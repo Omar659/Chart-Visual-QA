@@ -140,6 +140,11 @@
   box-shadow: 0 0 0 3px rgba(108, 140, 255, 0.2);
 }
 
+.text-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* Submit */
 .submit {
   padding: 12px 16px;
@@ -160,6 +165,42 @@
 .submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.submit-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Loading / processing state */
+.processing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(231, 236, 247, 0.25);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Feedback */

@@ -58,8 +58,8 @@ function App() {
     e.preventDefault()
     setError('')
     setAnswer(null)
-    if (!image) return setError('Pick a chart image first.')
-    if (!question.trim()) return setError('Type a question.')
+    if (!image) return setError('Please upload an image.')
+    if (!question.trim()) return setError('Please type a question.')
 
     setLoading(true)
     try {
@@ -124,25 +124,44 @@ function App() {
           </p>
         )}
 
-        {/* Question field */}
+        {/* Question field — disabled until an image is uploaded */}
         <label className="field">
           <span className="label">Question</span>
           <input
             type="text"
             className="text-input"
-            placeholder="e.g. What was the revenue in 2024?"
+            placeholder={
+              image
+                ? 'e.g. What was the revenue in 2024?'
+                : 'Upload a chart image first…'
+            }
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
+            disabled={!image || loading}
           />
         </label>
 
         <button type="submit" className="submit" disabled={!canSubmit}>
-          {loading ? 'Thinking…' : 'Ask'}
+          {loading ? (
+            <span className="submit-loading">
+              <span className="spinner" aria-hidden="true" />
+              Processing…
+            </span>
+          ) : (
+            'Ask'
+          )}
         </button>
+
+        {loading && (
+          <p className="processing" role="status" aria-live="polite">
+            <span className="spinner" aria-hidden="true" />
+            Processing model…
+          </p>
+        )}
 
         {error && <p className="error" role="alert">{error}</p>}
 
-        {answer && (
+        {!loading && answer && (
           <div className="answer" aria-live="polite">
             <span className="answer-label">Answer</span>
             <span className="answer-text">{answer.answer}</span>
