@@ -1,12 +1,12 @@
 :root {
-  --bg: #0f1117;
-  --panel: #181b24;
-  --panel-2: #1f232e;
-  --border: #2a2f3a;
-  --text: #e7e9ee;
-  --muted: #9aa0ad;
+  --bg: #0a1733;
+  --panel: #0f2147;
+  --panel-2: #142a55;
+  --border: #21407a;
+  --text: #e7ecf7;
+  --muted: #93a4c8;
   --accent: #6c8cff;
-  --accent-strong: #5577ff;
+  --accent-strong: #3d63ff;
   --danger: #ff6b6b;
 
   color-scheme: dark;
@@ -28,5 +28,5 @@ body,
 
 body {
   background:
-    radial-gradient(1200px 600px at 50% -10%, #1a2030 0%, var(--bg) 60%);
+    radial-gradient(1200px 600px at 50% -10%, #173061 0%, var(--bg) 60%);
 }
