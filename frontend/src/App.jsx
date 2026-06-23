@@ -4,6 +4,13 @@ import './App.css'
 
 const MAX_BYTES = 10 * 1024 * 1024 // keep in sync with backend MAX_CONTENT_LENGTH
 
+// Mirror of the backend's _question_too_weak guard for instant feedback.
+// Count letters/digits in any language (so CJK questions pass), reject junk.
+function questionTooWeak(q) {
+  const meaningful = (q.match(/[\p{L}\p{N}]/gu) || []).length
+  return meaningful < 3
+}
+
 function App() {
   const [image, setImage] = useState(null) // File
   const [previewUrl, setPreviewUrl] = useState('')
@@ -58,12 +65,14 @@ function App() {
     e.preventDefault()
     setError('')
     setAnswer(null)
+    const q = question.trim()
     if (!image) return setError('Please upload an image.')
-    if (!question.trim()) return setError('Please type a question.')
+    if (!q) return setError('Please type a question.')
+    if (questionTooWeak(q)) return setError('Please ask a more specific question.')
 
     setLoading(true)
     try {
-      const result = await askQuestion(image, question.trim())
+      const result = await askQuestion(image, q)
       setAnswer(result)
     } catch (err) {
       setError(err.message || 'Something went wrong.')
@@ -162,13 +171,31 @@ function App() {
         {error && <p className="error" role="alert">{error}</p>}
 
         {!loading && answer && (
-          <div className="answer" aria-live="polite">
-            <span className="answer-label">Answer</span>
-            <span className="answer-text">{answer.answer}</span>
-            <span className="answer-meta">
-              {answer.mock ? 'mock · ' : ''}
-              {Number(answer.latency_ms).toFixed(0)} ms
-            </span>
+          <div className="result" aria-live="polite">
+            {answer.is_chart === false && (
+              <p className="warning" role="alert">
+                ⚠️ This doesn&apos;t look like a chart — results may be unreliable.
+              </p>
+            )}
+
+            {answer.disclaimer ? (
+              <div className="disclaimer">
+                <span className="disclaimer-label">Mock mode</span>
+                <span className="disclaimer-text">{answer.disclaimer}</span>
+                <span className="answer-meta">
+                  {Number(answer.latency_ms).toFixed(0)} ms
+                </span>
+              </div>
+            ) : (
+              <div className="answer">
+                <span className="answer-label">Answer</span>
+                <span className="answer-text">{answer.answer}</span>
+                <span className="answer-meta">
+                  {answer.mock ? 'mock · ' : ''}
+                  {Number(answer.latency_ms).toFixed(0)} ms
+                </span>
+              </div>
+            )}
           </div>
         )}
       </form>

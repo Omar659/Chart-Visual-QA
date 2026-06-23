@@ -214,6 +214,50 @@
   font-size: 0.9rem;
 }
 
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Non-chart warning (Rule 4) */
+.warning {
+  margin: 0;
+  padding: 10px 12px;
+  color: #ffd479;
+  background: rgba(255, 212, 121, 0.1);
+  border: 1px solid rgba(255, 212, 121, 0.35);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+/* Mock-mode disclaimer (Rule 3) — shown instead of a fake answer */
+.disclaimer {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid #ffd479;
+  border-radius: 10px;
+}
+
+.disclaimer-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: #ffd479;
+}
+
+.disclaimer-text {
+  flex: 1 1 200px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
 .answer {
   display: flex;
   align-items: baseline;
