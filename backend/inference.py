@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import time
 
 # Default to mock. Override at runtime with the USE_MOCK env var, e.g.
 #   USE_MOCK=0 python app.py        # use the real model
@@ -39,6 +40,10 @@ def _env_use_mock(default: bool = True) -> bool:
 
 
 USE_MOCK = _env_use_mock()
+
+# Artificial delay (seconds) for the mock so the UI's loading state is visible.
+# Real model latency replaces this once wired in. Override with MOCK_DELAY_S.
+MOCK_DELAY_S = float(os.environ.get("MOCK_DELAY_S", "1.2"))
 
 # Canned answers the mock picks from. Deterministic per question so the same
 # question always yields the same answer (stable for demos and tests).
@@ -69,7 +74,13 @@ def _real_answer(image_bytes: bytes, question: str) -> str:
 
 
 def _mock_answer(image_bytes: bytes, question: str) -> str:
-    """Deterministic mock: same question -> same canned answer."""
+    """Deterministic mock: same question -> same canned answer.
+
+    Sleeps for ``MOCK_DELAY_S`` to emulate model latency so the frontend's
+    "Processing model…" state is actually visible during demos.
+    """
+    if MOCK_DELAY_S > 0:
+        time.sleep(MOCK_DELAY_S)
     digest = hashlib.sha1(question.strip().lower().encode("utf-8")).digest()
     return _MOCK_ANSWERS[digest[0] % len(_MOCK_ANSWERS)]
 
