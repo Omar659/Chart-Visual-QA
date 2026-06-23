@@ -1,18 +1,57 @@
+/* Design tokens — derived from DESIGN.md (Voltagent-inspired language).
+   Single electric-green accent on a near-black canvas; hairline borders
+   instead of shadows; Inter + JetBrains Mono. */
 :root {
-  --bg: #0f1117;
-  --panel: #181b24;
-  --panel-2: #1f232e;
-  --border: #2a2f3a;
-  --text: #e7e9ee;
-  --muted: #9aa0ad;
-  --accent: #6c8cff;
-  --accent-strong: #5577ff;
-  --danger: #ff6b6b;
+  /* Brand & accent */
+  --primary: #00d992;
+  --primary-soft: #2fd6a1;
+  --primary-deep: #10b981;
+  --on-primary: #101010;
+
+  /* Surface */
+  --canvas: #101010;
+  --canvas-soft: #1a1a1a;
+  --hairline: #3d3a39;
+  --hairline-dashed: rgba(79, 93, 117, 0.4);
+
+  /* Text */
+  --ink: #f2f2f2;
+  --ink-strong: #ffffff;
+  --body: #bdbdbd;
+  --mute: #8b949e;
+  --canvas-text-soft: #f5f6f7;
+
+  /* Radius */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-pill: 9999px;
+
+  /* Spacing (4px base) */
+  --s-xxs: 2px;
+  --s-xs: 4px;
+  --s-sm: 8px;
+  --s-md: 12px;
+  --s-lg: 16px;
+  --s-xl: 20px;
+  --s-2xl: 24px;
+  --s-3xl: 32px;
+  --s-4xl: 40px;
+  --s-5xl: 48px;
+  --s-6xl: 64px;
+
+  /* Type families */
+  --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', monospace;
 
   color-scheme: dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color: var(--text);
-  background-color: var(--bg);
+  font-family: var(--font-sans);
+  font-feature-settings: 'calt', 'rlig';
+  color: var(--ink);
+  background-color: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 * {
@@ -27,6 +66,5 @@ body,
 }
 
 body {
-  background:
-    radial-gradient(1200px 600px at 50% -10%, #1a2030 0%, var(--bg) 60%);
+  background-color: var(--canvas);
 }

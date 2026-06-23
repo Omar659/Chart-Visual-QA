@@ -118,14 +118,33 @@ curl http://127.0.0.1:5000/api/health
 curl -F "question=What was revenue in 2024?" -F "image=@chart.png" http://127.0.0.1:5000/api/ask
 ```
 
+## Tests
+
+Backend contract tests (lock the `/api/health` + `/api/ask` request/response shape):
+
+```bash
+cd backend
+.venv/Scripts/python.exe -m pip install -r requirements-dev.txt   # once
+.venv/Scripts/python.exe -m pytest                                # Windows
+# macOS/Linux: .venv/bin/python -m pytest
+```
+
 ## Swapping the mock for the real model
 
-All inference goes through one seam: **`backend/inference.py`**.
+All inference goes through one seam — the model team only touches **`backend/model_adapter.py`**:
 
-1. Implement `run_inference(image_bytes: bytes, question: str) -> str` with the real model.
-2. Set `USE_MOCK = False` in that file.
+1. Implement `predict(image_bytes: bytes, question: str) -> str` in `backend/model_adapter.py`
+   (add the model's runtime deps to `backend/requirements.txt`).
+2. Run the backend with the `USE_MOCK=0` env var — no code edit needed:
 
-No frontend or API changes are required — the contract stays the same.
+   ```bash
+   USE_MOCK=0 python app.py          # macOS/Linux / Git Bash
+   $env:USE_MOCK=0; python app.py    # PowerShell
+   ```
+
+`backend/inference.py` only imports the adapter when `USE_MOCK` is off, so the app boots
+fine in mock mode without any ML dependencies installed. No frontend or API changes are
+required — the contract stays the same.
 
 ## Project layout
 
@@ -133,10 +152,13 @@ No frontend or API changes are required — the contract stays the same.
 Chart-Visual-QA/
 ├── app.py              # dev orchestrator (boots backend + frontend)
 ├── backend/
-│   ├── app.py          # Flask API: /api/health, /api/ask
-│   ├── inference.py    # run_inference() seam (mock for now)
+│   ├── app.py            # Flask API: /api/health, /api/ask
+│   ├── inference.py      # run_inference() seam; mock vs real (USE_MOCK)
+│   ├── model_adapter.py  # model team's predict() landing spot
+│   ├── tests/            # pytest contract tests for the API
 │   ├── requirements.txt
-│   └── .venv/          # Python 3.12 virtualenv (gitignored)
+│   ├── requirements-dev.txt
+│   └── .venv/            # Python 3.12 virtualenv (gitignored)
 ├── frontend/           # React + Vite app
 │   ├── src/
 │   ├── vite.config.js  # dev server + /api proxy to the backend

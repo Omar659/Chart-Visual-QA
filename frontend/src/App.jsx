@@ -13,8 +13,9 @@ function App() {
   const [error, setError] = useState('')
   const [mockBanner, setMockBanner] = useState(false)
   const fileInputRef = useRef(null)
+  const abortRef = useRef(null)
 
-  // Probe the backend once so we can show a "mock mode" hint.
+  // Probe the backend once so we can show a "mock mode" status pill.
   useEffect(() => {
     getHealth()
       .then((h) => setMockBanner(Boolean(h.mock)))
@@ -27,6 +28,11 @@ function App() {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
     }
   }, [previewUrl])
+
+  // Abort any in-flight request if the component unmounts.
+  useEffect(() => {
+    return () => abortRef.current?.abort()
+  }, [])
 
   function selectImage(file) {
     if (!file) return
@@ -61,98 +67,127 @@ function App() {
     if (!image) return setError('Pick a chart image first.')
     if (!question.trim()) return setError('Type a question.')
 
+    // Cancel any in-flight request so a fast resubmit can't race.
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setLoading(true)
     try {
-      const result = await askQuestion(image, question.trim())
+      const result = await askQuestion(image, question.trim(), {
+        signal: controller.signal,
+      })
       setAnswer(result)
     } catch (err) {
+      if (err.name === 'AbortError') return // superseded by a newer request
       setError(err.message || 'Something went wrong.')
     } finally {
-      setLoading(false)
+      if (abortRef.current === controller) {
+        abortRef.current = null
+        setLoading(false)
+      }
     }
   }
 
   const canSubmit = image && question.trim() && !loading
 
   return (
-    <div className="app">
-      <header className="header">
-        <h1>Chart&nbsp;VQA</h1>
-        <p className="subtitle">Ask a question about a chart, get a short answer.</p>
-        {mockBanner && (
-          <span className="badge" title="The backend is returning mock answers.">
-            mock mode
-          </span>
-        )}
-      </header>
+    <div className="page">
+      <nav className="nav-bar">
+        <span className="brand">
+          <span className="brand-glyph" aria-hidden="true">⚡</span>
+          <span className="brand-name">Chart&nbsp;VQA</span>
+        </span>
+        <span className={`status-pill ${mockBanner ? 'is-mock' : 'is-live'}`}>
+          <span className="status-dot" aria-hidden="true" />
+          {mockBanner ? 'mock backend' : 'live'}
+        </span>
+      </nav>
 
-      <form className="card" onSubmit={onSubmit}>
-        {/* Image picker / dropzone */}
-        <button
-          type="button"
-          className={`picker ${previewUrl ? 'has-image' : ''}`}
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={onDrop}
-          aria-label="Choose a chart image"
-        >
-          {previewUrl ? (
-            <img className="preview" src={previewUrl} alt="Selected chart preview" />
-          ) : (
-            <span className="picker-empty">
-              <svg className="picker-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2M8.5 11l2.5 3 3.5-4.5L19 17H5z"
-                />
-              </svg>
-              <span className="picker-text">Click to choose a chart image</span>
-              <span className="picker-hint">or drag &amp; drop · PNG/JPG · up to 10&nbsp;MB</span>
-            </span>
-          )}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          hidden
-          onChange={onFileChange}
-        />
-        {image && (
-          <p className="filename" title={image.name}>
-            {image.name} · {(image.size / 1024).toFixed(0)} KB
+      <main className="container">
+        <header className="hero">
+          <p className="eyebrow">CHART QUESTION ANSWERING</p>
+          <h1 className="hero-title">Ask a question about a chart.</h1>
+          <p className="hero-sub">
+            Upload a chart, type a question, get a short answer. Powered by a
+            vision-language model behind <code className="chip">POST /api/ask</code>.
           </p>
-        )}
+        </header>
 
-        {/* Question field */}
-        <label className="field">
-          <span className="label">Question</span>
+        <form className="card" onSubmit={onSubmit}>
+          {/* Image picker / dropzone */}
+          <button
+            type="button"
+            className={`picker ${previewUrl ? 'has-image' : ''}`}
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={onDrop}
+            aria-label="Choose a chart image"
+          >
+            {previewUrl ? (
+              <img className="preview" src={previewUrl} alt="Selected chart preview" />
+            ) : (
+              <span className="picker-empty">
+                <svg className="picker-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    fill="currentColor"
+                    d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2M8.5 11l2.5 3 3.5-4.5L19 17H5z"
+                  />
+                </svg>
+                <span className="picker-text">Click to choose a chart image</span>
+                <span className="picker-hint">or drag &amp; drop · PNG/JPG · up to 10&nbsp;MB</span>
+              </span>
+            )}
+          </button>
           <input
-            type="text"
-            className="text-input"
-            placeholder="e.g. What was the revenue in 2024?"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={onFileChange}
           />
-        </label>
+          {image && (
+            <p className="filename">
+              <code className="chip">{image.name}</code>
+              <span className="filesize">{(image.size / 1024).toFixed(0)} KB</span>
+            </p>
+          )}
 
-        <button type="submit" className="submit" disabled={!canSubmit}>
-          {loading ? 'Thinking…' : 'Ask'}
-        </button>
+          {/* Question field */}
+          <label className="field">
+            <span className="label">Question</span>
+            <input
+              type="text"
+              className="text-input"
+              placeholder="e.g. What was the revenue in 2024?"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+          </label>
 
-        {error && <p className="error" role="alert">{error}</p>}
+          <button type="submit" className="submit" disabled={!canSubmit}>
+            {loading ? 'Thinking…' : 'Ask'}
+          </button>
 
-        {answer && (
-          <div className="answer" aria-live="polite">
-            <span className="answer-label">Answer</span>
-            <span className="answer-text">{answer.answer}</span>
-            <span className="answer-meta">
-              {answer.mock ? 'mock · ' : ''}
-              {Number(answer.latency_ms).toFixed(0)} ms
-            </span>
-          </div>
-        )}
-      </form>
+          {error && (
+            <p className="notice" role="alert">
+              <span className="notice-dot" aria-hidden="true" />
+              {error}
+            </p>
+          )}
+
+          {answer && (
+            <div className="answer" aria-live="polite">
+              <span className="answer-label">ANSWER</span>
+              <span className="answer-text">{answer.answer}</span>
+              <span className="answer-meta">
+                {answer.mock ? 'mock · ' : ''}
+                {Number(answer.latency_ms).toFixed(0)} ms
+              </span>
+            </div>
+          )}
+        </form>
+      </main>
     </div>
   )
 }

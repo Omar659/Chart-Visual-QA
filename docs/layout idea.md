@@ -1,100 +1,109 @@
-Here is a visual structure (layout) proposal for your project, focusing primarily on the **User Interface (Web UI)** described in the implementation track, along with a visual organization of the architecture and workflow.
+# Chart-Visual-QA — Experimentation & Implementation Plan
 
-Since I am a text-based AI, I have created a character-based  *wireframe* , which is ideal for guiding the frontend team (Victor & Min) through Phase C.
+## 1. Objective
 
-### 1. Web Interface Layout (Frontend - React)
+A Visual Question Answering system for **charts**. Input: a chart image + a question.
+Output: a short answer. We measure a zero-shot VLM against a fine-tuned VLM and ship a
+small web UI on top.
 
-This is the proposed design for the main application screen. The idea is to keep the interface clean, focusing on the chart and the question.
+- **Dataset:** ChartQA (`lmms-lab/ChartQA`) — chart reasoning.
+- **Metrics:** Exact-match for text answers, numeric tolerance (±5%) for numeric answers,
+  plus per-question-type breakdown (single value, comparison, calculation, trend).
 
-**Plaintext**
-
-```
-+-----------------------------------------------------------------------------+
-|  📊 Chart-Visual-QA                                           [Github]      |
-+-----------------------------------------------------------------------------+
-|                                                                             |
-|  +-----------------------------------------------------------------------+  |
-|  |                                                                       |  |
-|  |                           [ Upload Area ]                             |  |
-|  |                                                                       |  |
-|  |   +---------------------------------------------------------------+   |  |
-|  |   |                                                               |   |  |
-|  |   |      📁 Drag and drop the chart here or [Click to open        |   |  |
-|  |   |                       file explorer]                          |   |  |
-|  |   |                                                               |   |  |
-|  |   |           (After upload, the chart preview goes here)         |   |  |
-|  |   |                                                               |   |  |
-|  |   +---------------------------------------------------------------+   |  |
-|  |                                                                       |  |
-|  |                           [ Question Field ]                          |  |
-|  |                                                                       |  |
-|  |   +---------------------------------------------------------------+   |  |
-|  |   | 💬 What do you want to know about this chart?                 |   |  |
-|  |   +---------------------------------------------------------------+   |  |
-|  |                                                                       |  |
-|  |   +---------------------------------------------------------------+   |  |
-|  |   |                       [ 🚀 Submit Question ]                  |   |  |
-|  |   +---------------------------------------------------------------+   |  |
-|  |                                                                       |  |
-|  |                           [ Answer Area ]                             |  |
-|  |                                                                       |  |
-|  |   +---------------------------------------------------------------+   |  |
-|  |   |  💡 Answer:                                                   |   |  |
-|  |   |  The projected value for 2024 is 42%.                         |   |  |
-|  |   |                                                               |   |  |
-|  |   |  [✓] Mock: false                    [ Inference time: 1.2s]   |   |  |
-|  |   +---------------------------------------------------------------+   |  |
-|  |                                                                       |  |
-|  +-----------------------------------------------------------------------+  |
-|                                                                             |
-+-----------------------------------------------------------------------------+
-```
-
-**UI States (Phase C):**
-
-* **Empty:** Displays the upload icon and keeps the text field disabled until an image is uploaded.
-* **Loading:** Upon clicking "Submit", the button changes to an animated spinner and the text changes to "Processing model...".
-* **Error:** If `image` or `question` are empty, display a red alert below the corresponding field.
-
-### 2. System Architecture Layout (The "Contract")
-
-To align the Modeling and Implementation teams, here is the visual flow of the backend. It shows exactly where the "seam" of the project occurs:
-
-**Plaintext**
+## 2. Architecture
 
 ```
- [ FRONTEND ]                      [ BACKEND (Flask) ]
-Victor & Min                      Victor & Min
-
- 🌐 React UI    ------------>   POST /api/ask
-(Image + Text)  <------------   JSON { "answer": "..." }
-                                        |
-                                        | (Integration Contract)
-                                        v
-                            def run_inference(image, question) -> str:
-                                        |
- =======================================|=======================================
-                                        |
- [ MODEL PIPELINE ]                     v
- Susanne & Omar                     Preprocess (Resize, OCR, Prompt)
-                                        |
-                                        v
-                                    VLM Model (Zero-shot OR LoRA)
-                                        |
-                                        v
-                                    Postprocess (Parse, Units)
-                                        |
-                                        v
-                                   return "Short Answer"
+Input (image + question)
+        │
+        ▼
+   Preprocess            (image resize/normalize; optional OCR; prompt building)
+        │
+        ▼
+     Model               Baseline 1: VLM zero-shot
+                         Baseline 2: same VLM + LoRA fine-tune
+                         Approach:   VLM + our preprocess (+ optional postprocess)
+        │
+        ▼
+  Postprocess (maybe)    (answer cleanup, numeric parsing, unit normalization)
+        │
+        ▼
+   Output (short answer)
 ```
 
-### 3. Tracking Layout (Suggested Kanban Board)
+## 3. Experimentation track — Susanne & Omar
 
-To organize deliverables and milestones (Milestones 1 to 5), the team can structure the work as follows:
+1. **Load & inspect ChartQA.** Question types, answer formats, choose metrics.
+2. **Baseline 1 — VLM zero-shot.** Pick a VLM (BLIP-2 / LLaVA / Qwen2-VL). Prompt
+   `"Question: ... Answer:"`, generate, record accuracy.
+3. **Baseline 2 — VLM + LoRA fine-tune.** Attach LoRA to the LM side, train 1–2 epochs,
+   re-evaluate on the same val set.
+4. **Our approach — preprocess (+ maybe postprocess).** Add preprocessing around the
+   model; compare against both baselines.
+5. **Breakdown + error analysis.** Per-question-type accuracy; 20 failure cases grouped
+   by failure mode.
+6. **Define the inference contract** the backend will call (see §5) so integration is a
+   drop-in swap.
 
+**Deliverables:** notebook with both pipelines, results table, 20-case error analysis, README.
 
-| **📋 Backlog (To Do)**              | **⚙️ In Progress (Susanne & Omar)** | **💻 In Progress (Victor & Min)** | **✅ Done / Validation**   |
-| ----------------------------------------- | ------------------------------------------- | --------------------------------------- | -------------------------------- |
-| **[M4]**Integrate real model into backend | **[M3]**Run Baseline 1 (Zero-shot VLM)      | **[M1]**React + Vite + Flask Setup      | Load and inspect ChartQA dataset |
-| **[M5]**Results table + README            | **[M3]**Train Baseline 2 (LoRA)             | **[M2]**Build UI and states (Mock)      | Define inference contract        |
-| Error analysis (20 cases)                 | **[M3]**Create pre/post-processing          | Build`POST /api/ask`endpoint          |                                  |
+## 4. Implementation track — Victor & Min (webapp, mock-first)
+
+We build the full UI + API now against a **mock** backend, then swap in the real model.
+
+- **Phase A — Scaffold.** `frontend/` (React + Vite), `backend/` (Flask), dev scripts, CORS.
+- **Phase B — Backend (mock).** `GET /api/health`; `POST /api/ask` accepts an image +
+  question (multipart) and returns a canned `{ "answer": "...", "mock": true }`.
+- **Phase C — Frontend.** Question text field, clickable image-picker icon (opens file
+  explorer), preview, submit, answer display, loading + error states.
+- **Phase D — Wire-up.** Frontend → `/api/ask`; handle errors and empty inputs.
+- **Phase E — Integration-ready.** Isolate inference behind one function
+  (`run_inference(image, question)`) so Susanne & Omar's model replaces the mock with no
+  frontend changes.
+
+### Phase A detail — `app.py` orchestrator (single entry point)
+
+A root-level **`app.py`** is the one command that boots the whole stack for local dev.
+It shells out to the frontend and backend dev servers so a contributor runs **one** thing
+instead of juggling two terminals.
+
+- **Responsibility:** start the Flask backend and the Vite frontend dev server as
+  subprocesses (via `subprocess`/`shell` commands), stream their logs, and shut both down
+  cleanly on Ctrl-C.
+- **Commands it runs (illustrative):**
+  - backend: `flask --app backend/app run --port 5000` (or `python backend/app.py`)
+  - frontend: `npm --prefix frontend run dev`
+- **Behaviour:**
+  - Launch both, prefix/interleave their output so failures are visible.
+  - Propagate signals — killing `app.py` terminates both child processes (no orphans).
+  - Optional flags: `--backend-only` / `--frontend-only` for focused work; `--port` /
+    `--api-url` overrides for the dev ports.
+  - Cross-platform note: handle Windows vs POSIX process termination (we develop on
+    Windows; CI/Colab is POSIX).
+- **Why:** keeps the run story trivial (`python app.py`) and gives us one place to wire in
+  env vars (e.g. mock vs real inference) once Susanne & Omar's model lands.
+
+## 5. Integration contract (the seam between the two tracks)
+
+```
+POST /api/ask        (multipart/form-data)
+  fields: image=<file>, question=<string>
+  ->  200 { "answer": <string>, "mock": <bool>, "latency_ms": <number> }
+      400 { "error": <string> }
+```
+
+The model team implements `run_inference(image, question) -> str`. The backend calls it;
+the mock just returns a fixed string. Swapping the mock for the real model touches only
+that one function.
+
+## 6. Milestones
+
+- **M1** Webapp scaffold + mock backend running locally.
+- **M2** Full UI working end-to-end against the mock.
+- **M3** Model team's `run_inference` ready (baselines compared).
+- **M4** Integration: real model behind the same contract.
+- **M5** Results table + error analysis + README.
+
+## 7. Out of scope for now
+
+Model selection, fine-tuning, and final architecture decisions are owned by Susanne &
+Omar; the webapp ships mocked until their `run_inference` lands.
