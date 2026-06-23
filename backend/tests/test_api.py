@@ -13,6 +13,9 @@ from app import app as flask_app
 
 @pytest.fixture()
 def client():
+    import inference
+
+    inference.MOCK_DELAY_S = 0  # skip the demo latency sleep during tests
     flask_app.config.update(TESTING=True)
     return flask_app.test_client()
 
@@ -44,6 +47,7 @@ def test_ask_happy_path(client):
     body = res.get_json()
     assert isinstance(body["answer"], str) and body["answer"]
     assert isinstance(body["mock"], bool)
+    assert isinstance(body["is_chart"], bool)
     assert isinstance(body["latency_ms"], (int, float))
 
 
@@ -63,6 +67,14 @@ def test_ask_blank_question(client):
     res = _ask(client, question="   ")
     assert res.status_code == 400
     assert "error" in res.get_json()
+
+
+def test_ask_weak_question(client):
+    # Layer-1 guard: junk / near-empty questions are rejected.
+    for junk in ("?", "hi", "ok!"):
+        res = _ask(client, question=junk)
+        assert res.status_code == 400, junk
+        assert "error" in res.get_json()
 
 
 def test_ask_missing_image(client):
