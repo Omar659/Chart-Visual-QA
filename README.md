@@ -17,9 +17,10 @@ full plan and [docs/ROBUSTNESS.md](docs/ROBUSTNESS.md) for the guard design.
   ([docs/ROBUSTNESS.md](docs/ROBUSTNESS.md) §1):
   - **Layer 1** — cheap rules (empty/junk question, image present) + a "is this a chart?"
     heuristic. Always on, no extra deps.
-  - **Layer 2** — small local encoder classifiers: toxicity, prompt-injection, PII. *(opt-in models)*
+  - **Layer 2** — small local encoder classifiers: toxicity, prompt-injection, PII.
+    *(installed by default)*
   - **Layer 3** — **Llama Guard 3** (via Ollama) as an input boundary filter for unsafe
-    content / policy / jailbreak. *(needs Ollama)*
+    content / policy / jailbreak. *(install Ollama; the model is pulled automatically)*
   - Every layer is **fail-open**: if its model/service isn't installed, the app still runs —
     it just allows the request and **logs a warning** (Layer 3) so the gap is visible.
 
@@ -37,22 +38,18 @@ git clone <repo> && cd Chart-Visual-QA
 python app.py
 ```
 
-On first run, `app.py` bootstraps everything: creates the Python 3.12 venv, installs backend
-requirements, runs `npm install`, copies `.env.example` → `.env`, prints a **guard-readiness**
-report, then starts both servers. Open **http://localhost:5173**.
+On first run, `app.py` bootstraps **everything**: creates the Python 3.12 venv, installs the
+backend requirements **and the input-guard models** (Layer 2), runs `npm install`, copies
+`.env.example` → `.env`, pulls the **Layer-3** Llama Guard model if Ollama is running, prints a
+**guard-readiness** report, then starts both servers. Open **http://localhost:5173**.
 
-By default the app runs **without** the heavy guard models (Layers 2–3 fail open). To enable them:
+For the **Layer-3** safety guard, install **[Ollama](https://ollama.com)** before running — then
+`app.py` pulls `llama-guard3:1b` automatically. If Ollama isn't reachable, `app.py` **warns** and
+Layer 3 fails open (unsafe questions may pass). Set `GUARD_LLM_ENABLED=0` in `.env` to run without
+it intentionally.
 
-```bash
-# Layer 2 encoders (toxicity / injection / PII) — heavy: torch, transformers, presidio (~GBs)
-python app.py --with-guard
-
-# Layer 3 (Llama Guard) — install Ollama, then pull the model:
-ollama pull llama-guard3:1b
-```
-
-`app.py` warns at startup if Ollama isn't reachable (Layer 3 would otherwise silently allow
-unsafe questions). Set `GUARD_LLM_ENABLED=0` in `.env` to run without it intentionally.
+For a **light setup** (skip the heavy Layer-2 models), use `python app.py --no-guard`. Every
+layer fails open and warns when its model/service is missing, so the app always runs.
 
 ## Configuration (`.env`)
 
@@ -109,7 +106,7 @@ curl -F "question=What was revenue in 2024?" -F "image=@chart.png" http://127.0.
 ## Useful flags
 
 ```bash
-python app.py --with-guard               # also install the heavy Layer-2 guard models
+python app.py --no-guard                 # light setup: skip the heavy Layer-2 guard models
 python app.py --backend-only             # just the Flask API
 python app.py --frontend-only            # just the Vite dev server
 python app.py --setup-only               # install deps + print guard readiness, then exit

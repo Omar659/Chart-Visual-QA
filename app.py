@@ -10,20 +10,19 @@ Usage:
     python app.py --frontend-only  # only the Vite dev server
     python app.py --setup-only     # install deps and exit (no servers)
     python app.py --no-setup       # skip the dependency check (faster restarts)
-    python app.py --with-guard     # also install the heavy guard models (torch, ...)
+    python app.py --no-guard       # light setup: skip the heavy guard models
     python app.py --backend-port 5001 --frontend-port 5174
 
-First run is self-bootstrapping: if backend/.venv or frontend/node_modules are
-missing, app.py creates the Python 3.12 virtualenv, pip-installs the backend
-requirements, runs `npm install`, and copies .env.example -> .env. So a fresh
-clone just needs `python app.py`.
+First run is self-bootstrapping: app.py creates the Python 3.12 virtualenv, installs
+the backend requirements **and the input-guard models**, runs `npm install`, copies
+.env.example -> .env, and (if Ollama is running) pulls the Layer-3 guard model. So a
+fresh clone just needs `python app.py`.
 
-The input **guard** has heavy, optional pieces that are NOT installed by default
-(the app runs fine without them — it just fails open):
-  - Layer 2 encoders (toxicity / prompt-injection / PII): `python app.py --with-guard`.
-  - Layer 3 (Llama Guard): install Ollama (https://ollama.com) + `ollama pull
-    llama-guard3:1b`. app.py warns at startup if it isn't reachable.
-See docs/PLAN.md and docs/TASK_B_LAYER3.md for the rationale.
+The guard is **on by default**. Layer 2 (toxicity / injection / PII) installs
+automatically; Layer 3 (Llama Guard) needs Ollama (https://ollama.com) — app.py pulls
+llama-guard3:1b when Ollama is reachable and WARNS otherwise. Use --no-guard for a light
+setup; every layer fails open (allows + warns) when its model/service is missing.
+See docs/PLAN.md and docs/TASK_B_LAYER3.md.
 """
 
 from __future__ import annotations
@@ -119,13 +118,40 @@ def ensure_env_file() -> None:
         print("[setup] created .env from .env.example (edit it to configure).", flush=True)
 
 
-def install_guard_deps() -> None:
-    """Install the heavy Layer-2/3 guard models into the venv (opt-in: --with-guard)."""
+def ensure_guard_deps() -> None:
+    """Install the Layer-2 guard models into the venv (default; skip with --no-guard)."""
+    if _venv_can_import(["detoxify", "transformers", "presidio_analyzer"]):
+        return  # already installed
     venv_py = str(_venv_python())
-    print("[setup] installing guard models (heavy: torch, transformers, presidio)...", flush=True)
+    print("[setup] installing input-guard models (one-time: torch/transformers/presidio)...",
+          flush=True)
     _run([venv_py, "-m", "pip", "install", "-r", "requirements-guard.txt"], BACKEND_DIR)
     _run([venv_py, "-m", "spacy", "download", "en_core_web_lg"], BACKEND_DIR)
-    print("[setup] guard models installed.", flush=True)
+    print("[setup] input-guard models installed.", flush=True)
+
+
+def _ollama_exe() -> str | None:
+    """Path to the ollama CLI, or None (PATH, then the Windows default install dir)."""
+    exe = shutil.which("ollama")
+    if exe:
+        return exe
+    if IS_WINDOWS:
+        win = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe"
+        if win.exists():
+            return str(win)
+    return None
+
+
+def ensure_ollama_model() -> None:
+    """Pull the Layer-3 guard model if Ollama is running and the model isn't present."""
+    reachable, has_model = _ollama_status(os.environ.get("GUARD_LLM_URL", "http://localhost:11434"))
+    if not reachable or has_model:
+        return  # unreachable -> readiness report warns; already present -> nothing to do
+    exe = _ollama_exe()
+    if not exe:
+        return
+    print("[setup] pulling Layer-3 guard model llama-guard3:1b (one-time)...", flush=True)
+    subprocess.run([exe, "pull", "llama-guard3:1b"])
 
 
 def ensure_deps(run_backend: bool, run_frontend: bool) -> None:
@@ -247,8 +273,8 @@ def main() -> int:
     parser.add_argument("--frontend-only", action="store_true", help="run only the Vite dev server")
     parser.add_argument("--setup-only", action="store_true", help="install deps and exit")
     parser.add_argument("--no-setup", action="store_true", help="skip the dependency check")
-    parser.add_argument("--with-guard", action="store_true",
-                        help="also install the heavy guard models (torch/transformers/presidio)")
+    parser.add_argument("--no-guard", action="store_true",
+                        help="light setup: skip installing the heavy guard models")
     parser.add_argument("--backend-port", type=int, default=5000)
     parser.add_argument("--frontend-port", type=int, default=5173)
     args = parser.parse_args()
@@ -262,8 +288,9 @@ def main() -> int:
     if not args.no_setup:
         try:
             ensure_deps(run_backend, run_frontend)
-            if args.with_guard:
-                install_guard_deps()
+            if run_backend and not args.no_guard:
+                ensure_guard_deps()
+                ensure_ollama_model()
         except subprocess.CalledProcessError as exc:
             print(f"[setup] FAILED: {exc}", flush=True)
             return 1
