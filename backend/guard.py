@@ -135,10 +135,10 @@ def pii_hits(text: str) -> list[str] | None:
 
 # --- Orchestrator -----------------------------------------------------------
 def guard(question: str) -> GuardResult:
-    """Screen the question through the Layer-2 classifiers.
+    """Screen the question through the Layer-2 classifiers, then the Layer-3 LLM.
 
     Returns ``allowed=True`` when nothing fires OR when a detector is unavailable
-    (fail-open). Order: toxicity -> prompt injection -> PII.
+    (fail-open). Order: toxicity -> prompt injection -> PII -> Layer-3 LLM.
     """
     if not GUARD_ENABLED:
         return GuardResult(True)
@@ -160,6 +160,16 @@ def guard(question: str) -> GuardResult:
             False, "pii",
             "Please remove personal data from your question (e.g. " + ", ".join(hits) + ").",
         )
+
+    # --- Layer 3: LLM input boundary filter (Llama Guard) — last, gated, fail-open ---
+    # Lazy import avoids a circular import (guard_llm imports GuardResult from here).
+    try:
+        from guard_llm import llm_classify
+        verdict = llm_classify(question)
+    except Exception:  # noqa: BLE001
+        verdict = None
+    if verdict is not None and not verdict.allowed:
+        return verdict
 
     return GuardResult(True)
 
