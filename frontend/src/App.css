@@ -220,15 +220,24 @@
   gap: 10px;
 }
 
-/* Non-chart warning (Rule 4) */
-.warning {
+/* Chart-detection indicator (Rule 4) */
+.detect {
   margin: 0;
   padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.detect-ok {
+  color: #6ee7a8;
+  background: rgba(110, 231, 168, 0.1);
+  border: 1px solid rgba(110, 231, 168, 0.35);
+}
+
+.detect-warn {
   color: #ffd479;
   background: rgba(255, 212, 121, 0.1);
   border: 1px solid rgba(255, 212, 121, 0.35);
-  border-radius: 10px;
-  font-size: 0.9rem;
 }
 
 /* Mock-mode disclaimer (Rule 3) — shown instead of a fake answer */

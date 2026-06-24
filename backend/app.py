@@ -89,8 +89,8 @@ def ask():
     if not image_bytes:
         return jsonify(error="Uploaded image is empty."), 400
 
-    # Rule 4: heuristic chart gate (placeholder; see chart_check).
-    is_chart, _confidence = looks_like_chart(image_bytes)
+    # Rule 4: chart gate (CLIP zero-shot, heuristic fallback; see chart_check).
+    is_chart, chart_confidence = looks_like_chart(image_bytes)
 
     start = time.perf_counter()
     answer = run_inference(image_bytes, question)
@@ -103,10 +103,17 @@ def ask():
             disclaimer=MOCK_DISCLAIMER,
             mock=True,
             is_chart=is_chart,
+            chart_confidence=chart_confidence,
             latency_ms=latency_ms,
         )
 
-    return jsonify(answer=answer, mock=is_mock(), is_chart=is_chart, latency_ms=latency_ms)
+    return jsonify(
+        answer=answer,
+        mock=is_mock(),
+        is_chart=is_chart,
+        chart_confidence=chart_confidence,
+        latency_ms=latency_ms,
+    )
 
 
 if __name__ == "__main__":

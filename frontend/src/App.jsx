@@ -172,11 +172,19 @@ function App() {
 
         {!loading && answer && (
           <div className="result" aria-live="polite">
-            {answer.is_chart === false && (
-              <p className="warning" role="alert">
-                ⚠️ This doesn&apos;t look like a chart — results may be unreliable.
-              </p>
-            )}
+            {/* Chart-detection indicator — shows the CLIP result on every upload */}
+            {typeof answer.chart_confidence === 'number' &&
+              (answer.is_chart ? (
+                <p className="detect detect-ok">
+                  ✓ Chart detected · {Math.round(answer.chart_confidence * 100)}%
+                </p>
+              ) : (
+                <p className="detect detect-warn" role="alert">
+                  ⚠️ This doesn&apos;t look like a chart (
+                  {Math.round(answer.chart_confidence * 100)}%) — results may be
+                  unreliable.
+                </p>
+              ))}
 
             {answer.disclaimer ? (
               <div className="disclaimer">
