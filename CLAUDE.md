@@ -10,6 +10,7 @@ and a natural-language question, return a short answer (1–10 words). Compare a
 **zero-shot VLM baseline** vs a **fine-tuned VLM** on the same eval set, with an error
 analysis. Dataset: **ChartQA** (`lmms-lab/ChartQA`).
 
+
 ## Team & ownership
 
 - **Victor** (me) — webapp (React UI + Flask backend); pair-programming with **Min**.
@@ -43,6 +44,16 @@ real inference call without touching the frontend.
   - `frontend/` — React app (question box + image picker + answer display).
   - `backend/`  — Flask API (`/api/health`, `/api/ask`), mock inference first.
   - `docs/PLAN.md` — experimentation + implementation plan.
+
+## Engineering principles
+
+- **Always design for production efficiency, not just "works locally."** For anything
+  proposed or implemented, think about how it runs in production and minimize per-request
+  **latency and cost**: load models once (warm at boot, never in the request path), **cache**
+  by a stable key, run the **cheapest check first and short-circuit**, **gate expensive paths**
+  (e.g. an LLM) behind cheaper ones, keep heavy deps **opt-in** and **fail-open**, and prefer
+  small/quantized **local** models over paid per-token APIs. When suggesting a change, state
+  its latency/cost impact.
 
 ## Webapp UX (Victor's scope)
 

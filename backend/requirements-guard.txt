@@ -1,0 +1,13 @@
+# Layer-2 input-guard models (opt-in — NOT needed to run the app).
+# Without these, guard.py fails open (every question is allowed). Install to
+# turn the real classifiers on:  pip install -r backend/requirements-guard.txt
+#
+# Heavy: pulls torch + transformers + a spaCy model. Prefer a GPU box for speed.
+-r requirements.txt
+
+detoxify>=0.5,<0.6                 # toxicity (wraps unitary/toxic-bert)
+transformers>=4.40                 # prompt-injection classifier
+torch>=2.2                         # backend for the above
+presidio-analyzer>=2.2             # PII detection
+# Presidio also needs a spaCy model:
+#   python -m spacy download en_core_web_lg

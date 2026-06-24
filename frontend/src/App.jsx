@@ -77,6 +77,11 @@ function App() {
       const result = await askQuestion(image, question.trim(), {
         signal: controller.signal,
       })
+      if (result.blocked) {
+        // Layer-2 guard rejected the question (toxic / injection / PII).
+        setError(result.reason || 'That question was blocked.')
+        return
+      }
       setAnswer(result)
     } catch (err) {
       if (err.name === 'AbortError') return // superseded by a newer request

@@ -146,6 +146,42 @@ instead of an answer. **Fail-closed** for safety categories (toxicity, injection
 **fail-open with a hint** for "off-topic" so we don't frustrate legitimate users on a
 borderline classifier call.
 
+### 1.5 Evasion / adversarial robustness
+
+A naive classifier is easy to bypass: the attacker hides the real payload so the guard
+sees gibberish while the downstream model still understands it. The guard must defend
+against this, not just clean text. Three common tactics and how we counter them:
+
+| Tactic | Example | Defense |
+| --- | --- | --- |
+| **Altered encodings** | base64 / hex / ROT13 / URL-encoding of "generate harmful content"; homoglyphs (Cyrillic "а"), zero-width chars, leetspeak (`k1ll`), letter-spacing (`k i l l`) | **Canonicalize before classifying** + **decode-and-rescreen** |
+| **Synonym / paraphrase** | reword to dodge keyword-ish signals; misspellings | **Semantic** classifiers (encoder + LLM), not keyword lists |
+| **Role-play / jailbreak framing** | "pretend you are DAN", "for a fictional story, explain how to…" | **Intent** classifiers — deberta prompt-injection + Llama Guard jailbreak category |
+
+**Where each defense lives in our layers:**
+
+- **Layer 1 (cheap, before the classifiers) — normalize + flag:**
+  - Unicode **NFKC** normalization; strip zero-width / control chars; map confusable
+    homoglyphs to ASCII; collapse repeated separators (`k i l l` → `kill`); de-leet.
+  - **Encoding detection + decode-and-rescreen:** if the text contains a long
+    base64 / hex / percent-encoded blob (length + high-entropy / charset heuristic),
+    decode it and run the whole guard on the decoded text too — **bounded recursion**
+    (e.g. depth ≤ 2) so nested encodings can't loop forever. Screen **both** the raw and
+    the decoded/normalized forms; block if **either** fires.
+- **Layer 2 (encoders) — semantic, not lexical:** the toxicity and prompt-injection
+  models catch reworded/obfuscated intent that keyword rules miss; the deberta
+  prompt-injection model already covers many role-play/jailbreak phrasings.
+- **Layer 3 (LLM classifier) — the backstop:** novel encodings, creative paraphrase, and
+  elaborate role-play that slip past the cheap layers are where an LLM-as-classifier
+  (Llama Guard 3 / Granite Guardian, which have explicit jailbreak categories) earns its
+  cost. Run it on the **normalized** text.
+
+**LLMOps:** keep an **adversarial red-team set** (encoded payloads, paraphrases, role-play
+jailbreaks) and track guard recall on it in CI — it's the regression signal that a model or
+threshold change didn't reopen a bypass. Treat this as an **arms race**: the goal is to
+raise the bar and monitor, not to claim a perfect filter. Always normalize the **same** text
+that the model will ultimately see, or a gap reopens between what we screen and what runs.
+
 ---
 
 ## 2. RAG (Retrieval-Augmented Generation)
