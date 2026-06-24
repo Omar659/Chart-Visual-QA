@@ -174,6 +174,22 @@ def guard(question: str) -> GuardResult:
     return GuardResult(True)
 
 
+def warmup() -> None:
+    """Pre-load every guard model off the request path (call at boot, in a thread).
+
+    Fail-open: if a model's deps aren't installed the loader just returns None and this
+    does nothing heavy. Loads Layer-2 encoders, then warms the Layer-3 LLM.
+    """
+    _load_toxicity()
+    _load_injection()
+    _load_pii()
+    try:
+        import guard_llm
+        guard_llm.warmup()
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def is_available() -> dict[str, bool]:
     """Which detectors actually have their model loaded (for /api/health, debugging)."""
     return {
