@@ -1,3 +1,7 @@
 Flask>=3.0,<4.0
 flask-cors>=4.0,<6.0
 Pillow>=10,<12
+# CLIP zero-shot chart detector (chart_check.py). Heavy; the gate falls back to
+# a pixel heuristic if these aren't installed.
+torch>=2.2
+transformers>=4.40
