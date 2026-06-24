@@ -50,8 +50,9 @@ Two tracks, one seam (`run_inference`, §9):
 - [x] Restyle to design system (DESIGN.md / Voltagent language)
 - [x] Backend contract tests (pytest, 6 passing)
 - [x] Docs: README, PLAN, ROBUSTNESS
-- [ ] Integrate **Min's Layer-1 guard** (rebase branch `min` onto `feat/webapp` — §10)
-- [ ] **Layer 2** encoder classifiers (toxicity / prompt-injection / PII)
+- [x] Integrate **Min's Layer-1 guard** (merged her PR into `feat/webapp`)
+- [x] **Layer 2** encoder classifiers — `guard.py` (toxicity / prompt-injection / PII),
+      lazy + fail-open; real models opt-in via `backend/requirements-guard.txt`
 - [ ] **Layer 3** LLM classifier (on-topic + safety), Ollama → vLLM
 - [ ] Hardening: answer cache, rate-limit, upload safety (PIL verify), observability, eval harness
 - [ ] Deployment: vLLM serving for guard + VLM, env-configured URLs (§8)
