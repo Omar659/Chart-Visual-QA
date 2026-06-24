@@ -28,7 +28,10 @@ except Exception:  # noqa: BLE001 — requests not installed -> fail-open
 GUARD_LLM_ENABLED = os.environ.get("GUARD_LLM_ENABLED", "0").lower() in ("1", "true", "yes", "on")
 GUARD_LLM_URL = os.environ.get("GUARD_LLM_URL", "http://localhost:11434")
 GUARD_LLM_MODEL = os.environ.get("GUARD_LLM_MODEL", "llama-guard3:1b")
-_TIMEOUT = float(os.environ.get("GUARD_LLM_TIMEOUT", "5"))
+# Warm Llama Guard 1B inference measured ~3s here; a cold load is ~15-18s. Keep the
+# model warm in prod (pre-warm at boot / OLLAMA_KEEP_ALIVE) so this strict timeout is
+# enough; a cold/slow call just fails open (allows). Override with GUARD_LLM_TIMEOUT.
+_TIMEOUT = float(os.environ.get("GUARD_LLM_TIMEOUT", "8"))
 
 # Llama Guard hazard code -> (our category, user-safe reason). Trimmed to what matters here;
 # S99 is our custom off-topic category (requires a custom-taxonomy prompt — see TASK_B doc).
