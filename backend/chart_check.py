@@ -30,15 +30,39 @@ from collections import Counter
 _CLIP_MODEL = os.environ.get("CHART_CLIP_MODEL", "openai/clip-vit-base-patch32")
 _CLIP_THRESHOLD = float(os.environ.get("CHART_CLIP_THRESHOLD", "0.5"))
 
-# Zero-shot label set. Index 0 is the "chart" class; the rest are what a
-# non-chart upload usually is. CLIP softmaxes over all four labels and we read
-# off the probability mass on the chart label.
-_CLIP_LABELS = [
-    "a chart, graph, or data plot",
-    "a photograph",
-    "a screenshot of text or a document",
-    "a drawing or illustration",
+# Zero-shot label set, split into a "chart" group and a "non-chart" group.
+# CLIP softmaxes over ALL labels; P(chart) is the summed mass on the chart group.
+#
+# The chart prompts deliberately stress DATA — numeric values plus labeled axes,
+# a legend, or labeled segments — because a chart is only a chart if it encodes
+# values. The non-chart group includes "a diagram/figure with no data" so images
+# that look chart-like but carry no values (flowcharts, schematics, geometric
+# figures, generic illustrations) are pulled toward non-chart.
+_CHART_LABELS = [
+    "a bar chart with labeled axes and numeric values",
+    "a line graph showing data values over time",
+    "a pie chart with labeled segments and percentages",
+    "a scatter plot of data points with labeled axes",
+    "a dashboard with multiple bar, line, or pie charts",
+    "several plotted charts or graphs shown together",
 ]
+_NONCHART_LABELS = [
+    "a photograph",
+    "a diagram, schematic, or flowchart with no data values",
+    "a drawing, illustration, or geometric figure without data",
+    "a screenshot of text, a table of numbers, or a document",
+]
+_CLIP_LABELS = _CHART_LABELS + _NONCHART_LABELS
+
+# "Has data values" gate. CLIP recognises chart *structure* (axes, frames, even
+# chart-shaped icons) but can't tell whether real DATA is present. A real chart
+# shows numbers — axis ticks, data labels, percentages; an infographic of
+# chart-type icons, an empty frame, or a labels-only diagram has none. So a chart
+# must be CLIP-chart AND contain numeric data, read via OCR. This enforces the
+# rule "no data -> not a chart" no matter how chart-like the image looks or how
+# many panels it has. Requires the Tesseract binary (see requirements/README);
+# fails open if OCR is unavailable.
+_MIN_DATA_DIGITS = 2  # a real chart shows at least a couple of numeric values
 
 # Lazy singleton: None = not tried yet, False = unavailable, else (model, proc, torch).
 _clip = None
@@ -67,7 +91,7 @@ def _clip_chart_prob(image_bytes: bytes):
     """Return P(image is a chart) from CLIP zero-shot, or None if CLIP can't run.
 
     Reads the image, compares it against ``_CLIP_LABELS`` with CLIP, and returns
-    the softmax probability on the first (chart) label.
+    the summed softmax probability over the chart group (``_CHART_LABELS``).
     """
     clip = _load_clip()
     if clip is None:
@@ -81,7 +105,7 @@ def _clip_chart_prob(image_bytes: bytes):
         with torch.no_grad():
             logits = model(**inputs).logits_per_image  # (1, n_labels)
         probs = logits.softmax(dim=1)[0]
-        return float(probs[0])  # P(chart) — index 0 is the chart label
+        return float(probs[: len(_CHART_LABELS)].sum())  # P(chart) over chart labels
     except Exception:
         return None
 
@@ -91,6 +115,34 @@ def _clip_chart_prob(image_bytes: bytes):
 _SAMPLE_SIZE = 128            # downscale to this square before analysis
 _MIN_BACKGROUND_RATIO = 0.18  # charts usually have a big flat background
 _MAX_DISTINCT_COLORS = 48     # of 512 coarse buckets; photos blow past this
+
+
+def _has_data_values(image_bytes: bytes) -> bool:
+    """True if the image contains numeric data values (axis ticks, data labels,
+    percentages), read via OCR.
+
+    A real chart shows numbers; an infographic of chart-type icons, an empty
+    frame, or a labels-only diagram has none. Small images are upscaled first so
+    OCR can resolve small axis numbers.
+
+    Fails OPEN (returns True) if Pillow/Tesseract is unavailable or OCR errors,
+    so it never vetoes on its own failure — the CLIP verdict stands in that case.
+    """
+    try:
+        import pytesseract
+        from PIL import Image
+
+        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    except Exception:
+        return True
+    try:
+        if min(img.size) < 600:  # upscale small images so OCR can read numbers
+            scale = 600 // min(img.size) + 1
+            img = img.resize((img.width * scale, img.height * scale))
+        text = pytesseract.image_to_string(img)
+    except Exception:
+        return True
+    return sum(ch.isdigit() for ch in text) >= _MIN_DATA_DIGITS
 
 
 def _heuristic_chart(image_bytes: bytes) -> tuple[bool, float]:
@@ -131,5 +183,7 @@ def looks_like_chart(image_bytes: bytes) -> tuple[bool, float]:
     """
     prob = _clip_chart_prob(image_bytes)
     if prob is not None:
-        return prob >= _CLIP_THRESHOLD, round(prob, 3)
+        # Chart iff CLIP says chart AND the image shows real numeric data.
+        is_chart = prob >= _CLIP_THRESHOLD and _has_data_values(image_bytes)
+        return is_chart, round(prob, 3)
     return _heuristic_chart(image_bytes)

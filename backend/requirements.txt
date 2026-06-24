@@ -5,5 +5,9 @@ Pillow>=10,<12
 # a pixel heuristic if these aren't installed.
 torch>=2.2
 transformers>=4.40
+# OCR "has data values" gate in chart_check.py. Needs the Tesseract binary too:
+#   macOS: brew install tesseract   |   Debian/Ubuntu: apt install tesseract-ocr
+# Falls back to no-veto if Tesseract isn't installed.
+pytesseract>=0.3.10
 # Tests (test_chart_check.py) — run with: python -m pytest
 pytest>=8.0

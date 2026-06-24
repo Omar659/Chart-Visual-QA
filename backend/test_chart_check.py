@@ -20,6 +20,8 @@ def _png_bytes(color="white", size=(32, 32)) -> bytes:
     return buf.getvalue()
 
 
+
+
 def test_high_prob_is_chart(monkeypatch):
     # CLIP says 0.9 -> above threshold -> (True, 0.9)
     monkeypatch.setattr(chart_check, "_clip_chart_prob", lambda b: 0.9)
@@ -47,6 +49,24 @@ def test_none_prob_falls_back_to_heuristic(monkeypatch):
     sentinel = (True, 0.42)
     monkeypatch.setattr(chart_check, "_heuristic_chart", lambda b: sentinel)
     assert chart_check.looks_like_chart(b"ignored") is sentinel
+
+
+def test_data_gate_vetoes_chart_without_data(monkeypatch):
+    # CLIP is confident it's a chart, but OCR finds no numeric data (e.g. an
+    # infographic of chart-type icons) -> the data gate vetoes -> NOT a chart.
+    monkeypatch.setattr(chart_check, "_clip_chart_prob", lambda b: 0.95)
+    monkeypatch.setattr(chart_check, "_has_data_values", lambda b: False)
+    is_chart, _ = chart_check.looks_like_chart(b"img")
+    assert is_chart is False
+
+
+def test_data_gate_allows_chart_with_data(monkeypatch):
+    # CLIP says chart AND OCR finds numeric data values -> chart.
+    monkeypatch.setattr(chart_check, "_clip_chart_prob", lambda b: 0.95)
+    monkeypatch.setattr(chart_check, "_has_data_values", lambda b: True)
+    is_chart, conf = chart_check.looks_like_chart(b"img")
+    assert is_chart is True
+    assert conf == 0.95
 
 
 def test_fallback_when_clip_cannot_load(monkeypatch):
