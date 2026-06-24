@@ -5,3 +5,5 @@ Pillow>=10,<12
 # a pixel heuristic if these aren't installed.
 torch>=2.2
 transformers>=4.40
+# Tests (test_chart_check.py) — run with: python -m pytest
+pytest>=8.0

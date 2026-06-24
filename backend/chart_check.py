@@ -20,12 +20,15 @@ Fails open everywhere: if nothing can decide, we assume it IS a chart
 from __future__ import annotations
 
 import io
+import os
 from collections import Counter
 
 # --- CLIP zero-shot stage ------------------------------------------------
 
-_CLIP_MODEL = "openai/clip-vit-base-patch32"
-_CLIP_THRESHOLD = 0.5  # min P(chart) from CLIP to treat the image as a chart
+# Both configurable via env so the model and cutoff can be tuned without code
+# changes. Defaults per the project doc.
+_CLIP_MODEL = os.environ.get("CHART_CLIP_MODEL", "openai/clip-vit-base-patch32")
+_CLIP_THRESHOLD = float(os.environ.get("CHART_CLIP_THRESHOLD", "0.5"))
 
 # Zero-shot label set. Index 0 is the "chart" class; the rest are what a
 # non-chart upload usually is. CLIP softmaxes over all four labels and we read
@@ -41,7 +44,7 @@ _CLIP_LABELS = [
 _clip = None
 
 
-def _get_clip():
+def _load_clip():
     """Load CLIP once. Returns (model, processor, torch) or None if unavailable."""
     global _clip
     if _clip is not None:
@@ -66,7 +69,7 @@ def _clip_chart_prob(image_bytes: bytes):
     Reads the image, compares it against ``_CLIP_LABELS`` with CLIP, and returns
     the softmax probability on the first (chart) label.
     """
-    clip = _get_clip()
+    clip = _load_clip()
     if clip is None:
         return None
     model, processor, torch = clip
@@ -90,7 +93,7 @@ _MIN_BACKGROUND_RATIO = 0.18  # charts usually have a big flat background
 _MAX_DISTINCT_COLORS = 48     # of 512 coarse buckets; photos blow past this
 
 
-def _heuristic_is_chart(image_bytes: bytes) -> tuple[bool, float]:
+def _heuristic_chart(image_bytes: bytes) -> tuple[bool, float]:
     """Cheap pixel-stats verdict: flat background + limited palette => chart."""
     try:
         from PIL import Image
@@ -129,4 +132,4 @@ def looks_like_chart(image_bytes: bytes) -> tuple[bool, float]:
     prob = _clip_chart_prob(image_bytes)
     if prob is not None:
         return prob >= _CLIP_THRESHOLD, round(prob, 3)
-    return _heuristic_is_chart(image_bytes)
+    return _heuristic_chart(image_bytes)
