@@ -53,6 +53,8 @@ Two tracks, one seam (`run_inference`, §9):
 - [x] Integrate **Min's Layer-1 guard** (merged her PR into `feat/webapp`)
 - [x] **Layer 2** encoder classifiers — `guard.py` (toxicity / prompt-injection / PII),
       lazy + fail-open; real models opt-in via `backend/requirements-guard.txt`
+- [ ] **Evasion hardening** — normalize (NFKC / de-homoglyph / de-leet) + decode-and-rescreen
+      (base64/hex), LLM backstop for paraphrase / role-play jailbreaks (§6, ROBUSTNESS §1.5)
 - [ ] **Layer 3** LLM classifier (on-topic + safety), Ollama → vLLM
 - [ ] Hardening: answer cache, rate-limit, upload safety (PIL verify), observability, eval harness
 - [ ] Deployment: vLLM serving for guard + VLM, env-configured URLs (§8)
@@ -114,17 +116,21 @@ model, in three layers. The LLM appears **only in the last layer**, used as a *c
 (not an "LLM-judge"). Build order: Layer 1 → Layer 2 → Layer 3.
 
 - **Layer 1 — cheap rules, no ML (µs):** empty / length / charset checks, image present,
-  per-IP rate limit, cheap "is this a chart?" heuristic. ⇒ **Min already built a first
-  version** (`backend/chart_check.py` + validation rules in `app.py`) on branch `min` — needs
-  rebasing onto `feat/webapp` (§10).
+  per-IP rate limit, cheap "is this a chart?" heuristic. ✅ **Done** (Min's `chart_check.py`
+  + validation rules in `app.py`, merged). Still **TODO here:** evasion normalization (below).
 - **Layer 2 — small encoder classifiers, local, ms (not LLMs):** toxicity
-  (`unitary/toxic-bert` / Detoxify), prompt-injection
-  (`protectai/deberta-v3-base-prompt-injection-v2`), PII (Microsoft Presidio).
+  (Detoxify / `unitary/toxic-bert`), prompt-injection
+  (`protectai/deberta-v3-base-prompt-injection-v2`), PII (Microsoft Presidio). ✅ **Done** —
+  `backend/guard.py` (lazy + fail-open; real models opt-in via `requirements-guard.txt`).
 - **Layer 3 — LLM as a classifier, only on ambiguous/novel cases:** "is this a chart
   question?" + safety catch-all. Open-source: **Llama Guard 3 1B** (safety) +
   **Qwen2.5-1.5B-Instruct** (on-topic); alternatives Granite Guardian 3, ShieldGemma. Called
   over HTTP at an **env-configured URL** (Ollama in dev, vLLM in prod — §8), so the code path
   is identical across environments.
+- **Evasion / adversarial hardening (cross-layer):** canonicalize before classifying
+  (Unicode NFKC, strip zero-width, de-homoglyph/de-leet) + **decode-and-rescreen** encoded
+  payloads (base64/hex), with the LLM layer as the semantic backstop for paraphrase /
+  role-play jailbreaks. Full design in [ROBUSTNESS.md](ROBUSTNESS.md) §1.5.
 
 **Contract impact:** additive `blocked` response shape; tiny frontend branch. Fail-closed for
 safety categories, fail-open with a hint for "off-topic".
