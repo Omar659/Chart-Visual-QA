@@ -21,20 +21,19 @@ Contract: ``guard(question) -> GuardResult``. Fail-closed for safety categories
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from functools import lru_cache
 
-# --- Tunables (env-overridable) ---------------------------------------------
-TOXICITY_THRESHOLD = float(os.environ.get("GUARD_TOXICITY_THRESHOLD", "0.7"))
-INJECTION_THRESHOLD = float(os.environ.get("GUARD_INJECTION_THRESHOLD", "0.8"))
-PII_SCORE_THRESHOLD = float(os.environ.get("GUARD_PII_THRESHOLD", "0.6"))
-GUARD_ENABLED = os.environ.get("GUARD_ENABLED", "1").lower() not in ("0", "false", "no", "off")
+from env_config import env_bool, env_float, env_str
+
+# --- Tunables (required in .env; no in-code defaults) -----------------------
+TOXICITY_THRESHOLD = env_float("GUARD_TOXICITY_THRESHOLD")
+INJECTION_THRESHOLD = env_float("GUARD_INJECTION_THRESHOLD")
+PII_SCORE_THRESHOLD = env_float("GUARD_PII_THRESHOLD")
+GUARD_ENABLED = env_bool("GUARD_ENABLED")
 # Model identifiers (swap without code changes, e.g. a smaller/quantized variant).
-TOXICITY_MODEL = os.environ.get("GUARD_TOXICITY_MODEL", "original")
-INJECTION_MODEL = os.environ.get(
-    "GUARD_INJECTION_MODEL", "protectai/deberta-v3-base-prompt-injection-v2"
-)
+TOXICITY_MODEL = env_str("GUARD_TOXICITY_MODEL")
+INJECTION_MODEL = env_str("GUARD_INJECTION_MODEL")
 
 # Block only on high-risk identifiers; ignore PERSON/LOCATION/ORG/DATE to avoid
 # false positives on ordinary chart questions ("What was John's revenue?").

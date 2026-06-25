@@ -39,15 +39,16 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from chart_check import looks_like_chart
+from env_config import env_bool, env_float, env_int
 from guard import guard, warmup
 from inference import is_mock, run_inference
 
 logging.basicConfig(level=logging.INFO)
 
-# Demo toggle: when MOCK_REVEAL is set (1/true/yes/on), mock mode returns the
-# canned answer instead of the disclaimer — useful for demoing the full UI.
-# Default (unset) keeps Rule 3: no fake numbers, disclaimer only.
-MOCK_REVEAL = os.environ.get("MOCK_REVEAL", "").lower() in ("1", "true", "yes", "on")
+# Demo toggle: when MOCK_REVEAL is on, mock mode returns the canned answer instead
+# of the disclaimer — useful for demoing the full UI. Off keeps Rule 3 (no fake
+# numbers, disclaimer only).
+MOCK_REVEAL = env_bool("MOCK_REVEAL")
 
 app = Flask(__name__)
 
@@ -64,13 +65,13 @@ MOCK_DISCLAIMER = (
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Cap uploads (MB) so a huge file can't exhaust memory. Keep in sync with the
-# frontend's MAX_BYTES. Override with MAX_UPLOAD_MB.
-MAX_UPLOAD_MB = float(os.environ.get("MAX_UPLOAD_MB", "10"))
+# frontend's MAX_BYTES.
+MAX_UPLOAD_MB = env_float("MAX_UPLOAD_MB")
 app.config["MAX_CONTENT_LENGTH"] = int(MAX_UPLOAD_MB * 1024 * 1024)
 
 
 # Min "meaningful" (alphanumeric) chars a question must have to not be junk.
-MIN_QUESTION_ALNUM = int(os.environ.get("MIN_QUESTION_ALNUM", "3"))
+MIN_QUESTION_ALNUM = env_int("MIN_QUESTION_ALNUM")
 
 
 def _question_too_weak(question: str) -> bool:
@@ -144,5 +145,4 @@ if __name__ == "__main__":
     # (WERKZEUG_RUN_MAIN=true) — warm there, not in the watcher process.
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         threading.Thread(target=warmup, daemon=True).start()
-    port = int(os.environ.get("PORT", "5000"))
-    app.run(host="127.0.0.1", port=port, debug=True)
+    app.run(host="127.0.0.1", port=env_int("PORT"), debug=True)

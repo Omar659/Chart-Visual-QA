@@ -17,33 +17,16 @@ Switching to the real model:
 from __future__ import annotations
 
 import hashlib
-import os
 import time
 
-# Default to mock. Override at runtime with the USE_MOCK env var, e.g.
-#   USE_MOCK=0 python app.py        # use the real model
-# Accepts 0/1, false/true, no/yes, off/on (case-insensitive).
-_TRUTHY = {"1", "true", "yes", "on"}
-_FALSY = {"0", "false", "no", "off"}
+from env_config import env_bool, env_float
 
-
-def _env_use_mock(default: bool = True) -> bool:
-    raw = os.environ.get("USE_MOCK")
-    if raw is None:
-        return default
-    val = raw.strip().lower()
-    if val in _TRUTHY:
-        return True
-    if val in _FALSY:
-        return False
-    return default
-
-
-USE_MOCK = _env_use_mock()
+# Mock vs real model — required in .env (USE_MOCK=1 mock, 0 = model_adapter.predict).
+USE_MOCK = env_bool("USE_MOCK")
 
 # Artificial delay (seconds) for the mock so the UI's loading state is visible.
-# Real model latency replaces this once wired in. Override with MOCK_DELAY_S.
-MOCK_DELAY_S = float(os.environ.get("MOCK_DELAY_S", "1.2"))
+# Real model latency replaces this once wired in.
+MOCK_DELAY_S = env_float("MOCK_DELAY_S")
 
 # Canned answers the mock picks from. Deterministic per question so the same
 # question always yields the same answer (stable for demos and tests).

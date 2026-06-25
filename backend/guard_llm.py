@@ -17,8 +17,8 @@ We map the codes to our ``{unsafe, jailbreak, off_topic}`` categories + a user-s
 from __future__ import annotations
 
 import logging
-import os
 
+from env_config import env_bool, env_float, env_str
 from guard import GuardResult
 
 log = logging.getLogger("guard.layer3")
@@ -28,13 +28,13 @@ try:
 except Exception:  # noqa: BLE001 — requests not installed -> fail-open
     requests = None
 
-# --- Config (env-overridable; loaded from .env by the backend at startup) ---
-GUARD_LLM_ENABLED = os.environ.get("GUARD_LLM_ENABLED", "1").lower() in ("1", "true", "yes", "on")
-GUARD_LLM_URL = os.environ.get("GUARD_LLM_URL", "http://localhost:11434")
-GUARD_LLM_MODEL = os.environ.get("GUARD_LLM_MODEL", "llama-guard3:1b")
-# Generous enough to survive a cold model load (~15-18s) so the first request actually runs
-# the guard instead of failing open; warm calls are ~3s. Pre-warm at boot (see warmup()).
-_TIMEOUT = float(os.environ.get("GUARD_LLM_TIMEOUT", "20"))
+# --- Config (required in .env; loaded from .env by the backend at startup) ---
+GUARD_LLM_ENABLED = env_bool("GUARD_LLM_ENABLED")
+GUARD_LLM_URL = env_str("GUARD_LLM_URL")
+GUARD_LLM_MODEL = env_str("GUARD_LLM_MODEL")
+# Set generously in .env to survive a cold model load (~15-18s) so the first request
+# actually runs the guard instead of failing open; warm calls are ~3s.
+_TIMEOUT = env_float("GUARD_LLM_TIMEOUT")
 
 # Llama Guard hazard code -> (our category, user-safe reason). S99 is our custom off-topic
 # category (requires a custom-taxonomy prompt — see docs/TASK_B_LAYER3.md §3/§5).

@@ -20,19 +20,20 @@ Fails open everywhere: if nothing can decide, we assume it IS a chart
 from __future__ import annotations
 
 import io
-import os
 from collections import Counter
+
+from env_config import env_float, env_int, env_str
 
 # --- CLIP zero-shot stage ------------------------------------------------
 
 # Both configurable via env so the model and cutoff can be tuned without code
 # changes. Defaults per the project doc.
-_CLIP_MODEL = os.environ.get("CHART_CLIP_MODEL", "openai/clip-vit-base-patch32")
-_CLIP_THRESHOLD = float(os.environ.get("CHART_CLIP_THRESHOLD", "0.5"))
+_CLIP_MODEL = env_str("CHART_CLIP_MODEL")
+_CLIP_THRESHOLD = env_float("CHART_CLIP_THRESHOLD")
 
-# Optional path to the Tesseract engine for non-PATH installs (Windows, pinned
-# container path). Empty -> rely on PATH (the norm on Linux/containers).
-_TESSERACT_CMD = os.environ.get("TESSERACT_CMD", "")
+# Path to the Tesseract engine for non-PATH installs (Windows, pinned container
+# path). Empty value -> rely on PATH (the norm on Linux/containers).
+_TESSERACT_CMD = env_str("TESSERACT_CMD")
 
 # Zero-shot label set, split into a "chart" group and a "non-chart" group.
 # CLIP softmaxes over ALL labels; P(chart) is the summed mass on the chart group.
@@ -66,7 +67,7 @@ _CLIP_LABELS = _CHART_LABELS + _NONCHART_LABELS
 # rule "no data -> not a chart" no matter how chart-like the image looks or how
 # many panels it has. Requires the Tesseract binary (see requirements/README);
 # fails open if OCR is unavailable.
-_MIN_DATA_DIGITS = int(os.environ.get("CHART_MIN_DATA_DIGITS", "2"))  # min numeric chars for a real chart
+_MIN_DATA_DIGITS = env_int("CHART_MIN_DATA_DIGITS")  # min numeric chars for a real chart
 
 # Lazy singleton: None = not tried yet, False = unavailable, else (model, proc, torch).
 _clip = None
@@ -116,9 +117,9 @@ def _clip_chart_prob(image_bytes: bytes):
 
 # --- Pixel heuristic stage (fallback) ------------------------------------
 
-_SAMPLE_SIZE = int(os.environ.get("CHART_SAMPLE_SIZE", "128"))            # downscale square before analysis
-_MIN_BACKGROUND_RATIO = float(os.environ.get("CHART_MIN_BACKGROUND_RATIO", "0.18"))  # flat-background share
-_MAX_DISTINCT_COLORS = int(os.environ.get("CHART_MAX_DISTINCT_COLORS", "48"))     # of 512 coarse buckets
+_SAMPLE_SIZE = env_int("CHART_SAMPLE_SIZE")                       # downscale square before analysis
+_MIN_BACKGROUND_RATIO = env_float("CHART_MIN_BACKGROUND_RATIO")   # flat-background share
+_MAX_DISTINCT_COLORS = env_int("CHART_MAX_DISTINCT_COLORS")       # of 512 coarse buckets
 
 
 def _has_data_values(image_bytes: bytes) -> bool:
