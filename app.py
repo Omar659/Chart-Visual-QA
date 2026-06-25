@@ -1,21 +1,23 @@
 """Orchestrator for Chart-Visual-QA — two modes (see docs/ARCHITECTURE.md).
 
-    python app.py            PRODUCTION (default): backend + vLLM guard in Docker
-                             (CLIP + Tesseract baked into the backend image); the
-                             frontend runs as a local Vite server on :5173. Warns
-                             and stops if the Docker engine (Docker Desktop) is down.
+    python app.py            PRODUCTION (default): backend + Llama Guard (CPU Ollama)
+                             in Docker — CLIP/Tesseract/L2 baked into the backend image,
+                             the guard model baked into its image. Frontend runs as a
+                             local Vite server on :5173. Warns and stops if the Docker
+                             engine (Docker Desktop) is down.
 
-    python app.py --dev      LOCAL DEV: venv backend, local CLIP, local **Ollama**
-                             guard, local Vite — no Docker. Self-bootstrapping.
+    python app.py --dev      LOCAL DEV: venv backend, local CLIP, local Vite — no Docker.
+                             Layer 3 talks to whatever guard is at GUARD_LLM_URL (e.g.
+                             `docker compose up guard`). Self-bootstrapping.
 
 Dev-mode flags (ignored in production):
     python app.py --dev --backend-only / --frontend-only / --setup-only /
                   --no-setup / --no-guard / --backend-port 5001 --frontend-port 5174
 
 `--dev` first run is self-bootstrapping: creates the Python 3.12 virtualenv, installs the
-backend + input-guard models, runs `npm install`, copies .env.example -> .env, and (if
-Ollama is running) pulls llama-guard3:1b. Every guard layer fails open (allows + warns)
-when its model/service is missing. See docs/PLAN.md and docs/TASK_B_LAYER3.md.
+backend + input-guard models, runs `npm install`, and copies .env.example -> .env. Layer 3
+needs a guard reachable at GUARD_LLM_URL; every guard layer fails open (allows + warns)
+when its model/service is missing. See docs/PLAN.md and docs/ARCHITECTURE.md.
 """
 
 from __future__ import annotations
@@ -123,30 +125,6 @@ def ensure_guard_deps() -> None:
     print("[setup] input-guard models installed.", flush=True)
 
 
-def _ollama_exe() -> str | None:
-    """Path to the ollama CLI, or None (PATH, then the Windows default install dir)."""
-    exe = shutil.which("ollama")
-    if exe:
-        return exe
-    if IS_WINDOWS:
-        win = Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Ollama" / "ollama.exe"
-        if win.exists():
-            return str(win)
-    return None
-
-
-def ensure_ollama_model() -> None:
-    """Pull the Layer-3 guard model if Ollama is running and the model isn't present."""
-    reachable, has_model = _ollama_status(os.environ.get("GUARD_LLM_URL", "http://localhost:11434"))
-    if not reachable or has_model:
-        return  # unreachable -> readiness report warns; already present -> nothing to do
-    exe = _ollama_exe()
-    if not exe:
-        return
-    print("[setup] pulling Layer-3 guard model llama-guard3:1b (one-time)...", flush=True)
-    subprocess.run([exe, "pull", "llama-guard3:1b"])
-
-
 def ensure_deps(run_backend: bool, run_frontend: bool) -> None:
     """Install whatever the requested servers need before launching them."""
     ensure_env_file()
@@ -165,17 +143,14 @@ def _venv_can_import(modules: list[str]) -> bool:
     return subprocess.run([str(venv_py), "-c", code], capture_output=True).returncode == 0
 
 
-def _ollama_status(url: str = "http://localhost:11434") -> tuple[bool, bool]:
-    """(reachable, has_llama_guard3_model)."""
-    import json
+def _guard_reachable(url: str) -> bool:
+    """True if an OpenAI-compatible guard responds at ``url`` (the containerized guard,
+    or any vLLM/Ollama serving /v1). Engine-agnostic — no host Ollama assumed."""
     import urllib.request
     try:
-        with urllib.request.urlopen(f"{url}/api/tags", timeout=2) as resp:
-            data = json.loads(resp.read() or b"{}")
-        names = [m.get("name", "") for m in data.get("models", [])]
-        return True, any("llama-guard3" in n for n in names)
+        return urllib.request.urlopen(f"{url}/v1/models", timeout=2).status == 200
     except Exception:  # noqa: BLE001
-        return False, False
+        return False
 
 
 def report_guard_readiness() -> None:
@@ -187,16 +162,14 @@ def report_guard_readiness() -> None:
         print("[setup]   Layer 2: models NOT installed -> FAIL-OPEN. "
               "Enable with: python app.py --with-guard", flush=True)
 
-    reachable, has_model = _ollama_status(os.environ.get("GUARD_LLM_URL", "http://localhost:11434"))
-    if reachable and has_model:
-        print("[setup]   Layer 3 (Ollama / llama-guard3): READY", flush=True)
-    elif reachable:
-        print("[setup]   WARNING: Ollama is up but llama-guard3 is missing -> Layer 3 "
-              "FAIL-OPEN. Run: ollama pull llama-guard3:1b", flush=True)
+    guard_url = os.environ.get("GUARD_LLM_URL", "http://localhost:11434")
+    if _guard_reachable(guard_url):
+        print(f"[setup]   Layer 3 (guard at {guard_url}): READY", flush=True)
     else:
-        print("[setup]   WARNING: Ollama not reachable -> Layer 3 FAIL-OPEN; unsafe "
-              "questions may pass. Install Ollama (https://ollama.com), then "
-              "`ollama pull llama-guard3:1b` — or set GUARD_LLM_ENABLED=0 in .env.", flush=True)
+        print(f"[setup]   WARNING: guard not reachable at {guard_url} -> Layer 3 FAIL-OPEN; "
+              "unsafe questions may pass. Start it with `docker compose up guard` (or point "
+              "GUARD_LLM_URL at any OpenAI-compatible guard), or set GUARD_LLM_ENABLED=0.",
+              flush=True)
     print("[setup] -------------------------------", flush=True)
 
 
@@ -282,7 +255,7 @@ def _compose_base() -> list[str] | None:
 
 
 def run_production(run_frontend: bool, frontend_port: int, backend_port: int) -> int:
-    """Default mode: backend + vLLM guard in Docker; frontend stays a local Vite server."""
+    """Default mode: backend + Llama Guard (CPU Ollama) in Docker; frontend a local Vite server."""
     if not _docker_running():
         print("[orchestrator] WARNING: the Docker engine isn't reachable — is Docker "
               "Desktop running?", flush=True)
@@ -294,8 +267,18 @@ def run_production(run_frontend: bool, frontend_port: int, backend_port: int) ->
         print("[orchestrator] Docker is up but `docker compose` was not found.", flush=True)
         return 1
 
-    print("[orchestrator] building & starting containers (backend + guard); the first "
-          "build pulls torch + the vLLM image and can take a while...", flush=True)
+    # The backend runs in a container, but prod still needs .env (compose reads it via
+    # env_file) and, for the local Vite frontend, node_modules. No venv needed here.
+    try:
+        ensure_env_file()
+        if run_frontend:
+            ensure_frontend_deps()
+    except subprocess.CalledProcessError as exc:
+        print(f"[setup] FAILED: {exc}", flush=True)
+        return 1
+
+    print("[orchestrator] building & starting containers (backend + guard); the first build "
+          "compiles the ML stack and bakes the models, so it can take a while...", flush=True)
     up = subprocess.run([*compose, "up", "--build", "-d", "backend", "guard"], cwd=str(ROOT))
     if up.returncode != 0:
         print("[orchestrator] `docker compose up` failed (see output above).", flush=True)
@@ -343,8 +326,8 @@ def run_production(run_frontend: bool, frontend_port: int, backend_port: int) ->
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the Chart-Visual-QA stack.")
     parser.add_argument("--dev", action="store_true",
-                        help="local dev flow (venv backend, local CLIP + Ollama, Vite); "
-                             "no Docker. Default runs the production stack in Docker.")
+                        help="local dev flow (venv backend, local CLIP, Vite; Layer 3 via "
+                             "GUARD_LLM_URL); no Docker. Default runs the production stack in Docker.")
     parser.add_argument("--backend-only", action="store_true", help="run only the Flask API")
     parser.add_argument("--frontend-only", action="store_true", help="run only the Vite dev server")
     parser.add_argument("--setup-only", action="store_true", help="install deps and exit")
@@ -361,8 +344,8 @@ def main() -> int:
     run_backend = not args.frontend_only
     run_frontend = not args.backend_only
 
-    # Default = production: backend + vLLM guard in Docker, frontend local Vite.
-    # `--dev` keeps the local venv + Ollama flow below.
+    # Default = production: backend + guard in Docker, frontend local Vite.
+    # `--dev` keeps the local venv flow below (Layer 3 via GUARD_LLM_URL).
     if not args.dev:
         return run_production(run_frontend, args.frontend_port, args.backend_port)
 
@@ -371,7 +354,6 @@ def main() -> int:
             ensure_deps(run_backend, run_frontend)
             if run_backend and not args.no_guard:
                 ensure_guard_deps()
-                ensure_ollama_model()
         except subprocess.CalledProcessError as exc:
             print(f"[setup] FAILED: {exc}", flush=True)
             return 1
