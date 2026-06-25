@@ -151,3 +151,39 @@ a compose profile but isn't the default — it slows the edit loop.)
 - `docker-compose.yml` — `backend` + `guard` (Ollama default; vLLM via `--profile prod`).
 - `frontend/Dockerfile` (optional) — nginx static build for prod.
 - `app.py` — Docker-engine check + `docker compose up`, with `--no-docker` fallback.
+
+## 11. Cloud deploy target (scale-to-zero) — two services
+
+All **input validation on CPU**, only the **main VLM on GPU**:
+
+- **Service A — app + gates (CPU, `min=1`):** frontend build + Flask backend + Layer 1 +
+  Layer 2 encoders + Layer 3 Llama Guard + CLIP. Cheap to keep warm; it's the "gatekeeper"
+  that rejects junk / non-charts / unsafe input **without waking the GPU**.
+- **Service B — VLM (GPU, `min=0`):** the main chart-QA model only. Scales to zero; only
+  wakes for a legitimate chart question that passed every cheap gate. Biggest cost lever.
+
+Cold start: CPU service ~5–30s (or ~0 at `min=1`); GPU service ~30s–3min (GPU provision +
+multi-GB model load) — the pain of `min=0`. Warm inference: gates <0.5s (Llama Guard on CPU
+~1–4s); VLM ~1–5s. Keeping CLIP+guards on CPU means the GPU only cold-starts for real work.
+
+## 12. Future / next steps
+
+- **Quantization + precision analysis (don't assume "smaller = fine").** Before shipping any
+  quantized model, **measure the accuracy lost**:
+  - *Guard:* Llama Guard → GGUF **Q4/Q5** on CPU (Ollama/llama.cpp). Evaluate full vs
+    quantized on a held-out **red-team set** ([ROBUSTNESS.md](ROBUSTNESS.md) §1.5); report the
+    **per-category precision/recall delta**.
+  - *VLM:* **AWQ/GPTQ/fp8** on GPU. Evaluate on the **ChartQA eval set**; report
+    exact-match/accuracy delta.
+  - Pick the **smallest quant that stays within an agreed accuracy budget**; weigh the delta
+    against the win (latency, VRAM, image size, $). Track quality, not just size.
+- **CPU guard via Ollama/llama.cpp, not CUDA-vLLM.** For the scale-to-zero CPU service, serve
+  Llama Guard from Ollama/llama.cpp (GGUF) — small image (~MBs, not the ~9 GB CUDA vLLM image),
+  fast enough on CPU, and `guard_llm.py` already speaks its OpenAI endpoint. Reserve
+  CUDA-vLLM for a GPU LLM only.
+- **Multi-stage backend image.** A `builder` stage installs deps (and optionally pre-caches
+  weights); the slim runtime stage `COPY --from=builder` only the venv/site-packages + model
+  cache, dropping build tooling/caches. Marginal today (no compiled deps, `--no-cache-dir`,
+  CPU torch already); adopt once a compiled dep appears or the image grows.
+- **Main VLM placement (TBD).** Waiting on Susanne & Omar's model → GPU service, `min=0`,
+  gated behind the CPU validators.
