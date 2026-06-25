@@ -14,14 +14,19 @@ from app import app as flask_app
 @pytest.fixture()
 def client(monkeypatch):
     import inference
-    import app as app_mod
-    from guard import GuardResult
+    import chart_check
+    import guard as guard_mod
 
     inference.MOCK_DELAY_S = 0  # skip the demo latency sleep during tests
-    # Neutralize the Layer-2 guard by default so API tests don't load real models
-    # (whether or not requirements-guard is installed). Tests that exercise the
-    # guard override this with their own monkeypatch.
-    monkeypatch.setattr(app_mod, "guard", lambda q: GuardResult(True))
+    # Run the REAL guard, but switched off at its own flag — the same fail-open
+    # path production takes with GUARD_ENABLED=0. No fake guard(): the real code
+    # runs and returns "allowed", so these contract tests don't load Layer-2/3
+    # models. (test_guard.py / test_guard_llm.py cover the guard logic itself.)
+    monkeypatch.setattr(guard_mod, "GUARD_ENABLED", False)
+    # Run the REAL chart gate, but force CLIP unavailable so the actual pixel
+    # heuristic runs — same as production on a box without torch. No fake
+    # looks_like_chart(); test_chart_check.py covers the CLIP decision logic.
+    monkeypatch.setattr(chart_check, "_load_clip", lambda: None)
     flask_app.config.update(TESTING=True)
     return flask_app.test_client()
 
@@ -48,16 +53,35 @@ def test_health_ok(client):
 
 
 def test_ask_happy_path(client):
+    # Mock mode (Rule 3): no fake answer — a disclaimer is returned instead.
+    res = _ask(client)
+    assert res.status_code == 200
+    body = res.get_json()
+    assert isinstance(body["disclaimer"], str) and body["disclaimer"]
+    assert "answer" not in body
+    assert body["mock"] is True
+    assert isinstance(body["is_chart"], bool)
+    assert isinstance(body["chart_confidence"], (int, float))
+    assert isinstance(body["latency_ms"], (int, float))
+
+
+def test_ask_reveals_answer_when_enabled(client, monkeypatch):
+    # With MOCK_REVEAL on, mock mode returns the canned answer instead.
+    import app as app_mod
+
+    monkeypatch.setattr(app_mod, "MOCK_REVEAL", True)
     res = _ask(client)
     assert res.status_code == 200
     body = res.get_json()
     assert isinstance(body["answer"], str) and body["answer"]
     assert isinstance(body["mock"], bool)
-    assert isinstance(body["is_chart"], bool)
-    assert isinstance(body["latency_ms"], (int, float))
 
 
-def test_ask_is_deterministic(client):
+def test_ask_is_deterministic(client, monkeypatch):
+    # Compare the canned answer (MOCK_REVEAL on) across identical requests.
+    import app as app_mod
+
+    monkeypatch.setattr(app_mod, "MOCK_REVEAL", True)
     a = _ask(client, question="Highest year?").get_json()["answer"]
     b = _ask(client, question="Highest year?").get_json()["answer"]
     assert a == b

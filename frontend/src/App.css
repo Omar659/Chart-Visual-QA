@@ -275,6 +275,96 @@
   background-color: var(--mute);
 }
 
+/* ── Submit loading / processing (Task A) ────────────────────────── */
+.submit-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-sm);
+}
+
+.processing {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+  margin: 0;
+  padding: var(--s-md) var(--s-lg);
+  font-size: 14px;
+  color: var(--body);
+  background-color: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(231, 236, 247, 0.25);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Result block (chart detection + disclaimer/answer) ──────────── */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-md);
+}
+
+/* Chart-detection indicator (Rule 4 — CLIP zero-shot) */
+.detect {
+  margin: 0;
+  padding: var(--s-md) var(--s-lg);
+  border-radius: var(--r-sm);
+  font-size: 14px;
+}
+
+.detect-ok {
+  color: #6ee7a8;
+  background: rgba(110, 231, 168, 0.1);
+  border: 1px solid rgba(110, 231, 168, 0.35);
+}
+
+.detect-warn {
+  color: #ffd479;
+  background: rgba(255, 212, 121, 0.1);
+  border: 1px solid rgba(255, 212, 121, 0.35);
+}
+
+/* Mock-mode disclaimer (Rule 3) — shown instead of a fake answer */
+.disclaimer {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s-md);
+  padding: var(--s-lg);
+  background-color: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid #ffd479;
+  border-radius: var(--r-sm);
+}
+
+.disclaimer-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: #ffd479;
+}
+
+.disclaimer-text {
+  flex: 1 1 200px;
+  font-size: 15px;
+  color: var(--ink-strong);
+}
+
 /* ── Answer card (featured — 2px green border) ───────────────────── */
 .answer {
   display: flex;

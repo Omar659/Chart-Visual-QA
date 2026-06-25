@@ -3,3 +3,13 @@ flask-cors>=4.0,<6.0
 Pillow>=10,<12
 requests>=2.28,<3        # Layer-3 guard HTTP calls (Ollama / vLLM)
 python-dotenv>=1.0,<2    # load config from a .env file at startup
+# CLIP zero-shot chart detector (chart_check.py). Heavy; the gate falls back to
+# a pixel heuristic if these aren't installed.
+torch>=2.2
+transformers>=4.40
+# OCR "has data values" gate in chart_check.py. Needs the Tesseract binary too:
+#   macOS: brew install tesseract   |   Debian/Ubuntu: apt install tesseract-ocr
+# Falls back to no-veto if Tesseract isn't installed.
+pytesseract>=0.3.10
+# Tests (test_chart_check.py) — run with: python -m pytest
+pytest>=8.0

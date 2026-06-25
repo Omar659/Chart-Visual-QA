@@ -4,11 +4,18 @@ import './App.css'
 
 const MAX_BYTES = 10 * 1024 * 1024 // keep in sync with backend MAX_CONTENT_LENGTH
 
+// Mirror of the backend's _question_too_weak guard for instant feedback.
+// Count letters/digits in any language (so CJK questions pass), reject junk.
+function questionTooWeak(q) {
+  const meaningful = (q.match(/[\p{L}\p{N}]/gu) || []).length
+  return meaningful < 3
+}
+
 function App() {
   const [image, setImage] = useState(null) // File
   const [previewUrl, setPreviewUrl] = useState('')
   const [question, setQuestion] = useState('')
-  const [answer, setAnswer] = useState(null) // { answer, mock, latency_ms }
+  const [answer, setAnswer] = useState(null) // { answer, mock, latency_ms, is_chart, chart_confidence }
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [mockBanner, setMockBanner] = useState(false)
@@ -64,8 +71,10 @@ function App() {
     e.preventDefault()
     setError('')
     setAnswer(null)
-    if (!image) return setError('Pick a chart image first.')
-    if (!question.trim()) return setError('Type a question.')
+    const q = question.trim()
+    if (!image) return setError('Please upload an image.')
+    if (!q) return setError('Please type a question.')
+    if (questionTooWeak(q)) return setError('Please ask a more specific question.')
 
     // Cancel any in-flight request so a fast resubmit can't race.
     abortRef.current?.abort()
@@ -74,11 +83,9 @@ function App() {
 
     setLoading(true)
     try {
-      const result = await askQuestion(image, question.trim(), {
-        signal: controller.signal,
-      })
+      const result = await askQuestion(image, q, { signal: controller.signal })
       if (result.blocked) {
-        // Layer-2 guard rejected the question (toxic / injection / PII).
+        // Guard (Layer 2/3) rejected the question (toxic / injection / PII / unsafe).
         setError(result.reason || 'That question was blocked.')
         return
       }
@@ -158,21 +165,40 @@ function App() {
             </p>
           )}
 
-          {/* Question field */}
+          {/* Question field — disabled until an image is uploaded */}
           <label className="field">
             <span className="label">Question</span>
             <input
               type="text"
               className="text-input"
-              placeholder="e.g. What was the revenue in 2024?"
+              placeholder={
+                image
+                  ? 'e.g. What was the revenue in 2024?'
+                  : 'Upload a chart image first…'
+              }
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
+              disabled={!image || loading}
             />
           </label>
 
           <button type="submit" className="submit" disabled={!canSubmit}>
-            {loading ? 'Thinking…' : 'Ask'}
+            {loading ? (
+              <span className="submit-loading">
+                <span className="spinner" aria-hidden="true" />
+                Processing…
+              </span>
+            ) : (
+              'Ask'
+            )}
           </button>
+
+          {loading && (
+            <p className="processing" role="status" aria-live="polite">
+              <span className="spinner" aria-hidden="true" />
+              Processing model…
+            </p>
+          )}
 
           {error && (
             <p className="notice" role="alert">
@@ -181,14 +207,40 @@ function App() {
             </p>
           )}
 
-          {answer && (
-            <div className="answer" aria-live="polite">
-              <span className="answer-label">ANSWER</span>
-              <span className="answer-text">{answer.answer}</span>
-              <span className="answer-meta">
-                {answer.mock ? 'mock · ' : ''}
-                {Number(answer.latency_ms).toFixed(0)} ms
-              </span>
+          {!loading && answer && (
+            <div className="result" aria-live="polite">
+              {/* Chart-detection indicator — shows the CLIP result on every upload */}
+              {typeof answer.chart_confidence === 'number' &&
+                (answer.is_chart ? (
+                  <p className="detect detect-ok">
+                    ✓ Chart detected · {Math.round(answer.chart_confidence * 100)}%
+                  </p>
+                ) : (
+                  <p className="detect detect-warn" role="alert">
+                    ⚠️ This doesn&apos;t look like a chart (
+                    {Math.round(answer.chart_confidence * 100)}%) — results may be
+                    unreliable.
+                  </p>
+                ))}
+
+              {answer.disclaimer ? (
+                <div className="disclaimer">
+                  <span className="disclaimer-label">Mock mode</span>
+                  <span className="disclaimer-text">{answer.disclaimer}</span>
+                  <span className="answer-meta">
+                    {Number(answer.latency_ms).toFixed(0)} ms
+                  </span>
+                </div>
+              ) : (
+                <div className="answer">
+                  <span className="answer-label">ANSWER</span>
+                  <span className="answer-text">{answer.answer}</span>
+                  <span className="answer-meta">
+                    {answer.mock ? 'mock · ' : ''}
+                    {Number(answer.latency_ms).toFixed(0)} ms
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </form>
