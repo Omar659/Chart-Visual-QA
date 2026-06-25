@@ -26,6 +26,16 @@ RUN python -c "from transformers import CLIPModel, CLIPProcessor; \
     CLIPModel.from_pretrained('openai/clip-vit-base-patch32'); \
     CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32')"
 
+# Pre-cache the Layer-2 guard encoders at build (toxicity = detoxify/toxic-bert,
+# prompt-injection = deberta) so the backend doesn't download them at boot — warmup
+# becomes instant instead of a multi-minute runtime download. Presidio (PII) uses the
+# spaCy model already installed above. Keep these model ids in sync with .env defaults
+# (GUARD_TOXICITY_MODEL / GUARD_INJECTION_MODEL); a non-default value re-downloads once.
+RUN python -c "from detoxify import Detoxify; Detoxify('original')" \
+    && python -c "from transformers import pipeline; \
+       pipeline('text-classification', \
+                model='protectai/deberta-v3-base-prompt-injection-v2', truncation=True)"
+
 COPY . .
 
 EXPOSE 5000
