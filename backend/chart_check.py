@@ -132,6 +132,12 @@ def _has_data_values(image_bytes: bytes) -> bool:
         import pytesseract
         from PIL import Image
 
+        # Optional override for non-PATH installs (e.g. Windows, or a pinned path
+        # in a container). On Linux/containers tesseract is usually on PATH already.
+        _cmd = os.environ.get("TESSERACT_CMD")
+        if _cmd:
+            pytesseract.pytesseract.tesseract_cmd = _cmd
+
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     except Exception:
         return True

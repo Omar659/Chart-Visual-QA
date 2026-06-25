@@ -7,9 +7,12 @@ python-dotenv>=1.0,<2    # load config from a .env file at startup
 # a pixel heuristic if these aren't installed.
 torch>=2.2
 transformers>=4.40
-# OCR "has data values" gate in chart_check.py. Needs the Tesseract binary too:
-#   macOS: brew install tesseract   |   Debian/Ubuntu: apt install tesseract-ocr
-# Falls back to no-veto if Tesseract isn't installed.
+# OCR "has data values" gate in chart_check.py. pytesseract is only a thin wrapper
+# — it needs the Tesseract ENGINE (a system binary, not a pip package) on PATH:
+#   Debian/Ubuntu (containers): apt-get install -y tesseract-ocr
+#   macOS:   brew install tesseract
+#   Windows: winget install UB-Mannheim.TesseractOCR  (or set TESSERACT_CMD=<path>)
+# Falls back to no-veto (CLIP-only) if the engine isn't found.
 pytesseract>=0.3.10
 # Tests (test_chart_check.py) — run with: python -m pytest
 pytest>=8.0
