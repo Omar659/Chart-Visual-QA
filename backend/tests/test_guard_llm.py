@@ -9,7 +9,8 @@ from guard import GuardResult
 
 
 class _Resp:
-    """Minimal stand-in for a requests.Response with an Ollama /api/chat body."""
+    """Minimal stand-in for a requests.Response with an OpenAI chat-completions body
+    (the shape both Ollama and vLLM return at /v1/chat/completions)."""
 
     def __init__(self, content):
         self._content = content
@@ -18,7 +19,7 @@ class _Resp:
         pass
 
     def json(self):
-        return {"message": {"content": self._content}}
+        return {"choices": [{"message": {"content": self._content}}]}
 
 
 def _fake_requests(content=None, boom=False):

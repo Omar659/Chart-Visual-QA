@@ -3,7 +3,8 @@
 See docs/TASK_B_LAYER3.md. This is the **semantic** boundary check that runs after the
 cheap Layers 1-2, screening the question for unsafe content / policy / out-of-scope
 (jailbreak & prompt-injection stay primarily on Layer 2). It calls a small local guard
-model over HTTP — Ollama in dev, vLLM in prod — same code, only ``GUARD_LLM_URL`` changes.
+model over the OpenAI-compatible HTTP API (``/v1/chat/completions``) — served by both
+Ollama (dev) and vLLM (prod), so dev->prod is a ``GUARD_LLM_URL`` change only.
 
 **ON by default.** It only falls back to allowing the request (fail-open) when the guard is
 genuinely unavailable — the dependency is missing, or the service is unreachable / slow /
@@ -62,17 +63,22 @@ def _warn_fallback(reason: str) -> None:
 
 
 def _chat(content: str, timeout: float):
+    # OpenAI-compatible Chat Completions — served by BOTH Ollama (dev) and vLLM
+    # (prod), so dev->prod is a GUARD_LLM_URL change only. See docs/ARCHITECTURE.md.
     resp = requests.post(
-        f"{GUARD_LLM_URL}/api/chat",
+        f"{GUARD_LLM_URL}/v1/chat/completions",
         timeout=timeout,
         json={
             "model": GUARD_LLM_MODEL,
             "messages": [{"role": "user", "content": content}],
             "stream": False,
+            "temperature": 0,
+            "max_tokens": 32,  # Llama Guard answers with "safe" / "unsafe\nS..": tiny output
         },
     )
     resp.raise_for_status()
-    return (resp.json().get("message", {}).get("content") or "").strip()
+    data = resp.json()
+    return (data["choices"][0]["message"]["content"] or "").strip()
 
 
 def llm_classify(question: str):
@@ -121,6 +127,6 @@ def is_available() -> bool:
     if not GUARD_LLM_ENABLED or requests is None:
         return False
     try:
-        return requests.get(f"{GUARD_LLM_URL}/api/tags", timeout=2).ok
+        return requests.get(f"{GUARD_LLM_URL}/v1/models", timeout=2).ok
     except Exception:  # noqa: BLE001
         return False
