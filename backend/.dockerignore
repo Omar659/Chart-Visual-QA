@@ -1,0 +1,7 @@
+# Keep the build context (and image) small and reproducible.
+.venv/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+*.md

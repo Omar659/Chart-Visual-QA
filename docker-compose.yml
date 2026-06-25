@@ -1,0 +1,43 @@
+# Production stack for `python app.py` (default mode): the Flask backend
+# (CLIP + Tesseract) and the Llama Guard service on vLLM. The frontend stays a
+# local Vite dev server (see app.py / docs/ARCHITECTURE.md). Local dev without
+# Docker is `python app.py --dev` (venv + local Ollama).
+
+services:
+  backend:
+    build: ./backend
+    # All config comes from .env (single source of truth); the few values below
+    # override it for the container (networking + the apt Tesseract on PATH).
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0                                   # reachable from the host
+      FLASK_DEBUG: 0                                  # no reloader in the container
+      GUARD_LLM_URL: http://guard:8000                # reach the guard by service name
+      GUARD_LLM_MODEL: meta-llama/Llama-Guard-3-1B    # vLLM model id
+      TESSERACT_CMD: ""                               # use the apt binary on PATH
+    ports:
+      - "5000:5000"
+    depends_on:
+      - guard
+
+  guard:
+    # vLLM serves the OpenAI API on :8000 — same endpoint guard_llm.py calls in dev.
+    image: vllm/vllm-openai:latest
+    command: ["--model", "meta-llama/Llama-Guard-3-1B", "--max-model-len", "8192"]
+    environment:
+      # Gated weights — set HF_TOKEN in .env (and accept the license on Hugging Face).
+      HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}
+    volumes:
+      - hf-cache:/root/.cache/huggingface              # persist weights across restarts
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia                           # needs WSL2 + NVIDIA Container Toolkit
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  hf-cache:

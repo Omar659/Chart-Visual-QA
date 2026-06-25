@@ -1,28 +1,21 @@
-"""Local-dev orchestrator for Chart-Visual-QA.
+"""Orchestrator for Chart-Visual-QA — two modes (see docs/ARCHITECTURE.md).
 
-Single entry point that boots the whole stack: the Flask backend and the Vite
-frontend dev server. It shells out to each as a subprocess, prefixes + streams
-their logs, and shuts both down cleanly on Ctrl-C (no orphan processes).
+    python app.py            PRODUCTION (default): backend + vLLM guard in Docker
+                             (CLIP + Tesseract baked into the backend image); the
+                             frontend runs as a local Vite server on :5173. Warns
+                             and stops if the Docker engine (Docker Desktop) is down.
 
-Usage:
-    python app.py                  # set up deps if needed, then start both
-    python app.py --backend-only   # only the Flask API
-    python app.py --frontend-only  # only the Vite dev server
-    python app.py --setup-only     # install deps and exit (no servers)
-    python app.py --no-setup       # skip the dependency check (faster restarts)
-    python app.py --no-guard       # light setup: skip the heavy guard models
-    python app.py --backend-port 5001 --frontend-port 5174
+    python app.py --dev      LOCAL DEV: venv backend, local CLIP, local **Ollama**
+                             guard, local Vite — no Docker. Self-bootstrapping.
 
-First run is self-bootstrapping: app.py creates the Python 3.12 virtualenv, installs
-the backend requirements **and the input-guard models**, runs `npm install`, copies
-.env.example -> .env, and (if Ollama is running) pulls the Layer-3 guard model. So a
-fresh clone just needs `python app.py`.
+Dev-mode flags (ignored in production):
+    python app.py --dev --backend-only / --frontend-only / --setup-only /
+                  --no-setup / --no-guard / --backend-port 5001 --frontend-port 5174
 
-The guard is **on by default**. Layer 2 (toxicity / injection / PII) installs
-automatically; Layer 3 (Llama Guard) needs Ollama (https://ollama.com) — app.py pulls
-llama-guard3:1b when Ollama is reachable and WARNS otherwise. Use --no-guard for a light
-setup; every layer fails open (allows + warns) when its model/service is missing.
-See docs/PLAN.md and docs/TASK_B_LAYER3.md.
+`--dev` first run is self-bootstrapping: creates the Python 3.12 virtualenv, installs the
+backend + input-guard models, runs `npm install`, copies .env.example -> .env, and (if
+Ollama is running) pulls llama-guard3:1b. Every guard layer fails open (allows + warns)
+when its model/service is missing. See docs/PLAN.md and docs/TASK_B_LAYER3.md.
 """
 
 from __future__ import annotations
@@ -267,8 +260,91 @@ def _terminate(proc: subprocess.Popen) -> None:
         proc.kill()
 
 
+def _docker_running() -> bool:
+    """True if the Docker engine is reachable (i.e. Docker Desktop is running)."""
+    try:
+        return subprocess.run(
+            ["docker", "info"], capture_output=True, text=True, timeout=20
+        ).returncode == 0
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
+def _compose_base() -> list[str] | None:
+    """`docker compose` (v2) if available, else `docker-compose`, else None."""
+    if shutil.which("docker") and subprocess.run(
+        ["docker", "compose", "version"], capture_output=True
+    ).returncode == 0:
+        return ["docker", "compose"]
+    if shutil.which("docker-compose"):
+        return ["docker-compose"]
+    return None
+
+
+def run_production(run_frontend: bool, frontend_port: int, backend_port: int) -> int:
+    """Default mode: backend + vLLM guard in Docker; frontend stays a local Vite server."""
+    if not _docker_running():
+        print("[orchestrator] WARNING: the Docker engine isn't reachable — is Docker "
+              "Desktop running?", flush=True)
+        print("[orchestrator]   Start Docker Desktop and retry, or run the local flow: "
+              "python app.py --dev", flush=True)
+        return 1
+    compose = _compose_base()
+    if compose is None:
+        print("[orchestrator] Docker is up but `docker compose` was not found.", flush=True)
+        return 1
+
+    print("[orchestrator] building & starting containers (backend + guard); the first "
+          "build pulls torch + the vLLM image and can take a while...", flush=True)
+    up = subprocess.run([*compose, "up", "--build", "-d", "backend", "guard"], cwd=str(ROOT))
+    if up.returncode != 0:
+        print("[orchestrator] `docker compose up` failed (see output above).", flush=True)
+        return up.returncode
+
+    procs: list[tuple[str, subprocess.Popen]] = []
+    try:
+        procs.append(("docker", _popen([*compose, "logs", "-f", "backend", "guard"],
+                                        ROOT, os.environ.copy())))
+        if run_frontend:
+            procs.append(("frontend", start_frontend(frontend_port, backend_port)))
+
+        for name, proc in procs:
+            threading.Thread(target=_stream_output, args=(proc, name), daemon=True).start()
+
+        print(f"[orchestrator] backend (container): http://127.0.0.1:{backend_port}/api/health",
+              flush=True)
+        if run_frontend:
+            print(f"[orchestrator] frontend (local):   http://127.0.0.1:{frontend_port}",
+                  flush=True)
+        print("[orchestrator] press Ctrl-C to stop (containers are torn down on exit).",
+              flush=True)
+
+        while True:
+            for name, proc in procs:
+                code = proc.poll()
+                if code is not None:
+                    print(f"[orchestrator] {name} exited ({code}); shutting down.", flush=True)
+                    return code or 0
+            for _, proc in procs:
+                try:
+                    proc.wait(timeout=0.5)
+                except subprocess.TimeoutExpired:
+                    pass
+    except KeyboardInterrupt:
+        print("\n[orchestrator] Ctrl-C received; stopping...", flush=True)
+        return 0
+    finally:
+        for _, proc in procs:
+            _terminate(proc)
+        print("[orchestrator] docker compose down...", flush=True)
+        subprocess.run([*compose, "down"], cwd=str(ROOT))
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run the Chart-Visual-QA dev stack.")
+    parser = argparse.ArgumentParser(description="Run the Chart-Visual-QA stack.")
+    parser.add_argument("--dev", action="store_true",
+                        help="local dev flow (venv backend, local CLIP + Ollama, Vite); "
+                             "no Docker. Default runs the production stack in Docker.")
     parser.add_argument("--backend-only", action="store_true", help="run only the Flask API")
     parser.add_argument("--frontend-only", action="store_true", help="run only the Vite dev server")
     parser.add_argument("--setup-only", action="store_true", help="install deps and exit")
@@ -284,6 +360,11 @@ def main() -> int:
 
     run_backend = not args.frontend_only
     run_frontend = not args.backend_only
+
+    # Default = production: backend + vLLM guard in Docker, frontend local Vite.
+    # `--dev` keeps the local venv + Ollama flow below.
+    if not args.dev:
+        return run_production(run_frontend, args.frontend_port, args.backend_port)
 
     if not args.no_setup:
         try:

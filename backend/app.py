@@ -39,7 +39,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 from chart_check import looks_like_chart
-from env_config import env_bool, env_float, env_int
+from env_config import env_bool, env_float, env_int, env_str
 from guard import guard, warmup
 from inference import is_mock, run_inference
 
@@ -140,9 +140,10 @@ def ask():
 
 
 if __name__ == "__main__":
+    debug = env_bool("FLASK_DEBUG")
     # Pre-warm guard models off the request path so the first /api/ask is fast and the
-    # Layer-3 guard is ready. Under the debug reloader only the child serves
-    # (WERKZEUG_RUN_MAIN=true) — warm there, not in the watcher process.
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    # Layer-3 guard is ready. With the debug reloader only the child serves
+    # (WERKZEUG_RUN_MAIN=true) — warm there; without the reloader, warm unconditionally.
+    if not debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         threading.Thread(target=warmup, daemon=True).start()
-    app.run(host="127.0.0.1", port=env_int("PORT"), debug=True)
+    app.run(host=env_str("HOST"), port=env_int("PORT"), debug=debug)
