@@ -10,7 +10,6 @@ and a natural-language question, return a short answer (1–10 words). Compare a
 **zero-shot VLM baseline** vs a **fine-tuned VLM** on the same eval set, with an error
 analysis. Dataset: **ChartQA** (`lmms-lab/ChartQA`).
 
-
 ## Team & ownership
 
 - **Victor** (me) — webapp (React UI + Flask backend); pair-programming with **Min**.
@@ -39,6 +38,12 @@ real inference call without touching the frontend.
 ## Conventions
 
 - All code, comments, docs, and commit messages in **English**.
+- **No stubs or scaffolding.** Never ship placeholder implementations or fake
+  return values (e.g. replacing a function with `lambda …: <canned value>`). Write the
+  real thing. In **tests**, don't fake the unit under test: disable a heavy dependency at
+  its **real boundary** (an enable flag like `GUARD_ENABLED=0`, or a model loader like
+  `_load_clip → None`) so the **real** code path runs fail-open — never `monkeypatch` the
+  public function with a constant. See `backend/test_chart_check.py` for the pattern.
 - Python 3.10+ for the backend. React (Vite) for the frontend.
 - Planned layout (once approved):
   - `frontend/` — React app (question box + image picker + answer display).
