@@ -30,6 +30,10 @@ from collections import Counter
 _CLIP_MODEL = os.environ.get("CHART_CLIP_MODEL", "openai/clip-vit-base-patch32")
 _CLIP_THRESHOLD = float(os.environ.get("CHART_CLIP_THRESHOLD", "0.5"))
 
+# Optional path to the Tesseract engine for non-PATH installs (Windows, pinned
+# container path). Empty -> rely on PATH (the norm on Linux/containers).
+_TESSERACT_CMD = os.environ.get("TESSERACT_CMD", "")
+
 # Zero-shot label set, split into a "chart" group and a "non-chart" group.
 # CLIP softmaxes over ALL labels; P(chart) is the summed mass on the chart group.
 #
@@ -62,7 +66,7 @@ _CLIP_LABELS = _CHART_LABELS + _NONCHART_LABELS
 # rule "no data -> not a chart" no matter how chart-like the image looks or how
 # many panels it has. Requires the Tesseract binary (see requirements/README);
 # fails open if OCR is unavailable.
-_MIN_DATA_DIGITS = 2  # a real chart shows at least a couple of numeric values
+_MIN_DATA_DIGITS = int(os.environ.get("CHART_MIN_DATA_DIGITS", "2"))  # min numeric chars for a real chart
 
 # Lazy singleton: None = not tried yet, False = unavailable, else (model, proc, torch).
 _clip = None
@@ -112,9 +116,9 @@ def _clip_chart_prob(image_bytes: bytes):
 
 # --- Pixel heuristic stage (fallback) ------------------------------------
 
-_SAMPLE_SIZE = 128            # downscale to this square before analysis
-_MIN_BACKGROUND_RATIO = 0.18  # charts usually have a big flat background
-_MAX_DISTINCT_COLORS = 48     # of 512 coarse buckets; photos blow past this
+_SAMPLE_SIZE = int(os.environ.get("CHART_SAMPLE_SIZE", "128"))            # downscale square before analysis
+_MIN_BACKGROUND_RATIO = float(os.environ.get("CHART_MIN_BACKGROUND_RATIO", "0.18"))  # flat-background share
+_MAX_DISTINCT_COLORS = int(os.environ.get("CHART_MAX_DISTINCT_COLORS", "48"))     # of 512 coarse buckets
 
 
 def _has_data_values(image_bytes: bytes) -> bool:
@@ -134,9 +138,8 @@ def _has_data_values(image_bytes: bytes) -> bool:
 
         # Optional override for non-PATH installs (e.g. Windows, or a pinned path
         # in a container). On Linux/containers tesseract is usually on PATH already.
-        _cmd = os.environ.get("TESSERACT_CMD")
-        if _cmd:
-            pytesseract.pytesseract.tesseract_cmd = _cmd
+        if _TESSERACT_CMD:
+            pytesseract.pytesseract.tesseract_cmd = _TESSERACT_CMD
 
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     except Exception:

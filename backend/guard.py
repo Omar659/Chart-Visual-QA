@@ -30,6 +30,11 @@ TOXICITY_THRESHOLD = float(os.environ.get("GUARD_TOXICITY_THRESHOLD", "0.7"))
 INJECTION_THRESHOLD = float(os.environ.get("GUARD_INJECTION_THRESHOLD", "0.8"))
 PII_SCORE_THRESHOLD = float(os.environ.get("GUARD_PII_THRESHOLD", "0.6"))
 GUARD_ENABLED = os.environ.get("GUARD_ENABLED", "1").lower() not in ("0", "false", "no", "off")
+# Model identifiers (swap without code changes, e.g. a smaller/quantized variant).
+TOXICITY_MODEL = os.environ.get("GUARD_TOXICITY_MODEL", "original")
+INJECTION_MODEL = os.environ.get(
+    "GUARD_INJECTION_MODEL", "protectai/deberta-v3-base-prompt-injection-v2"
+)
 
 # Block only on high-risk identifiers; ignore PERSON/LOCATION/ORG/DATE to avoid
 # false positives on ordinary chart questions ("What was John's revenue?").
@@ -63,7 +68,7 @@ def _load_toxicity():
     try:
         from detoxify import Detoxify
         device = "cuda" if _cuda_device_index() == 0 else "cpu"
-        return Detoxify("original", device=device)
+        return Detoxify(TOXICITY_MODEL, device=device)
     except Exception:  # noqa: BLE001 — dep missing or model download failed
         return None
 
@@ -74,7 +79,7 @@ def _load_injection():
         from transformers import pipeline
         return pipeline(
             "text-classification",
-            model="protectai/deberta-v3-base-prompt-injection-v2",
+            model=INJECTION_MODEL,
             truncation=True,
             device=_cuda_device_index(),
         )

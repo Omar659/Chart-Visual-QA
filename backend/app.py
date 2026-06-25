@@ -63,8 +63,14 @@ MOCK_DISCLAIMER = (
 # when called straight from the browser/tools.
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Cap uploads at 10 MB so a huge file can't exhaust memory.
-app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
+# Cap uploads (MB) so a huge file can't exhaust memory. Keep in sync with the
+# frontend's MAX_BYTES. Override with MAX_UPLOAD_MB.
+MAX_UPLOAD_MB = float(os.environ.get("MAX_UPLOAD_MB", "10"))
+app.config["MAX_CONTENT_LENGTH"] = int(MAX_UPLOAD_MB * 1024 * 1024)
+
+
+# Min "meaningful" (alphanumeric) chars a question must have to not be junk.
+MIN_QUESTION_ALNUM = int(os.environ.get("MIN_QUESTION_ALNUM", "3"))
 
 
 def _question_too_weak(question: str) -> bool:
@@ -75,7 +81,7 @@ def _question_too_weak(question: str) -> bool:
     This is a light Layer-1 guard against junk, not real NLP.
     """
     meaningful = sum(1 for c in question if c.isalnum())
-    return meaningful < 3
+    return meaningful < MIN_QUESTION_ALNUM
 
 
 @app.get("/api/health")
