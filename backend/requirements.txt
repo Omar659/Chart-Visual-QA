@@ -6,7 +6,10 @@ python-dotenv>=1.0,<2    # load config from a .env file at startup
 # CLIP zero-shot chart detector (chart_check.py). Heavy; the gate falls back to
 # a pixel heuristic if these aren't installed.
 torch>=2.2
-transformers>=4.40
+transformers>=4.57          # >=4.57 for Qwen3-VL (model_adapter.py); also covers CLIP
+# Real VLM path (model_adapter.py, USE_MOCK=0): LoRA adapter loading + auto device map.
+peft>=0.11
+accelerate>=0.30
 # OCR "has data values" gate in chart_check.py. pytesseract is only a thin wrapper
 # — it needs the Tesseract ENGINE (a system binary, not a pip package) on PATH:
 #   Debian/Ubuntu (containers): apt-get install -y tesseract-ocr

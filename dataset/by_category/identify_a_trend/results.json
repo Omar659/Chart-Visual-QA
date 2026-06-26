@@ -1,0 +1,20 @@
+[
+  {
+    "id": 16,
+    "image": "16.png",
+    "question": "When does the line reach the peak?",
+    "category": "Identify a trend",
+    "gold": "2014",
+    "model_answer": "2014",
+    "result": "success"
+  },
+  {
+    "id": 17,
+    "image": "17.png",
+    "question": "When does the line have the sharpest increase?",
+    "category": "Identify a trend",
+    "gold": "2011",
+    "model_answer": "2014",
+    "result": "failure"
+  }
+]

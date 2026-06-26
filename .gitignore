@@ -18,7 +18,7 @@ lib/
 lib64/
 parts/
 sdist/
-var/
+var1
 wheels/
 share/python-wheels/
 *.egg-info/
@@ -146,6 +146,10 @@ activemq-data/
 
 # SageMath parsed files
 *.sage.py
+
+# Local model weights — brought in from feat/model to run real mode (USE_MOCK=0).
+# Too large for GitHub (>100 MB/file); host on HF Hub or Git LFS instead.
+checkpoints/
 
 # Environments
 .env
