@@ -1,0 +1,59 @@
+# Containerized stack for `python app.py` (default mode): the Flask backend
+# (CLIP + Tesseract) and the Llama Guard service.
+#
+# The guard runs on CPU via Ollama IN A CONTAINER — no GPU, and no host/external
+# Ollama needed (the container pulls + serves the model itself). This avoids the
+# CUDA driver requirement of the vLLM image entirely. A GPU vLLM variant is shown
+# commented below for later, once a CUDA>=13 driver is available.
+
+services:
+  backend:
+    build: ./backend
+    # All config comes from .env (single source of truth); the few values below
+    # override it for the container (networking + the apt Tesseract on PATH).
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0                       # reachable from the host
+      FLASK_DEBUG: 0                      # no reloader in the container
+      GUARD_LLM_URL: http://guard:11434   # reach the containerized Ollama guard
+      GUARD_LLM_MODEL: llama-guard3:1b    # Ollama model tag (not gated)
+      TESSERACT_CMD: ""                   # use the apt binary on PATH
+    ports:
+      - "5000:5000"
+    depends_on:
+      - guard
+
+  # CPU-only guard: Ollama serving Llama Guard over the OpenAI API
+  # (/v1/chat/completions — the same endpoint guard_llm.py calls). The model is
+  # BAKED into the image (guard/Dockerfile), so there's no runtime pull and cold
+  # start is fast (good for scale-to-zero). Not gated, so no HF_TOKEN.
+  # No volume on purpose — it would shadow the baked-in model and force a re-pull.
+  guard:
+    build: ./guard
+    ports:
+      - "11434:11434"
+
+  # --- GPU alternative (later, needs a CUDA>=13 driver + NVIDIA Container Toolkit) ---
+  # Replace the `guard` service above with vLLM serving the gated weights, and set the
+  # backend env to GUARD_LLM_URL=http://guard:8000, GUARD_LLM_MODEL=meta-llama/Llama-Guard-3-1B.
+  # guard:
+  #   image: vllm/vllm-openai:latest
+  #   command: ["--model", "meta-llama/Llama-Guard-3-1B", "--max-model-len", "8192"]
+  #   environment:
+  #     HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}   # gated weights: set HF_TOKEN in .env
+  #   volumes:
+  #     - hf-cache:/root/.cache/huggingface
+  #   ports:
+  #     - "8000:8000"
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+
+# No named volumes: the guard model is baked into its image, CLIP into the
+# backend image. (Uncomment hf-cache for the vLLM/GPU guard variant above.)
+# volumes:
+#   hf-cache:

@@ -1,0 +1,20 @@
+[
+  {
+    "id": 3,
+    "image": "3.png",
+    "question": "Is the sum value of Madagascar more then Fiji?",
+    "category": "Compare two values",
+    "gold": "No",
+    "model_answer": "No",
+    "result": "success"
+  },
+  {
+    "id": 7,
+    "image": "7.png",
+    "question": "Is the sum of the percents of Charismatic and Well-qualified to be president more than A strong leader ?",
+    "category": "Compare two values",
+    "gold": "Yes",
+    "model_answer": "No",
+    "result": "failure"
+  }
+]

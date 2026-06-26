@@ -1,0 +1,414 @@
+/* Chart VQA — Voltagent-inspired surface (see DESIGN.md).
+   Dark canvas, single green accent, hairline borders, Inter + mono. */
+
+.page {
+  min-height: 100vh;
+  background-color: var(--canvas);
+}
+
+/* ── Nav ─────────────────────────────────────────────────────────── */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-md) var(--s-3xl);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-sm);
+}
+
+.brand-glyph {
+  color: var(--primary);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.brand-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-sm);
+  padding: var(--s-xs) var(--s-md);
+  font-size: 13px;
+  color: var(--ink);
+  background-color: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-pill);
+  background-color: var(--primary);
+}
+
+.status-pill.is-mock .status-dot {
+  background-color: var(--mute);
+}
+
+/* ── Layout ──────────────────────────────────────────────────────── */
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--s-5xl) var(--s-3xl) var(--s-6xl);
+}
+
+/* ── Hero ────────────────────────────────────────────────────────── */
+.hero {
+  margin-bottom: var(--s-4xl);
+}
+
+.eyebrow {
+  margin: 0 0 var(--s-lg);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2.52px;
+  color: var(--primary);
+}
+
+.hero-title {
+  margin: 0;
+  font-size: 60px;
+  font-weight: 400;
+  line-height: 60px;
+  letter-spacing: -0.65px;
+  color: var(--ink-strong);
+}
+
+.hero-sub {
+  margin: var(--s-xl) 0 0;
+  max-width: 52ch;
+  font-size: 18px;
+  line-height: 28px;
+  color: var(--body);
+}
+
+/* Inline mono command/value chip */
+.chip {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--canvas-text-soft);
+  background-color: var(--canvas-soft);
+  border-radius: var(--r-xs);
+  padding: var(--s-xxs) var(--s-sm);
+}
+
+/* ── Feature card ────────────────────────────────────────────────── */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-lg);
+  padding: var(--s-2xl);
+  background-color: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+}
+
+/* ── Image picker / dropzone ─────────────────────────────────────── */
+.picker {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 210px;
+  padding: var(--s-lg);
+  color: var(--mute);
+  background-color: var(--canvas-soft);
+  border: 1px dashed var(--hairline-dashed);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.picker:hover {
+  border-color: var(--primary);
+  color: var(--ink);
+}
+
+.picker.has-image {
+  border-style: solid;
+  border-color: var(--hairline);
+  padding: var(--s-sm);
+}
+
+.preview {
+  display: block;
+  max-width: 100%;
+  max-height: 340px;
+  border-radius: var(--r-sm);
+}
+
+.picker-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-sm);
+  text-align: center;
+}
+
+.picker-icon {
+  width: 42px;
+  height: 42px;
+  color: var(--primary);
+  opacity: 0.9;
+}
+
+.picker-text {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.picker-hint {
+  font-size: 13px;
+  color: var(--mute);
+}
+
+.filename {
+  display: flex;
+  align-items: center;
+  gap: var(--s-md);
+  margin: calc(-1 * var(--s-sm)) 0 0;
+  min-width: 0;
+}
+
+.filename .chip {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filesize {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--mute);
+}
+
+/* ── Question field ──────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-sm);
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.45px;
+  color: var(--mute);
+}
+
+.text-input {
+  width: 100%;
+  padding: var(--s-md) var(--s-lg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--ink);
+  background-color: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.text-input::placeholder {
+  color: var(--mute);
+}
+
+.text-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+/* ── Primary CTA ─────────────────────────────────────────────────── */
+.submit {
+  align-self: flex-start;
+  padding: var(--s-md) var(--s-2xl);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--on-primary);
+  background-color: var(--primary);
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+}
+
+.submit:hover:not(:disabled) {
+  background-color: var(--primary-soft);
+}
+
+.submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Notice (validation / errors — muted, on-brand) ──────────────── */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+  margin: 0;
+  padding: var(--s-md) var(--s-lg);
+  font-size: 14px;
+  color: var(--body);
+  background-color: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+}
+
+.notice-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: var(--r-pill);
+  background-color: var(--mute);
+}
+
+/* ── Submit loading / processing (Task A) ────────────────────────── */
+.submit-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-sm);
+}
+
+.processing {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+  margin: 0;
+  padding: var(--s-md) var(--s-lg);
+  font-size: 14px;
+  color: var(--body);
+  background-color: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(231, 236, 247, 0.25);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Result block (chart detection + disclaimer/answer) ──────────── */
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-md);
+}
+
+/* Chart-detection indicator (Rule 4 — CLIP zero-shot) */
+.detect {
+  margin: 0;
+  padding: var(--s-md) var(--s-lg);
+  border-radius: var(--r-sm);
+  font-size: 14px;
+}
+
+.detect-ok {
+  color: #6ee7a8;
+  background: rgba(110, 231, 168, 0.1);
+  border: 1px solid rgba(110, 231, 168, 0.35);
+}
+
+.detect-warn {
+  color: #ffd479;
+  background: rgba(255, 212, 121, 0.1);
+  border: 1px solid rgba(255, 212, 121, 0.35);
+}
+
+/* Mock-mode disclaimer (Rule 3) — shown instead of a fake answer */
+.disclaimer {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s-md);
+  padding: var(--s-lg);
+  background-color: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid #ffd479;
+  border-radius: var(--r-sm);
+}
+
+.disclaimer-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: #ffd479;
+}
+
+.disclaimer-text {
+  flex: 1 1 200px;
+  font-size: 15px;
+  color: var(--ink-strong);
+}
+
+/* ── Answer card (featured — 2px green border) ───────────────────── */
+.answer {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--s-md);
+  padding: var(--s-xl);
+  background-color: var(--canvas);
+  border: 2px solid var(--primary);
+  border-radius: var(--r-md);
+}
+
+.answer-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2.52px;
+  color: var(--primary);
+}
+
+.answer-text {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 32px;
+  letter-spacing: -0.6px;
+  color: var(--ink-strong);
+}
+
+.answer-meta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--mute);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--s-4xl) var(--s-xl) var(--s-5xl);
+  }
+  .hero-title {
+    font-size: 32px;
+    line-height: 36px;
+  }
+  .nav-bar {
+    padding: var(--s-md) var(--s-xl);
+  }
+}

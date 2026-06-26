@@ -18,7 +18,7 @@ lib/
 lib64/
 parts/
 sdist/
-var/
+var1
 wheels/
 share/python-wheels/
 *.egg-info/
@@ -147,6 +147,10 @@ activemq-data/
 # SageMath parsed files
 *.sage.py
 
+# Local model weights — brought in from feat/model to run real mode (USE_MOCK=0).
+# Too large for GitHub (>100 MB/file); host on HF Hub or Git LFS instead.
+checkpoints/
+
 # Environments
 .env
 .envrc
@@ -216,3 +220,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node / frontend (Vite + React)
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Backend virtualenv (explicit)
+backend/.venv/

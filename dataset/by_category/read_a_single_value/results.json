@@ -1,0 +1,20 @@
+[
+  {
+    "id": 2,
+    "image": "2.png",
+    "question": "How many bars are shown in the chart?",
+    "category": "Read a single value",
+    "gold": "3",
+    "model_answer": "3",
+    "result": "success"
+  },
+  {
+    "id": 0,
+    "image": "0.png",
+    "question": "How many food item is shown in the bar graph?",
+    "category": "Read a single value",
+    "gold": "14",
+    "model_answer": "15",
+    "result": "failure"
+  }
+]

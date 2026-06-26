@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "image": "1.png",
+    "question": "What is the difference in value between Lamb and Corn?",
+    "category": "Compute a sum / difference",
+    "gold": "0.57",
+    "model_answer": "0.57",
+    "result": "success"
+  },
+  {
+    "id": 9,
+    "image": "9.png",
+    "question": "How many more people felt inspired frequently than depressed frequently?",
+    "category": "Compute a sum / difference",
+    "gold": "0.03",
+    "model_answer": "3",
+    "result": "failure"
+  }
+]

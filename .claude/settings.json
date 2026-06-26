@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git fetch:*)",
+      "Bash(git remote:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(pwd)",
+      "Bash(tree:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(which:*)",
+      "Bash(node:*)",
+      "Bash(npm --version:*)",
+      "Bash(npm install:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm run:*)",
+      "Bash(npm list:*)",
+      "Bash(npm test:*)",
+      "Bash(npm create:*)",
+      "Bash(npx:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(py:*)",
+      "Bash(./backend/.venv/Scripts/python.exe:*)",
+      "Bash(backend/.venv/Scripts/python.exe:*)",
+      "Bash(./backend/.venv/bin/python:*)",
+      "Bash(pip install:*)",
+      "Bash(pip list:*)",
+      "Bash(pip show:*)",
+      "Bash(pip freeze:*)",
+      "Bash(pytest:*)",
+      "Bash(flask:*)",
+      "PowerShell(Get-ChildItem:*)",
+      "PowerShell(Test-Path:*)",
+      "PowerShell(Get-Content:*)",
+      "PowerShell(Select-String:*)",
+      "PowerShell(git status:*)",
+      "PowerShell(git log:*)",
+      "PowerShell(git diff:*)",
+      "PowerShell(git branch:*)",
+      "PowerShell(node:*)",
+      "PowerShell(npm --version:*)",
+      "PowerShell(npm install:*)",
+      "PowerShell(npm run:*)",
+      "PowerShell(npm ci:*)",
+      "PowerShell(npm create:*)",
+      "PowerShell(npx:*)",
+      "PowerShell(python:*)",
+      "PowerShell(py:*)",
+      "PowerShell(pip install:*)",
+      "PowerShell(pip list:*)",
+      "PowerShell(flask:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -fd:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(mkfs:*)",
+      "Bash(dd:*)",
+      "Bash(shutdown:*)",
+      "Bash(reboot:*)",
+      "PowerShell(Remove-Item -Recurse -Force:*)",
+      "PowerShell(Remove-Item -Force -Recurse:*)",
+      "PowerShell(Format-Volume:*)",
+      "PowerShell(Stop-Computer:*)",
+      "PowerShell(Restart-Computer:*)",
+      "Read(./.env)",
+      "Read(./**/.env)",
+      "Read(./**/secrets.toml)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "PowerShell(git push:*)"
+    ],
+    "defaultMode": "default"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "in=$(cat); if printf '%s' \"$in\" | grep -qE 'git[[:space:]]' && printf '%s' \"$in\" | grep -qE '(commit|push)'; then b=$(git branch --show-current 2>/dev/null); if [ \"$b\" = \"main\" ] || [ \"$b\" = \"master\" ]; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Commit/push directly to %s is blocked by project policy. Switch to a feature branch (e.g. feat/webapp) first.\"}}' \"$b\"; fi; fi",
+            "statusMessage": "Checking branch policy..."
+          }
+        ]
+      }
+    ]
+  }
+}

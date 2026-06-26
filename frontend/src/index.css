@@ -1,0 +1,70 @@
+/* Design tokens — derived from DESIGN.md (Voltagent-inspired language).
+   Single electric-green accent on a near-black canvas; hairline borders
+   instead of shadows; Inter + JetBrains Mono. */
+:root {
+  /* Brand & accent */
+  --primary: #00d992;
+  --primary-soft: #2fd6a1;
+  --primary-deep: #10b981;
+  --on-primary: #101010;
+
+  /* Surface */
+  --canvas: #101010;
+  --canvas-soft: #1a1a1a;
+  --hairline: #3d3a39;
+  --hairline-dashed: rgba(79, 93, 117, 0.4);
+
+  /* Text */
+  --ink: #f2f2f2;
+  --ink-strong: #ffffff;
+  --body: #bdbdbd;
+  --mute: #8b949e;
+  --canvas-text-soft: #f5f6f7;
+
+  /* Radius */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-pill: 9999px;
+
+  /* Spacing (4px base) */
+  --s-xxs: 2px;
+  --s-xs: 4px;
+  --s-sm: 8px;
+  --s-md: 12px;
+  --s-lg: 16px;
+  --s-xl: 20px;
+  --s-2xl: 24px;
+  --s-3xl: 32px;
+  --s-4xl: 40px;
+  --s-5xl: 48px;
+  --s-6xl: 64px;
+
+  /* Type families */
+  --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', monospace;
+
+  color-scheme: dark;
+  font-family: var(--font-sans);
+  font-feature-settings: 'calt', 'rlig';
+  color: var(--ink);
+  background-color: var(--canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100vh;
+}
+
+body {
+  background-color: var(--canvas);
+}
