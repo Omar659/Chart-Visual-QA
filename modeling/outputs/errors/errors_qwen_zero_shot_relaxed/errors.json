@@ -1,0 +1,2320 @@
+{
+  "model": "qwen",
+  "checkpoint": "base model",
+  "split": "test",
+  "metric": "relaxed",
+  "n": 2500,
+  "num_errors": 385,
+  "errors": [
+    {
+      "index": 0,
+      "image": "0.png",
+      "gold": "14",
+      "pred": "13"
+    },
+    {
+      "index": 7,
+      "image": "7.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 9,
+      "image": "9.png",
+      "gold": "0.03",
+      "pred": "3"
+    },
+    {
+      "index": 19,
+      "image": "19.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 20,
+      "image": "20.png",
+      "gold": "green line",
+      "pred": "The teal line"
+    },
+    {
+      "index": 23,
+      "image": "23.png",
+      "gold": "1.216666667",
+      "pred": "0.666666667"
+    },
+    {
+      "index": 28,
+      "image": "28.png",
+      "gold": "0.6",
+      "pred": "23"
+    },
+    {
+      "index": 29,
+      "image": "29.png",
+      "gold": "61",
+      "pred": "49"
+    },
+    {
+      "index": 31,
+      "image": "31.png",
+      "gold": "5",
+      "pred": "7"
+    },
+    {
+      "index": 32,
+      "image": "32.png",
+      "gold": "24",
+      "pred": "21"
+    },
+    {
+      "index": 49,
+      "image": "49.png",
+      "gold": "2.13",
+      "pred": "0.20645161290322581"
+    },
+    {
+      "index": 52,
+      "image": "52.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 53,
+      "image": "53.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 54,
+      "image": "54.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 55,
+      "image": "55.png",
+      "gold": "0.33333333",
+      "pred": "0.12244897959183673"
+    },
+    {
+      "index": 56,
+      "image": "56.png",
+      "gold": "Democrat (scores 60 to 100)",
+      "pred": "Republican"
+    },
+    {
+      "index": 57,
+      "image": "57.png",
+      "gold": "0.01",
+      "pred": "99"
+    },
+    {
+      "index": 63,
+      "image": "63.png",
+      "gold": "50.25",
+      "pred": "53.25"
+    },
+    {
+      "index": 65,
+      "image": "65.png",
+      "gold": "0.633333333",
+      "pred": "0.042361111"
+    },
+    {
+      "index": 69,
+      "image": "69.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 71,
+      "image": "71.png",
+      "gold": "51.04",
+      "pred": "56.045"
+    },
+    {
+      "index": 73,
+      "image": "73.png",
+      "gold": "21.5",
+      "pred": "16.5"
+    },
+    {
+      "index": 74,
+      "image": "74.png",
+      "gold": "3.0238",
+      "pred": "302.38"
+    },
+    {
+      "index": 75,
+      "image": "75.png",
+      "gold": "0.1922",
+      "pred": "19.12"
+    },
+    {
+      "index": 81,
+      "image": "81.png",
+      "gold": "1.051388889",
+      "pred": "1.861111111"
+    },
+    {
+      "index": 86,
+      "image": "86.png",
+      "gold": "77",
+      "pred": "77, 47"
+    },
+    {
+      "index": 89,
+      "image": "89.png",
+      "gold": "1.684722222",
+      "pred": "1.333333333"
+    },
+    {
+      "index": 91,
+      "image": "91.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 92,
+      "image": "92.png",
+      "gold": "3",
+      "pred": "8"
+    },
+    {
+      "index": 102,
+      "image": "102.png",
+      "gold": "0.08",
+      "pred": "26"
+    },
+    {
+      "index": 103,
+      "image": "103.png",
+      "gold": "65",
+      "pred": "55"
+    },
+    {
+      "index": 105,
+      "image": "105.png",
+      "gold": "2",
+      "pred": "6"
+    },
+    {
+      "index": 107,
+      "image": "107.png",
+      "gold": "1.179861111",
+      "pred": "1.4736842105263158"
+    },
+    {
+      "index": 109,
+      "image": "109.png",
+      "gold": "37",
+      "pred": "27"
+    },
+    {
+      "index": 111,
+      "image": "111.png",
+      "gold": "8",
+      "pred": "57"
+    },
+    {
+      "index": 112,
+      "image": "112.png",
+      "gold": "1.4",
+      "pred": "1.4 billion"
+    },
+    {
+      "index": 119,
+      "image": "119.png",
+      "gold": "21",
+      "pred": "73.5"
+    },
+    {
+      "index": 120,
+      "image": "120.png",
+      "gold": "0.3",
+      "pred": "19"
+    },
+    {
+      "index": 121,
+      "image": "121.png",
+      "gold": "0.07",
+      "pred": "7"
+    },
+    {
+      "index": 125,
+      "image": "125.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 129,
+      "image": "129.png",
+      "gold": "1",
+      "pred": "0"
+    },
+    {
+      "index": 131,
+      "image": "131.png",
+      "gold": "gray",
+      "pred": "Green"
+    },
+    {
+      "index": 135,
+      "image": "135.png",
+      "gold": "1.058333333",
+      "pred": "0.520833333"
+    },
+    {
+      "index": 139,
+      "image": "139.png",
+      "gold": "2.125694444",
+      "pred": "3.055555556"
+    },
+    {
+      "index": 143,
+      "image": "143.png",
+      "gold": "2577420",
+      "pred": "1575000"
+    },
+    {
+      "index": 147,
+      "image": "147.png",
+      "gold": "62.43",
+      "pred": "58.8"
+    },
+    {
+      "index": 149,
+      "image": "149.png",
+      "gold": "0.9375",
+      "pred": "1.545454545"
+    },
+    {
+      "index": 159,
+      "image": "159.png",
+      "gold": "3",
+      "pred": "4"
+    },
+    {
+      "index": 160,
+      "image": "160.png",
+      "gold": "March 2011",
+      "pred": "2011"
+    },
+    {
+      "index": 163,
+      "image": "163.png",
+      "gold": "2210",
+      "pred": "1992"
+    },
+    {
+      "index": 164,
+      "image": "164.png",
+      "gold": "1",
+      "pred": "26"
+    },
+    {
+      "index": 177,
+      "image": "177.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 182,
+      "image": "182.png",
+      "gold": "Important, but lower priority",
+      "pred": "40%"
+    },
+    {
+      "index": 183,
+      "image": "183.png",
+      "gold": "75",
+      "pred": "40"
+    },
+    {
+      "index": 195,
+      "image": "195.png",
+      "gold": "15",
+      "pred": "10.4"
+    },
+    {
+      "index": 199,
+      "image": "199.png",
+      "gold": "5.95",
+      "pred": "11.43"
+    },
+    {
+      "index": 200,
+      "image": "200.png",
+      "gold": "Finland",
+      "pred": "Teal"
+    },
+    {
+      "index": 209,
+      "image": "209.png",
+      "gold": "203",
+      "pred": "123"
+    },
+    {
+      "index": 216,
+      "image": "216.png",
+      "gold": "1931",
+      "pred": "1.93"
+    },
+    {
+      "index": 222,
+      "image": "222.png",
+      "gold": "16",
+      "pred": "15"
+    },
+    {
+      "index": 233,
+      "image": "233.png",
+      "gold": "0.02",
+      "pred": "0.010000000000000002"
+    },
+    {
+      "index": 236,
+      "image": "236.png",
+      "gold": "20.98",
+      "pred": "20.98 m²"
+    },
+    {
+      "index": 237,
+      "image": "237.png",
+      "gold": "0.2",
+      "pred": "0.20 m²"
+    },
+    {
+      "index": 242,
+      "image": "242.png",
+      "gold": "5.25",
+      "pred": "5.25 trillion"
+    },
+    {
+      "index": 243,
+      "image": "243.png",
+      "gold": "252.65",
+      "pred": "5.5 trillion"
+    },
+    {
+      "index": 248,
+      "image": "248.png",
+      "gold": "Teal Blue",
+      "pred": "teal"
+    },
+    {
+      "index": 253,
+      "image": "253.png",
+      "gold": "6.2",
+      "pred": "2.6"
+    },
+    {
+      "index": 259,
+      "image": "259.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 263,
+      "image": "263.png",
+      "gold": "2",
+      "pred": "3"
+    },
+    {
+      "index": 272,
+      "image": "272.png",
+      "gold": "gray",
+      "pred": "Dark blue"
+    },
+    {
+      "index": 275,
+      "image": "275.png",
+      "gold": "742.07",
+      "pred": "Human capital"
+    },
+    {
+      "index": 301,
+      "image": "301.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 303,
+      "image": "303.png",
+      "gold": "[Gambia, Niger]",
+      "pred": "Gambia, Niger"
+    },
+    {
+      "index": 305,
+      "image": "305.png",
+      "gold": "82.2",
+      "pred": "1,917.8"
+    },
+    {
+      "index": 306,
+      "image": "306.png",
+      "gold": "13",
+      "pred": "12"
+    },
+    {
+      "index": 307,
+      "image": "307.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 308,
+      "image": "308.png",
+      "gold": "11",
+      "pred": "8"
+    },
+    {
+      "index": 311,
+      "image": "311.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 314,
+      "image": "314.png",
+      "gold": "[Italy , 22]",
+      "pred": "Italy, 22%"
+    },
+    {
+      "index": 317,
+      "image": "317.png",
+      "gold": "389.82",
+      "pred": "390.82**"
+    },
+    {
+      "index": 318,
+      "image": "318.png",
+      "gold": "navy blue",
+      "pred": "Blue"
+    },
+    {
+      "index": 319,
+      "image": "319.png",
+      "gold": "0.08",
+      "pred": "0.04"
+    },
+    {
+      "index": 327,
+      "image": "327.png",
+      "gold": "47.68",
+      "pred": "45"
+    },
+    {
+      "index": 336,
+      "image": "336.png",
+      "gold": "brown",
+      "pred": "Orange"
+    },
+    {
+      "index": 341,
+      "image": "341.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 348,
+      "image": "348.png",
+      "gold": "[2014, 2016]",
+      "pred": "2015 and 2016"
+    },
+    {
+      "index": 357,
+      "image": "357.png",
+      "gold": "6",
+      "pred": "3"
+    },
+    {
+      "index": 361,
+      "image": "361.png",
+      "gold": "No",
+      "pred": "Neither"
+    },
+    {
+      "index": 363,
+      "image": "363.png",
+      "gold": "[2003, 2004]",
+      "pred": "2004"
+    },
+    {
+      "index": 364,
+      "image": "364.png",
+      "gold": "Cameroon",
+      "pred": "Costa Rica"
+    },
+    {
+      "index": 369,
+      "image": "369.png",
+      "gold": "2",
+      "pred": "7"
+    },
+    {
+      "index": 373,
+      "image": "373.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 375,
+      "image": "375.png",
+      "gold": "6",
+      "pred": "2005 to 2014"
+    },
+    {
+      "index": 376,
+      "image": "376.png",
+      "gold": "[2013, 2016]",
+      "pred": "2013 to 2016"
+    },
+    {
+      "index": 377,
+      "image": "377.png",
+      "gold": "[Germany, Bolivia, Dominican Republic]",
+      "pred": "Germany, Bolivia, Dominican Republic"
+    },
+    {
+      "index": 379,
+      "image": "379.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 382,
+      "image": "382.png",
+      "gold": "4",
+      "pred": "3"
+    },
+    {
+      "index": 383,
+      "image": "383.png",
+      "gold": "1",
+      "pred": "3"
+    },
+    {
+      "index": 385,
+      "image": "385.png",
+      "gold": "6",
+      "pred": "10"
+    },
+    {
+      "index": 389,
+      "image": "389.png",
+      "gold": "1.4",
+      "pred": "1.0"
+    },
+    {
+      "index": 391,
+      "image": "391.png",
+      "gold": "[United Kingdom, Cape Verde]",
+      "pred": "United Kingdom, Cape Verde"
+    },
+    {
+      "index": 396,
+      "image": "396.png",
+      "gold": "orange",
+      "pred": "Brown"
+    },
+    {
+      "index": 401,
+      "image": "401.png",
+      "gold": "[1965, 1970]",
+      "pred": "1968 and 1969"
+    },
+    {
+      "index": 405,
+      "image": "405.png",
+      "gold": "75",
+      "pred": "12"
+    },
+    {
+      "index": 406,
+      "image": "406.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 411,
+      "image": "411.png",
+      "gold": "16",
+      "pred": "5"
+    },
+    {
+      "index": 412,
+      "image": "412.png",
+      "gold": "Botswana",
+      "pred": "Chile"
+    },
+    {
+      "index": 418,
+      "image": "418.png",
+      "gold": "Child (before age 5)",
+      "pred": "Neonatal (first 28 days of life)"
+    },
+    {
+      "index": 425,
+      "image": "425.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 429,
+      "image": "429.png",
+      "gold": "Taiwan",
+      "pred": "Iran"
+    },
+    {
+      "index": 437,
+      "image": "437.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 439,
+      "image": "439.png",
+      "gold": "25",
+      "pred": "30"
+    },
+    {
+      "index": 447,
+      "image": "447.png",
+      "gold": "1",
+      "pred": "0.222222222"
+    },
+    {
+      "index": 452,
+      "image": "452.png",
+      "gold": "15",
+      "pred": "48"
+    },
+    {
+      "index": 455,
+      "image": "455.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 459,
+      "image": "459.png",
+      "gold": "24",
+      "pred": "15"
+    },
+    {
+      "index": 461,
+      "image": "461.png",
+      "gold": "44",
+      "pred": "24"
+    },
+    {
+      "index": 463,
+      "image": "463.png",
+      "gold": "0.414285714",
+      "pred": "0.7"
+    },
+    {
+      "index": 465,
+      "image": "465.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 467,
+      "image": "467.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 468,
+      "image": "468.png",
+      "gold": "Dark blue",
+      "pred": "Blue"
+    },
+    {
+      "index": 474,
+      "image": "474.png",
+      "gold": "45",
+      "pred": "62"
+    },
+    {
+      "index": 475,
+      "image": "475.png",
+      "gold": "1",
+      "pred": "4"
+    },
+    {
+      "index": 477,
+      "image": "477.png",
+      "gold": "50.6",
+      "pred": "44.6"
+    },
+    {
+      "index": 481,
+      "image": "481.png",
+      "gold": "3.6",
+      "pred": "2.3"
+    },
+    {
+      "index": 485,
+      "image": "485.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 486,
+      "image": "486.png",
+      "gold": "4",
+      "pred": "2"
+    },
+    {
+      "index": 495,
+      "image": "495.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 498,
+      "image": "498.png",
+      "gold": "[Should not, Should]",
+      "pred": "Should not, Should"
+    },
+    {
+      "index": 499,
+      "image": "499.png",
+      "gold": "0.75",
+      "pred": "1.333333333"
+    },
+    {
+      "index": 500,
+      "image": "500.png",
+      "gold": "46",
+      "pred": "64"
+    },
+    {
+      "index": 501,
+      "image": "501.png",
+      "gold": "72",
+      "pred": "64"
+    },
+    {
+      "index": 502,
+      "image": "502.png",
+      "gold": "47",
+      "pred": "67"
+    },
+    {
+      "index": 503,
+      "image": "503.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 504,
+      "image": "504.png",
+      "gold": "Same",
+      "pred": "33"
+    },
+    {
+      "index": 505,
+      "image": "505.png",
+      "gold": "16",
+      "pred": "2"
+    },
+    {
+      "index": 507,
+      "image": "507.png",
+      "gold": "7",
+      "pred": "4"
+    },
+    {
+      "index": 509,
+      "image": "509.png",
+      "gold": "6",
+      "pred": "7"
+    },
+    {
+      "index": 511,
+      "image": "511.png",
+      "gold": "39.5",
+      "pred": "43.5"
+    },
+    {
+      "index": 513,
+      "image": "513.png",
+      "gold": "35",
+      "pred": "31.67"
+    },
+    {
+      "index": 514,
+      "image": "514.png",
+      "gold": "213",
+      "pred": "213k"
+    },
+    {
+      "index": 521,
+      "image": "521.png",
+      "gold": "1",
+      "pred": "4"
+    },
+    {
+      "index": 527,
+      "image": "527.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 554,
+      "image": "554.png",
+      "gold": "Right decision",
+      "pred": "Wrong decision"
+    },
+    {
+      "index": 555,
+      "image": "555.png",
+      "gold": "64",
+      "pred": "37"
+    },
+    {
+      "index": 557,
+      "image": "557.png",
+      "gold": "Independent",
+      "pred": "Republican"
+    },
+    {
+      "index": 561,
+      "image": "561.png",
+      "gold": "1.06",
+      "pred": "0.05"
+    },
+    {
+      "index": 577,
+      "image": "577.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 581,
+      "image": "581.png",
+      "gold": "[Australia, Italy]",
+      "pred": "Australia, Italy"
+    },
+    {
+      "index": 582,
+      "image": "582.png",
+      "gold": "[Slovenia, Turkey]",
+      "pred": "Slovenia, Turkey"
+    },
+    {
+      "index": 585,
+      "image": "585.png",
+      "gold": "1",
+      "pred": "0"
+    },
+    {
+      "index": 587,
+      "image": "587.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 588,
+      "image": "588.png",
+      "gold": "[Austria, Chile]",
+      "pred": "Austria, Chile"
+    },
+    {
+      "index": 590,
+      "image": "590.png",
+      "gold": "[Lithuania, Saudi Arabia]",
+      "pred": "Lithuania, Saudi Arabia"
+    },
+    {
+      "index": 595,
+      "image": "595.png",
+      "gold": "1",
+      "pred": "2"
+    },
+    {
+      "index": 601,
+      "image": "601.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 604,
+      "image": "604.png",
+      "gold": "Facebook Messenger*",
+      "pred": "Facebook Messenger"
+    },
+    {
+      "index": 611,
+      "image": "611.png",
+      "gold": "39.31",
+      "pred": "31.25"
+    },
+    {
+      "index": 612,
+      "image": "612.png",
+      "gold": "[1.34, 1.37]",
+      "pred": "1.37"
+    },
+    {
+      "index": 614,
+      "image": "614.png",
+      "gold": "Increased",
+      "pred": "Increased 35%"
+    },
+    {
+      "index": 617,
+      "image": "617.png",
+      "gold": "1",
+      "pred": "0.2"
+    },
+    {
+      "index": 619,
+      "image": "619.png",
+      "gold": "-1.6",
+      "pred": "16"
+    },
+    {
+      "index": 621,
+      "image": "621.png",
+      "gold": "7",
+      "pred": "6"
+    },
+    {
+      "index": 625,
+      "image": "625.png",
+      "gold": "3",
+      "pred": "4"
+    },
+    {
+      "index": 627,
+      "image": "627.png",
+      "gold": "73",
+      "pred": "66"
+    },
+    {
+      "index": 629,
+      "image": "629.png",
+      "gold": "2",
+      "pred": "3"
+    },
+    {
+      "index": 637,
+      "image": "637.png",
+      "gold": "828",
+      "pred": "628"
+    },
+    {
+      "index": 642,
+      "image": "642.png",
+      "gold": "increasing",
+      "pred": "Increase"
+    },
+    {
+      "index": 643,
+      "image": "643.png",
+      "gold": "5",
+      "pred": "3"
+    },
+    {
+      "index": 645,
+      "image": "645.png",
+      "gold": "4",
+      "pred": "1"
+    },
+    {
+      "index": 647,
+      "image": "647.png",
+      "gold": "3.7",
+      "pred": "2.7"
+    },
+    {
+      "index": 649,
+      "image": "649.png",
+      "gold": "41",
+      "pred": "32"
+    },
+    {
+      "index": 655,
+      "image": "655.png",
+      "gold": "2",
+      "pred": "3"
+    },
+    {
+      "index": 656,
+      "image": "656.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 657,
+      "image": "657.png",
+      "gold": "70.4",
+      "pred": "66.6"
+    },
+    {
+      "index": 659,
+      "image": "659.png",
+      "gold": "3",
+      "pred": "0.03"
+    },
+    {
+      "index": 667,
+      "image": "667.png",
+      "gold": "19",
+      "pred": "17"
+    },
+    {
+      "index": 680,
+      "image": "680.png",
+      "gold": "Kit (Nike)",
+      "pred": "Nike"
+    },
+    {
+      "index": 681,
+      "image": "681.png",
+      "gold": "17.3",
+      "pred": "14"
+    },
+    {
+      "index": 692,
+      "image": "692.png",
+      "gold": "3",
+      "pred": "4"
+    },
+    {
+      "index": 699,
+      "image": "699.png",
+      "gold": "18.6",
+      "pred": "15.33"
+    },
+    {
+      "index": 704,
+      "image": "704.png",
+      "gold": "I do not know",
+      "pred": "Very poorly"
+    },
+    {
+      "index": 715,
+      "image": "715.png",
+      "gold": "5910",
+      "pred": "5508"
+    },
+    {
+      "index": 717,
+      "image": "717.png",
+      "gold": "2009",
+      "pred": "2008 to 2009"
+    },
+    {
+      "index": 719,
+      "image": "719.png",
+      "gold": "6",
+      "pred": "3"
+    },
+    {
+      "index": 727,
+      "image": "727.png",
+      "gold": "2.87",
+      "pred": "5.37"
+    },
+    {
+      "index": 728,
+      "image": "728.png",
+      "gold": "NFL (2016)",
+      "pred": "NFL"
+    },
+    {
+      "index": 729,
+      "image": "729.png",
+      "gold": "43.44",
+      "pred": "31"
+    },
+    {
+      "index": 731,
+      "image": "731.png",
+      "gold": "0.19",
+      "pred": "0.14"
+    },
+    {
+      "index": 738,
+      "image": "738.png",
+      "gold": "[2003,2009]",
+      "pred": "2003, 2010"
+    },
+    {
+      "index": 739,
+      "image": "739.png",
+      "gold": "0",
+      "pred": "0.02"
+    },
+    {
+      "index": 749,
+      "image": "749.png",
+      "gold": "59.9",
+      "pred": "40.5"
+    },
+    {
+      "index": 753,
+      "image": "753.png",
+      "gold": "31.3",
+      "pred": "24.02"
+    },
+    {
+      "index": 757,
+      "image": "757.png",
+      "gold": "756.36",
+      "pred": "1,120.34"
+    },
+    {
+      "index": 770,
+      "image": "770.png",
+      "gold": "7",
+      "pred": "6"
+    },
+    {
+      "index": 777,
+      "image": "777.png",
+      "gold": "7.23",
+      "pred": "9.23"
+    },
+    {
+      "index": 779,
+      "image": "779.png",
+      "gold": "[Germany,United States]",
+      "pred": "Germany vs. United States"
+    },
+    {
+      "index": 783,
+      "image": "783.png",
+      "gold": "11.4",
+      "pred": "42.7"
+    },
+    {
+      "index": 791,
+      "image": "791.png",
+      "gold": "12",
+      "pred": "11"
+    },
+    {
+      "index": 797,
+      "image": "797.png",
+      "gold": "3",
+      "pred": "7"
+    },
+    {
+      "index": 799,
+      "image": "799.png",
+      "gold": "93",
+      "pred": "48"
+    },
+    {
+      "index": 804,
+      "image": "804.png",
+      "gold": "10",
+      "pred": "9"
+    },
+    {
+      "index": 805,
+      "image": "805.png",
+      "gold": "[Thailand, South Korea]",
+      "pred": "Thailand, South Korea"
+    },
+    {
+      "index": 807,
+      "image": "807.png",
+      "gold": "61.2",
+      "pred": "57.9"
+    },
+    {
+      "index": 811,
+      "image": "811.png",
+      "gold": "200",
+      "pred": "523"
+    },
+    {
+      "index": 819,
+      "image": "819.png",
+      "gold": "3.38",
+      "pred": "11.25"
+    },
+    {
+      "index": 823,
+      "image": "823.png",
+      "gold": "2.33",
+      "pred": "0.07"
+    },
+    {
+      "index": 829,
+      "image": "829.png",
+      "gold": "67.6",
+      "pred": "52.3"
+    },
+    {
+      "index": 837,
+      "image": "837.png",
+      "gold": "23",
+      "pred": "26"
+    },
+    {
+      "index": 841,
+      "image": "841.png",
+      "gold": "16.59",
+      "pred": "14.81"
+    },
+    {
+      "index": 845,
+      "image": "845.png",
+      "gold": "63",
+      "pred": "34"
+    },
+    {
+      "index": 849,
+      "image": "849.png",
+      "gold": "78",
+      "pred": "57"
+    },
+    {
+      "index": 850,
+      "image": "850.png",
+      "gold": "[2017, 2023]",
+      "pred": "2017 and 2023"
+    },
+    {
+      "index": 851,
+      "image": "851.png",
+      "gold": "Digestive health",
+      "pred": "Digestive health, Immune health"
+    },
+    {
+      "index": 853,
+      "image": "853.png",
+      "gold": "70",
+      "pred": "90.5"
+    },
+    {
+      "index": 859,
+      "image": "859.png",
+      "gold": "112249",
+      "pred": "29533"
+    },
+    {
+      "index": 861,
+      "image": "861.png",
+      "gold": "239.4",
+      "pred": "218.4"
+    },
+    {
+      "index": 865,
+      "image": "865.png",
+      "gold": "7.53",
+      "pred": "2.58"
+    },
+    {
+      "index": 869,
+      "image": "869.png",
+      "gold": "Data not reported",
+      "pred": "26-50% of retail price is tax"
+    },
+    {
+      "index": 871,
+      "image": "871.png",
+      "gold": "2.44",
+      "pred": "2.24"
+    },
+    {
+      "index": 885,
+      "image": "885.png",
+      "gold": "197.3",
+      "pred": "213.3"
+    },
+    {
+      "index": 889,
+      "image": "889.png",
+      "gold": "832.5",
+      "pred": "Asia: 64.6, Europe: 767.9"
+    },
+    {
+      "index": 893,
+      "image": "893.png",
+      "gold": "505",
+      "pred": "1105"
+    },
+    {
+      "index": 901,
+      "image": "901.png",
+      "gold": "3594",
+      "pred": "4566"
+    },
+    {
+      "index": 902,
+      "image": "902.png",
+      "gold": "2010/11",
+      "pred": "2018/19"
+    },
+    {
+      "index": 903,
+      "image": "903.png",
+      "gold": "28568",
+      "pred": "35283-8254"
+    },
+    {
+      "index": 904,
+      "image": "904.png",
+      "gold": "Pirates of the Caribbean: Dead Man's Chest",
+      "pred": "Pirates of the Caribbean: Dead Men Tell No Tales"
+    },
+    {
+      "index": 908,
+      "image": "908.png",
+      "gold": "Cooking (e.g., MasterChef, Chopped, etc.)",
+      "pred": "Travel / aspirational (e.g., Lifestyles of the Rich and Famous, MTV Cribs, etc.)"
+    },
+    {
+      "index": 910,
+      "image": "910.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 913,
+      "image": "913.png",
+      "gold": "479.5",
+      "pred": "430.5"
+    },
+    {
+      "index": 915,
+      "image": "915.png",
+      "gold": "52",
+      "pred": "73"
+    },
+    {
+      "index": 920,
+      "image": "920.png",
+      "gold": "Jimmy Fallon",
+      "pred": "Stephen Colbert"
+    },
+    {
+      "index": 921,
+      "image": "921.png",
+      "gold": "19",
+      "pred": "16"
+    },
+    {
+      "index": 925,
+      "image": "925.png",
+      "gold": "60",
+      "pred": "20"
+    },
+    {
+      "index": 937,
+      "image": "937.png",
+      "gold": "10",
+      "pred": "3.4"
+    },
+    {
+      "index": 940,
+      "image": "940.png",
+      "gold": "62",
+      "pred": "71"
+    },
+    {
+      "index": 941,
+      "image": "941.png",
+      "gold": "72",
+      "pred": "6"
+    },
+    {
+      "index": 942,
+      "image": "942.png",
+      "gold": "[2011, 2012]",
+      "pred": "2011, 2012"
+    },
+    {
+      "index": 945,
+      "image": "945.png",
+      "gold": "47",
+      "pred": "33"
+    },
+    {
+      "index": 949,
+      "image": "949.png",
+      "gold": "14",
+      "pred": "18"
+    },
+    {
+      "index": 954,
+      "image": "954.png",
+      "gold": "80",
+      "pred": "Joe Biden"
+    },
+    {
+      "index": 957,
+      "image": "957.png",
+      "gold": "6.7",
+      "pred": "7.7"
+    },
+    {
+      "index": 959,
+      "image": "959.png",
+      "gold": "2372.1",
+      "pred": "2858.3"
+    },
+    {
+      "index": 963,
+      "image": "963.png",
+      "gold": "5.66",
+      "pred": "3.52"
+    },
+    {
+      "index": 981,
+      "image": "981.png",
+      "gold": "1",
+      "pred": "0"
+    },
+    {
+      "index": 982,
+      "image": "982.png",
+      "gold": "gray",
+      "pred": "Blue"
+    },
+    {
+      "index": 983,
+      "image": "983.png",
+      "gold": "2.72",
+      "pred": "1.31"
+    },
+    {
+      "index": 984,
+      "image": "984.png",
+      "gold": "43.9",
+      "pred": "47"
+    },
+    {
+      "index": 987,
+      "image": "987.png",
+      "gold": "5",
+      "pred": "5.33"
+    },
+    {
+      "index": 990,
+      "image": "990.png",
+      "gold": "18/19",
+      "pred": "13/14"
+    },
+    {
+      "index": 998,
+      "image": "998.png",
+      "gold": "light blue",
+      "pred": "blue"
+    },
+    {
+      "index": 1011,
+      "image": "1011.png",
+      "gold": "53",
+      "pred": "50"
+    },
+    {
+      "index": 1019,
+      "image": "1019.png",
+      "gold": "I don't discriminate against them, nor do I fear them.",
+      "pred": "It's natural. I understand that homosexuals want to find love."
+    },
+    {
+      "index": 1021,
+      "image": "1021.png",
+      "gold": "Not worried at all",
+      "pred": "Not very worried"
+    },
+    {
+      "index": 1022,
+      "image": "1022.png",
+      "gold": "light blue",
+      "pred": "Blue"
+    },
+    {
+      "index": 1024,
+      "image": "1024.png",
+      "gold": "Preterm birth complications",
+      "pred": "Intrapartum-related events"
+    },
+    {
+      "index": 1025,
+      "image": "1025.png",
+      "gold": "12",
+      "pred": "14"
+    },
+    {
+      "index": 1035,
+      "image": "1035.png",
+      "gold": "306",
+      "pred": "207"
+    },
+    {
+      "index": 1040,
+      "image": "1040.png",
+      "gold": "100",
+      "pred": "80"
+    },
+    {
+      "index": 1042,
+      "image": "1042.png",
+      "gold": "light blue",
+      "pred": "Blue"
+    },
+    {
+      "index": 1044,
+      "image": "1044.png",
+      "gold": "Year",
+      "pred": "Academic year"
+    },
+    {
+      "index": 1045,
+      "image": "1045.png",
+      "gold": "7",
+      "pred": "3"
+    },
+    {
+      "index": 1049,
+      "image": "1049.png",
+      "gold": "0.05",
+      "pred": "0"
+    },
+    {
+      "index": 1052,
+      "image": "1052.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 1054,
+      "image": "1054.png",
+      "gold": "Navy blue",
+      "pred": "Blue"
+    },
+    {
+      "index": 1055,
+      "image": "1055.png",
+      "gold": "110",
+      "pred": "79"
+    },
+    {
+      "index": 1057,
+      "image": "1057.png",
+      "gold": "11",
+      "pred": "42"
+    },
+    {
+      "index": 1060,
+      "image": "1060.png",
+      "gold": "11",
+      "pred": "10"
+    },
+    {
+      "index": 1062,
+      "image": "1062.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 1065,
+      "image": "1065.png",
+      "gold": "98",
+      "pred": "12"
+    },
+    {
+      "index": 1066,
+      "image": "1066.png",
+      "gold": "Girls grade 10",
+      "pred": "Grade 10"
+    },
+    {
+      "index": 1067,
+      "image": "1067.png",
+      "gold": "30.33",
+      "pred": "27.67"
+    },
+    {
+      "index": 1069,
+      "image": "1069.png",
+      "gold": "4",
+      "pred": "8"
+    },
+    {
+      "index": 1071,
+      "image": "1071.png",
+      "gold": "Public institutions",
+      "pred": "Private for-profit institution"
+    },
+    {
+      "index": 1077,
+      "image": "1077.png",
+      "gold": "46",
+      "pred": "53"
+    },
+    {
+      "index": 1083,
+      "image": "1083.png",
+      "gold": "5.546",
+      "pred": "0.177455052"
+    },
+    {
+      "index": 1084,
+      "image": "1084.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 1089,
+      "image": "1089.png",
+      "gold": "5564",
+      "pred": "4333.67"
+    },
+    {
+      "index": 1090,
+      "image": "1090.png",
+      "gold": "2021",
+      "pred": "2021*"
+    },
+    {
+      "index": 1093,
+      "image": "1093.png",
+      "gold": "7",
+      "pred": "5"
+    },
+    {
+      "index": 1103,
+      "image": "1103.png",
+      "gold": "53.23",
+      "pred": "48.86"
+    },
+    {
+      "index": 1105,
+      "image": "1105.png",
+      "gold": "25",
+      "pred": "15%"
+    },
+    {
+      "index": 1109,
+      "image": "1109.png",
+      "gold": "7",
+      "pred": "6.5"
+    },
+    {
+      "index": 1112,
+      "image": "1112.png",
+      "gold": "[2015, 2016]",
+      "pred": "2018"
+    },
+    {
+      "index": 1114,
+      "image": "1114.png",
+      "gold": "Rabbit**",
+      "pred": "Rabbit"
+    },
+    {
+      "index": 1115,
+      "image": "1115.png",
+      "gold": "250",
+      "pred": "450"
+    },
+    {
+      "index": 1119,
+      "image": "1119.png",
+      "gold": "25",
+      "pred": "33"
+    },
+    {
+      "index": 1121,
+      "image": "1121.png",
+      "gold": "Opportunity to get ahead through hard work",
+      "pred": "Overall quality of life"
+    },
+    {
+      "index": 1122,
+      "image": "1122.png",
+      "gold": "Russia",
+      "pred": "Business owners, Politicians"
+    },
+    {
+      "index": 1127,
+      "image": "1127.png",
+      "gold": "72",
+      "pred": "78"
+    },
+    {
+      "index": 1129,
+      "image": "1129.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 1133,
+      "image": "1133.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 1135,
+      "image": "1135.png",
+      "gold": "51.1",
+      "pred": "43.1"
+    },
+    {
+      "index": 1141,
+      "image": "1141.png",
+      "gold": "70.8",
+      "pred": "77.6"
+    },
+    {
+      "index": 1145,
+      "image": "1145.png",
+      "gold": "585",
+      "pred": "122"
+    },
+    {
+      "index": 1146,
+      "image": "1146.png",
+      "gold": "Navy blue",
+      "pred": "Dark blue"
+    },
+    {
+      "index": 1149,
+      "image": "1149.png",
+      "gold": "42",
+      "pred": "49"
+    },
+    {
+      "index": 1151,
+      "image": "1151.png",
+      "gold": "18",
+      "pred": "7"
+    },
+    {
+      "index": 1157,
+      "image": "1157.png",
+      "gold": "74.6",
+      "pred": "6.87"
+    },
+    {
+      "index": 1164,
+      "image": "1164.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 1167,
+      "image": "1167.png",
+      "gold": "187863.67",
+      "pred": "169241"
+    },
+    {
+      "index": 1170,
+      "image": "1170.png",
+      "gold": "-30.03",
+      "pred": "-0.0071"
+    },
+    {
+      "index": 1172,
+      "image": "1172.png",
+      "gold": "1343.75",
+      "pred": "1222.07"
+    },
+    {
+      "index": 1175,
+      "image": "1175.png",
+      "gold": "35",
+      "pred": "25"
+    },
+    {
+      "index": 1177,
+      "image": "1177.png",
+      "gold": "Tablets",
+      "pred": "Laptop"
+    },
+    {
+      "index": 1179,
+      "image": "1179.png",
+      "gold": "[Casual consumers**, Non-consumers]",
+      "pred": "Casual consumers**"
+    },
+    {
+      "index": 1192,
+      "image": "1192.png",
+      "gold": "Facebook users",
+      "pred": "The provided chart does not contain information about retailers or their social media presence in the United Kingdom. It shows survey data on consumer trust levels toward retailers based on user categories (Online shoppers, Facebook users, Twitter users), but it does not identify specific retailers or rank them by social media presence. Therefore, the question cannot be answered from this chart."
+    },
+    {
+      "index": 1193,
+      "image": "1193.png",
+      "gold": "Online shoppers",
+      "pred": "Twitter users"
+    },
+    {
+      "index": 1195,
+      "image": "1195.png",
+      "gold": "4.9",
+      "pred": "5.3"
+    },
+    {
+      "index": 1203,
+      "image": "1203.png",
+      "gold": "[42.47, 54.91]",
+      "pred": "In 2019, the age structure for the population was as follows:\n\n- **0–14 years**: 42.47%\n- **15–64 years**: 54.91%\n\nThese percentages represent the share of the total population in each age group for that year."
+    },
+    {
+      "index": 1209,
+      "image": "1209.png",
+      "gold": "5864",
+      "pred": "5564"
+    },
+    {
+      "index": 1215,
+      "image": "1215.png",
+      "gold": "2.7",
+      "pred": "1.8"
+    },
+    {
+      "index": 1217,
+      "image": "1217.png",
+      "gold": "29.33",
+      "pred": "31.2"
+    },
+    {
+      "index": 1221,
+      "image": "1221.png",
+      "gold": "5.2",
+      "pred": "5.9"
+    },
+    {
+      "index": 1234,
+      "image": "1234.png",
+      "gold": "Very concerned",
+      "pred": "Compatibility"
+    },
+    {
+      "index": 1255,
+      "image": "1255.png",
+      "gold": "23",
+      "pred": "28"
+    },
+    {
+      "index": 1258,
+      "image": "1258.png",
+      "gold": "80.2",
+      "pred": "72.3"
+    },
+    {
+      "index": 1262,
+      "image": "1262.png",
+      "gold": "32",
+      "pred": "17"
+    },
+    {
+      "index": 1271,
+      "image": "1271.png",
+      "gold": "Jimmy Fallon",
+      "pred": "Stephen Colbert"
+    },
+    {
+      "index": 1273,
+      "image": "1273.png",
+      "gold": "361",
+      "pred": "315"
+    },
+    {
+      "index": 1276,
+      "image": "1276.png",
+      "gold": "144",
+      "pred": "2097"
+    },
+    {
+      "index": 1278,
+      "image": "1278.png",
+      "gold": "2000",
+      "pred": "43576"
+    },
+    {
+      "index": 1286,
+      "image": "1286.png",
+      "gold": "Tizen",
+      "pred": "WebOS"
+    },
+    {
+      "index": 1299,
+      "image": "1299.png",
+      "gold": "France",
+      "pred": "United States"
+    },
+    {
+      "index": 1360,
+      "image": "1360.png",
+      "gold": "25",
+      "pred": "27"
+    },
+    {
+      "index": 1390,
+      "image": "1390.png",
+      "gold": "Newport",
+      "pred": "Marlboro"
+    },
+    {
+      "index": 1448,
+      "image": "1448.png",
+      "gold": "3.4",
+      "pred": "2.31"
+    },
+    {
+      "index": 1463,
+      "image": "1463.png",
+      "gold": "Paraguay",
+      "pred": "Argentina"
+    },
+    {
+      "index": 1485,
+      "image": "1485.png",
+      "gold": "5",
+      "pred": "10"
+    },
+    {
+      "index": 1519,
+      "image": "1519.png",
+      "gold": "40.03",
+      "pred": "49.18"
+    },
+    {
+      "index": 1533,
+      "image": "1533.png",
+      "gold": "Kyiv",
+      "pred": "Vinnytsia Oblast"
+    },
+    {
+      "index": 1601,
+      "image": "1601.png",
+      "gold": "2014",
+      "pred": "2012 to Jan '17"
+    },
+    {
+      "index": 1606,
+      "image": "1606.png",
+      "gold": "44.3",
+      "pred": "24.9"
+    },
+    {
+      "index": 1628,
+      "image": "1628.png",
+      "gold": "54",
+      "pred": "40"
+    },
+    {
+      "index": 1630,
+      "image": "1630.png",
+      "gold": "Catalonia",
+      "pred": "Melilla"
+    },
+    {
+      "index": 1671,
+      "image": "1671.png",
+      "gold": "May 2020",
+      "pred": "May 2019"
+    },
+    {
+      "index": 1674,
+      "image": "1674.png",
+      "gold": "Syria",
+      "pred": "Israel"
+    },
+    {
+      "index": 1680,
+      "image": "1680.png",
+      "gold": "2006",
+      "pred": "2006 to 2020"
+    },
+    {
+      "index": 1682,
+      "image": "1682.png",
+      "gold": "17",
+      "pred": "540"
+    },
+    {
+      "index": 1686,
+      "image": "1686.png",
+      "gold": "2015/16",
+      "pred": "2011/12"
+    },
+    {
+      "index": 1697,
+      "image": "1697.png",
+      "gold": "Germany",
+      "pred": "United States"
+    },
+    {
+      "index": 1713,
+      "image": "1713.png",
+      "gold": "76",
+      "pred": "35.6"
+    },
+    {
+      "index": 1714,
+      "image": "1714.png",
+      "gold": "8",
+      "pred": "2.4"
+    },
+    {
+      "index": 1723,
+      "image": "1723.png",
+      "gold": "95",
+      "pred": "5"
+    },
+    {
+      "index": 1725,
+      "image": "1725.png",
+      "gold": "336.73",
+      "pred": "237.9"
+    },
+    {
+      "index": 1734,
+      "image": "1734.png",
+      "gold": "8092208",
+      "pred": "6000000"
+    },
+    {
+      "index": 1735,
+      "image": "1735.png",
+      "gold": "Amazon",
+      "pred": "Netflix"
+    },
+    {
+      "index": 1750,
+      "image": "1750.png",
+      "gold": "5857",
+      "pred": "5014"
+    },
+    {
+      "index": 1751,
+      "image": "1751.png",
+      "gold": "5857",
+      "pred": "6174"
+    },
+    {
+      "index": 1755,
+      "image": "1755.png",
+      "gold": "2.4",
+      "pred": "5"
+    },
+    {
+      "index": 1759,
+      "image": "1759.png",
+      "gold": "Eden Hazard",
+      "pred": "Romelu Lukaku"
+    },
+    {
+      "index": 1784,
+      "image": "1784.png",
+      "gold": "48.8",
+      "pred": "40.3"
+    },
+    {
+      "index": 1785,
+      "image": "1785.png",
+      "gold": "48.8",
+      "pred": "0.5"
+    },
+    {
+      "index": 1790,
+      "image": "1790.png",
+      "gold": "77658792",
+      "pred": "The provided bar chart does not contain information about super-PACs spending on TV-attack ads as of November 20. The chart shows total expenditures for presidential candidates in a U.S. election, with Barack Obama spending $150,105,400 and Mitt Romney spending $77,658,792, among others. There is no mention of super-PACs or TV-attack ads specifically."
+    },
+    {
+      "index": 1797,
+      "image": "1797.png",
+      "gold": "9.9",
+      "pred": "14.3"
+    },
+    {
+      "index": 1815,
+      "image": "1815.png",
+      "gold": "2019/20",
+      "pred": "2017/18"
+    },
+    {
+      "index": 1817,
+      "image": "1817.png",
+      "gold": "109",
+      "pred": "142"
+    },
+    {
+      "index": 1853,
+      "image": "1853.png",
+      "gold": "GQ",
+      "pred": "CQ"
+    },
+    {
+      "index": 1864,
+      "image": "1864.png",
+      "gold": "113",
+      "pred": "100"
+    },
+    {
+      "index": 1870,
+      "image": "1870.png",
+      "gold": "Scotland",
+      "pred": "United Kingdom"
+    },
+    {
+      "index": 1878,
+      "image": "1878.png",
+      "gold": "July 2014",
+      "pred": "July 2012"
+    },
+    {
+      "index": 1908,
+      "image": "1908.png",
+      "gold": "France",
+      "pred": "Montenegro"
+    },
+    {
+      "index": 1913,
+      "image": "1913.png",
+      "gold": "207.1",
+      "pred": "177.5"
+    },
+    {
+      "index": 1914,
+      "image": "1914.png",
+      "gold": "2011",
+      "pred": "2016*"
+    },
+    {
+      "index": 1942,
+      "image": "1942.png",
+      "gold": "6.3",
+      "pred": "106.3"
+    },
+    {
+      "index": 1963,
+      "image": "1963.png",
+      "gold": "13",
+      "pred": "8"
+    },
+    {
+      "index": 1968,
+      "image": "1968.png",
+      "gold": "2582603",
+      "pred": "2737000"
+    },
+    {
+      "index": 1986,
+      "image": "1986.png",
+      "gold": "0.1",
+      "pred": "0.2"
+    },
+    {
+      "index": 2019,
+      "image": "2019.png",
+      "gold": "31",
+      "pred": "122"
+    },
+    {
+      "index": 2053,
+      "image": "2053.png",
+      "gold": "233851",
+      "pred": "42182"
+    },
+    {
+      "index": 2056,
+      "image": "2056.png",
+      "gold": "Saudi Arabia",
+      "pred": "Iran"
+    },
+    {
+      "index": 2065,
+      "image": "2065.png",
+      "gold": "1.1",
+      "pred": "1.51"
+    },
+    {
+      "index": 2093,
+      "image": "2093.png",
+      "gold": "1.6",
+      "pred": "1.44"
+    },
+    {
+      "index": 2171,
+      "image": "2171.png",
+      "gold": "30",
+      "pred": "25"
+    },
+    {
+      "index": 2185,
+      "image": "2185.png",
+      "gold": "8544",
+      "pred": "38884"
+    },
+    {
+      "index": 2215,
+      "image": "2215.png",
+      "gold": "1273.27",
+      "pred": "21.9"
+    },
+    {
+      "index": 2219,
+      "image": "2219.png",
+      "gold": "16.9",
+      "pred": "17.8"
+    },
+    {
+      "index": 2290,
+      "image": "2290.png",
+      "gold": "1.6",
+      "pred": "2.4"
+    },
+    {
+      "index": 2338,
+      "image": "2338.png",
+      "gold": "27935",
+      "pred": "37827"
+    },
+    {
+      "index": 2353,
+      "image": "2353.png",
+      "gold": "944",
+      "pred": "1000"
+    },
+    {
+      "index": 2358,
+      "image": "2358.png",
+      "gold": "144.8",
+      "pred": "620.2"
+    },
+    {
+      "index": 2381,
+      "image": "2381.png",
+      "gold": "Hindus",
+      "pred": "Muslim"
+    },
+    {
+      "index": 2477,
+      "image": "2477.png",
+      "gold": "75.19",
+      "pred": "284.94"
+    },
+    {
+      "index": 2480,
+      "image": "2480.png",
+      "gold": "3.2",
+      "pred": "2.5"
+    },
+    {
+      "index": 2498,
+      "image": "2498.png",
+      "gold": "Autonomous Province of Bolzano",
+      "pred": "Lombardy"
+    }
+  ]
+}

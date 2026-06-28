@@ -1,10 +1,7 @@
 from torch.utils.data import Dataset
 from datasets import load_dataset
 
-# HuggingFaceM4/ChartQA ships train/val/test with columns:
-#   image, query (question), label (answer, stored as a single-element list),
-#   human_or_machine.
-DATASET_NAME = "HuggingFaceM4/ChartQA"
+from chartqa.constants import DATASET_NAME
 
 
 class ChartQADataset(Dataset):

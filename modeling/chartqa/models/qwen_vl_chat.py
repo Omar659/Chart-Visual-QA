@@ -11,6 +11,7 @@ class QwenVLChat:
         dtype: str = "auto",
         device_map: str = "auto",
         attn_implementation: str = "sdpa",
+        adapter_path: str | None = None,
     ):
         # Load the model on the available device(s) (device_map="auto" uses the GPU).
         self.model = Qwen3VLForConditionalGeneration.from_pretrained(
@@ -19,18 +20,28 @@ class QwenVLChat:
             device_map=device_map,
             attn_implementation=attn_implementation,
         )
-        self.processor = AutoProcessor.from_pretrained(model_name)
+        # Optionally load a LoRA adapter checkpoint on top of the base model.
+        if adapter_path:
+            from peft import PeftModel
 
-    def chat(
-        self,
+            self.model = PeftModel.from_pretrained(self.model, adapter_path)
+            # Fold the LoRA weights into the base model for faster inference.
+            self.model = self.model.merge_and_unload()
+        # Prefer the checkpoint's processor (in case it added tokens) and fall
+        # back to the base model's when running without an adapter.
+        self.processor = AutoProcessor.from_pretrained(adapter_path or model_name)
+
+    @staticmethod
+    def build_messages(
         image,
         text: str,
         system_prompt: str | None = None,
-        max_new_tokens: int = 128,
-    ) -> str:
-        """Send an image + text (with optional system prompt) and return the reply.
+        answer: str | None = None,
+    ) -> list:
+        """Build the chat `messages` structure for the Qwen processor.
 
-        `image` accepts a URL, a local file path, or a PIL image.
+        Shared by inference (`chat`) and training. Pass `answer` to append the
+        assistant turn (used to build supervised training targets).
         """
         messages = []
         if system_prompt:
@@ -46,6 +57,24 @@ class QwenVLChat:
                 ],
             }
         )
+        if answer is not None:
+            messages.append(
+                {"role": "assistant", "content": [{"type": "text", "text": answer}]}
+            )
+        return messages
+
+    def chat(
+        self,
+        image,
+        text: str,
+        system_prompt: str | None = None,
+        max_new_tokens: int = 128,
+    ) -> str:
+        """Send an image + text (with optional system prompt) and return the reply.
+
+        `image` accepts a URL, a local file path, or a PIL image.
+        """
+        messages = self.build_messages(image, text, system_prompt)
 
         # Preparation for inference
         inputs = self.processor.apply_chat_template(
@@ -73,6 +102,8 @@ class QwenVLChat:
 
 if __name__ == "__main__":
     model = QwenVLChat()
+    # print(model.model)
+    # exit()
     counter_correct = 0
     counter_total = 0
     for i in load_dataset("HuggingFaceM4/ChartQA")["test"]:
