@@ -23,6 +23,7 @@ when its model/service is missing. See docs/PLAN.md and docs/ARCHITECTURE.md.
 from __future__ import annotations
 
 import argparse
+import glob
 import os
 import shutil
 import signal
@@ -79,10 +80,10 @@ def _find_python_312() -> list[str]:
     return [sys.executable]
 
 
-def _run(cmd: list[str], cwd: Path) -> None:
+def _run(cmd: list[str], cwd: Path, env: dict | None = None) -> None:
     """Run a setup command synchronously, streaming its output; raise on failure."""
     print(f"[setup] $ {' '.join(cmd)}  (cwd={cwd.name})", flush=True)
-    subprocess.run(cmd, cwd=str(cwd), check=True)
+    subprocess.run(cmd, cwd=str(cwd), check=True, env=env)
 
 
 def ensure_backend_deps() -> None:
@@ -100,8 +101,8 @@ def ensure_frontend_deps() -> None:
     """Run `npm install` if frontend/node_modules is missing."""
     if not (FRONTEND_DIR / "node_modules").exists():
         print("[setup] frontend node_modules missing; running npm install...", flush=True)
-        npm = "npm.cmd" if IS_WINDOWS else "npm"
-        _run([npm, "install"], FRONTEND_DIR)
+        npm, env = _frontend_launch()
+        _run([npm, "install"], FRONTEND_DIR, env=env)
         print("[setup] frontend ready.", flush=True)
 
 
@@ -199,6 +200,57 @@ def _popen(cmd: list[str], cwd: Path, env: dict[str, str]) -> subprocess.Popen:
     return subprocess.Popen(cmd, **kwargs)
 
 
+def _modern_node_bin() -> str | None:
+    """Dir of a Node >= 20 to prepend to PATH for the frontend (Vite needs >= 20).
+
+    Returns None when the Node already on PATH is new enough. Otherwise scans
+    common local installs (~/.local/node*, nvm, fnm) so an old system Node does
+    not break `npm` / Vite.
+    """
+    def major(node: str) -> int:
+        try:
+            out = subprocess.run([node, "--version"], capture_output=True, text=True, timeout=5)
+            return int(out.stdout.strip().lstrip("v").split(".")[0])
+        except (OSError, ValueError, subprocess.SubprocessError):
+            return -1
+
+    on_path = shutil.which("node")
+    if on_path and major(on_path) >= 20:
+        return None  # current Node is fine
+
+    home = Path.home()
+    patterns = [
+        ".local/node*/bin/node",
+        ".nvm/versions/node/*/bin/node",
+        ".local/share/fnm/node-versions/*/installation/bin/node",
+        ".fnm/node-versions/*/installation/bin/node",
+    ]
+    best, best_major = None, 19
+    for pat in patterns:
+        for cand in glob.glob(str(home / pat)):
+            m = major(cand)
+            if m > best_major:
+                best, best_major = cand, m
+    return str(Path(best).parent) if best else None
+
+
+def _frontend_launch(extra_env: dict | None = None) -> tuple[str, dict]:
+    """(npm executable, env) for frontend commands, using a modern Node if the
+    system Node is too old for Vite."""
+    env = os.environ.copy()
+    npm = "npm.cmd" if IS_WINDOWS else "npm"
+    node_bin = _modern_node_bin()
+    if node_bin:
+        env["PATH"] = node_bin + os.pathsep + env.get("PATH", "")
+        cand = Path(node_bin) / npm
+        if cand.exists():
+            npm = str(cand)
+        print(f"[setup] frontend: using Node from {node_bin} (system Node is too old for Vite).", flush=True)
+    if extra_env:
+        env.update(extra_env)
+    return npm, env
+
+
 def start_backend(port: int) -> subprocess.Popen:
     env = os.environ.copy()
     env["PORT"] = str(port)
@@ -208,9 +260,7 @@ def start_backend(port: int) -> subprocess.Popen:
 
 
 def start_frontend(port: int, backend_port: int) -> subprocess.Popen:
-    env = os.environ.copy()
-    env["VITE_BACKEND_PORT"] = str(backend_port)
-    npm = "npm.cmd" if IS_WINDOWS else "npm"
+    npm, env = _frontend_launch({"VITE_BACKEND_PORT": str(backend_port)})
     cmd = [npm, "run", "dev", "--", "--port", str(port)]
     print(f"[orchestrator] starting frontend on :{port} -> {cmd}", flush=True)
     return _popen(cmd, FRONTEND_DIR, env)
