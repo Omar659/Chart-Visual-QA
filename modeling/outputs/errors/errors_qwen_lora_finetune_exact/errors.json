@@ -1,0 +1,3460 @@
+{
+  "model": "qwen",
+  "checkpoint": "./checkpoints/qwen3vl-lora-final2",
+  "split": "test",
+  "metric": "exact",
+  "n": 2500,
+  "num_errors": 575,
+  "errors": [
+    {
+      "index": 0,
+      "image": "0.png",
+      "gold": "14",
+      "pred": "15"
+    },
+    {
+      "index": 6,
+      "image": "6.png",
+      "gold": "62",
+      "pred": "0.62"
+    },
+    {
+      "index": 7,
+      "image": "7.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 9,
+      "image": "9.png",
+      "gold": "0.03",
+      "pred": "3"
+    },
+    {
+      "index": 13,
+      "image": "13.png",
+      "gold": "21.6",
+      "pred": "21.7"
+    },
+    {
+      "index": 17,
+      "image": "17.png",
+      "gold": "2011",
+      "pred": "2014"
+    },
+    {
+      "index": 19,
+      "image": "19.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 20,
+      "image": "20.png",
+      "gold": "green line",
+      "pred": "Child Labor (Boys, World, 2000-2012) (ILO)"
+    },
+    {
+      "index": 21,
+      "image": "21.png",
+      "gold": "2008",
+      "pred": "2004"
+    },
+    {
+      "index": 23,
+      "image": "23.png",
+      "gold": "1.216666667",
+      "pred": "1.375"
+    },
+    {
+      "index": 28,
+      "image": "28.png",
+      "gold": "0.6",
+      "pred": "23"
+    },
+    {
+      "index": 29,
+      "image": "29.png",
+      "gold": "61",
+      "pred": "50"
+    },
+    {
+      "index": 31,
+      "image": "31.png",
+      "gold": "5",
+      "pred": "6"
+    },
+    {
+      "index": 32,
+      "image": "32.png",
+      "gold": "24",
+      "pred": "21"
+    },
+    {
+      "index": 45,
+      "image": "45.png",
+      "gold": "28.6",
+      "pred": "28.7"
+    },
+    {
+      "index": 49,
+      "image": "49.png",
+      "gold": "2.13",
+      "pred": "2.133333333"
+    },
+    {
+      "index": 52,
+      "image": "52.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 54,
+      "image": "54.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 55,
+      "image": "55.png",
+      "gold": "0.33333333",
+      "pred": "0.042361111"
+    },
+    {
+      "index": 56,
+      "image": "56.png",
+      "gold": "Democrat (scores 60 to 100)",
+      "pred": "Republican"
+    },
+    {
+      "index": 57,
+      "image": "57.png",
+      "gold": "0.01",
+      "pred": "99"
+    },
+    {
+      "index": 61,
+      "image": "61.png",
+      "gold": "87.5",
+      "pred": "87"
+    },
+    {
+      "index": 63,
+      "image": "63.png",
+      "gold": "50.25",
+      "pred": "53.75"
+    },
+    {
+      "index": 65,
+      "image": "65.png",
+      "gold": "0.633333333",
+      "pred": "0.25"
+    },
+    {
+      "index": 71,
+      "image": "71.png",
+      "gold": "51.04",
+      "pred": "0.5105"
+    },
+    {
+      "index": 73,
+      "image": "73.png",
+      "gold": "21.5",
+      "pred": "19.5"
+    },
+    {
+      "index": 74,
+      "image": "74.png",
+      "gold": "3.0238",
+      "pred": "302.38"
+    },
+    {
+      "index": 75,
+      "image": "75.png",
+      "gold": "0.1922",
+      "pred": "20.14"
+    },
+    {
+      "index": 77,
+      "image": "77.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 81,
+      "image": "81.png",
+      "gold": "1.051388889",
+      "pred": "1.75"
+    },
+    {
+      "index": 86,
+      "image": "86.png",
+      "gold": "77",
+      "pred": "77, 77"
+    },
+    {
+      "index": 89,
+      "image": "89.png",
+      "gold": "1.684722222",
+      "pred": "1.53846"
+    },
+    {
+      "index": 91,
+      "image": "91.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 92,
+      "image": "92.png",
+      "gold": "3",
+      "pred": "8"
+    },
+    {
+      "index": 102,
+      "image": "102.png",
+      "gold": "0.08",
+      "pred": "20"
+    },
+    {
+      "index": 103,
+      "image": "103.png",
+      "gold": "65",
+      "pred": "55"
+    },
+    {
+      "index": 105,
+      "image": "105.png",
+      "gold": "2",
+      "pred": "8"
+    },
+    {
+      "index": 107,
+      "image": "107.png",
+      "gold": "1.179861111",
+      "pred": "1.47368"
+    },
+    {
+      "index": 109,
+      "image": "109.png",
+      "gold": "37",
+      "pred": "27"
+    },
+    {
+      "index": 110,
+      "image": "110.png",
+      "gold": "Gray",
+      "pred": "gray"
+    },
+    {
+      "index": 111,
+      "image": "111.png",
+      "gold": "8",
+      "pred": "57"
+    },
+    {
+      "index": 112,
+      "image": "112.png",
+      "gold": "1.4",
+      "pred": "1.4 billion"
+    },
+    {
+      "index": 117,
+      "image": "117.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 119,
+      "image": "119.png",
+      "gold": "21",
+      "pred": "66.5"
+    },
+    {
+      "index": 120,
+      "image": "120.png",
+      "gold": "0.3",
+      "pred": "19"
+    },
+    {
+      "index": 121,
+      "image": "121.png",
+      "gold": "0.07",
+      "pred": "7"
+    },
+    {
+      "index": 129,
+      "image": "129.png",
+      "gold": "1",
+      "pred": "18"
+    },
+    {
+      "index": 130,
+      "image": "130.png",
+      "gold": "30",
+      "pred": "0.3"
+    },
+    {
+      "index": 131,
+      "image": "131.png",
+      "gold": "gray",
+      "pred": "Green"
+    },
+    {
+      "index": 135,
+      "image": "135.png",
+      "gold": "1.058333333",
+      "pred": "0.006666667"
+    },
+    {
+      "index": 139,
+      "image": "139.png",
+      "gold": "2.125694444",
+      "pred": "0.583333333"
+    },
+    {
+      "index": 143,
+      "image": "143.png",
+      "gold": "2577420",
+      "pred": "13824"
+    },
+    {
+      "index": 145,
+      "image": "145.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 147,
+      "image": "147.png",
+      "gold": "62.43",
+      "pred": "57.6"
+    },
+    {
+      "index": 149,
+      "image": "149.png",
+      "gold": "0.9375",
+      "pred": "7.1"
+    },
+    {
+      "index": 152,
+      "image": "152.png",
+      "gold": "2014",
+      "pred": "1969"
+    },
+    {
+      "index": 154,
+      "image": "154.png",
+      "gold": "orange",
+      "pred": "Orange"
+    },
+    {
+      "index": 155,
+      "image": "155.png",
+      "gold": "57",
+      "pred": "61"
+    },
+    {
+      "index": 157,
+      "image": "157.png",
+      "gold": "2010",
+      "pred": "2013"
+    },
+    {
+      "index": 159,
+      "image": "159.png",
+      "gold": "3",
+      "pred": "4"
+    },
+    {
+      "index": 160,
+      "image": "160.png",
+      "gold": "March 2011",
+      "pred": "2011"
+    },
+    {
+      "index": 163,
+      "image": "163.png",
+      "gold": "2210",
+      "pred": "1938"
+    },
+    {
+      "index": 164,
+      "image": "164.png",
+      "gold": "1",
+      "pred": "26"
+    },
+    {
+      "index": 170,
+      "image": "170.png",
+      "gold": "Don't Know",
+      "pred": "Don't know"
+    },
+    {
+      "index": 174,
+      "image": "174.png",
+      "gold": "41",
+      "pred": "0.41"
+    },
+    {
+      "index": 177,
+      "image": "177.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 179,
+      "image": "179.png",
+      "gold": "53",
+      "pred": "0.53"
+    },
+    {
+      "index": 183,
+      "image": "183.png",
+      "gold": "75",
+      "pred": "40"
+    },
+    {
+      "index": 185,
+      "image": "185.png",
+      "gold": "3.9",
+      "pred": "3.85"
+    },
+    {
+      "index": 195,
+      "image": "195.png",
+      "gold": "15",
+      "pred": "11.6"
+    },
+    {
+      "index": 198,
+      "image": "198.png",
+      "gold": "5.32",
+      "pred": "Libya"
+    },
+    {
+      "index": 199,
+      "image": "199.png",
+      "gold": "5.95",
+      "pred": "11.43"
+    },
+    {
+      "index": 200,
+      "image": "200.png",
+      "gold": "Finland",
+      "pred": "Teal"
+    },
+    {
+      "index": 209,
+      "image": "209.png",
+      "gold": "203",
+      "pred": "122"
+    },
+    {
+      "index": 216,
+      "image": "216.png",
+      "gold": "1931",
+      "pred": "1.93"
+    },
+    {
+      "index": 222,
+      "image": "222.png",
+      "gold": "16",
+      "pred": "15"
+    },
+    {
+      "index": 231,
+      "image": "231.png",
+      "gold": "0.475",
+      "pred": "0.455"
+    },
+    {
+      "index": 237,
+      "image": "237.png",
+      "gold": "0.2",
+      "pred": "0.15"
+    },
+    {
+      "index": 243,
+      "image": "243.png",
+      "gold": "252.65",
+      "pred": "5.494"
+    },
+    {
+      "index": 248,
+      "image": "248.png",
+      "gold": "Teal Blue",
+      "pred": "Green"
+    },
+    {
+      "index": 251,
+      "image": "251.png",
+      "gold": "1.346",
+      "pred": "1.3467"
+    },
+    {
+      "index": 253,
+      "image": "253.png",
+      "gold": "6.2",
+      "pred": "2.7"
+    },
+    {
+      "index": 259,
+      "image": "259.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 263,
+      "image": "263.png",
+      "gold": "2",
+      "pred": "3"
+    },
+    {
+      "index": 275,
+      "image": "275.png",
+      "gold": "742.07",
+      "pred": "Human capital"
+    },
+    {
+      "index": 298,
+      "image": "298.png",
+      "gold": "95",
+      "pred": "0.95"
+    },
+    {
+      "index": 305,
+      "image": "305.png",
+      "gold": "82.2",
+      "pred": "1917.8"
+    },
+    {
+      "index": 308,
+      "image": "308.png",
+      "gold": "11",
+      "pred": "9"
+    },
+    {
+      "index": 313,
+      "image": "313.png",
+      "gold": "1.905805459",
+      "pred": "1.910144244"
+    },
+    {
+      "index": 314,
+      "image": "314.png",
+      "gold": "[Italy , 22]",
+      "pred": "[Italy, 22]"
+    },
+    {
+      "index": 315,
+      "image": "315.png",
+      "gold": "2.54",
+      "pred": "2.545454545"
+    },
+    {
+      "index": 316,
+      "image": "316.png",
+      "gold": "27.22",
+      "pred": "27.34"
+    },
+    {
+      "index": 317,
+      "image": "317.png",
+      "gold": "389.82",
+      "pred": "0.264856"
+    },
+    {
+      "index": 318,
+      "image": "318.png",
+      "gold": "navy blue",
+      "pred": "Blue"
+    },
+    {
+      "index": 319,
+      "image": "319.png",
+      "gold": "0.08",
+      "pred": "0.02"
+    },
+    {
+      "index": 324,
+      "image": "324.png",
+      "gold": "9545.35",
+      "pred": "9546.35"
+    },
+    {
+      "index": 325,
+      "image": "325.png",
+      "gold": "14153.35",
+      "pred": "14515.35"
+    },
+    {
+      "index": 327,
+      "image": "327.png",
+      "gold": "47.68",
+      "pred": "45.68"
+    },
+    {
+      "index": 336,
+      "image": "336.png",
+      "gold": "brown",
+      "pred": "Dark Red"
+    },
+    {
+      "index": 337,
+      "image": "337.png",
+      "gold": "1.015645372",
+      "pred": "1.021235773"
+    },
+    {
+      "index": 338,
+      "image": "338.png",
+      "gold": "Pink",
+      "pred": "Dark pink"
+    },
+    {
+      "index": 343,
+      "image": "343.png",
+      "gold": "32.43",
+      "pred": "32.23"
+    },
+    {
+      "index": 348,
+      "image": "348.png",
+      "gold": "[2014, 2016]",
+      "pred": "[2015, 2016]"
+    },
+    {
+      "index": 357,
+      "image": "357.png",
+      "gold": "6",
+      "pred": "2"
+    },
+    {
+      "index": 361,
+      "image": "361.png",
+      "gold": "No",
+      "pred": "constant"
+    },
+    {
+      "index": 364,
+      "image": "364.png",
+      "gold": "Cameroon",
+      "pred": "Solomon Islands"
+    },
+    {
+      "index": 365,
+      "image": "365.png",
+      "gold": "Pink",
+      "pred": "Red"
+    },
+    {
+      "index": 369,
+      "image": "369.png",
+      "gold": "2",
+      "pred": "10"
+    },
+    {
+      "index": 373,
+      "image": "373.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 375,
+      "image": "375.png",
+      "gold": "6",
+      "pred": "2005, 2006, 2008, 2010, 2012, 2014"
+    },
+    {
+      "index": 376,
+      "image": "376.png",
+      "gold": "[2013, 2016]",
+      "pred": "2013"
+    },
+    {
+      "index": 382,
+      "image": "382.png",
+      "gold": "4",
+      "pred": "5"
+    },
+    {
+      "index": 383,
+      "image": "383.png",
+      "gold": "1",
+      "pred": "2"
+    },
+    {
+      "index": 385,
+      "image": "385.png",
+      "gold": "6",
+      "pred": "10"
+    },
+    {
+      "index": 389,
+      "image": "389.png",
+      "gold": "1.4",
+      "pred": "0.09"
+    },
+    {
+      "index": 394,
+      "image": "394.png",
+      "gold": "orange",
+      "pred": "Orange"
+    },
+    {
+      "index": 396,
+      "image": "396.png",
+      "gold": "orange",
+      "pred": "Red"
+    },
+    {
+      "index": 397,
+      "image": "397.png",
+      "gold": "1992",
+      "pred": "2008"
+    },
+    {
+      "index": 401,
+      "image": "401.png",
+      "gold": "[1965, 1970]",
+      "pred": "[1968, 1970]"
+    },
+    {
+      "index": 405,
+      "image": "405.png",
+      "gold": "75",
+      "pred": "10"
+    },
+    {
+      "index": 411,
+      "image": "411.png",
+      "gold": "16",
+      "pred": "5"
+    },
+    {
+      "index": 415,
+      "image": "415.png",
+      "gold": "2014",
+      "pred": "[2014, 2015]"
+    },
+    {
+      "index": 421,
+      "image": "421.png",
+      "gold": "1978",
+      "pred": "1980"
+    },
+    {
+      "index": 425,
+      "image": "425.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 439,
+      "image": "439.png",
+      "gold": "25",
+      "pred": "45"
+    },
+    {
+      "index": 442,
+      "image": "442.png",
+      "gold": "Blue",
+      "pred": "Green"
+    },
+    {
+      "index": 443,
+      "image": "443.png",
+      "gold": "98",
+      "pred": "97"
+    },
+    {
+      "index": 447,
+      "image": "447.png",
+      "gold": "1",
+      "pred": "0.222222222"
+    },
+    {
+      "index": 451,
+      "image": "451.png",
+      "gold": "62.6",
+      "pred": "61.6"
+    },
+    {
+      "index": 452,
+      "image": "452.png",
+      "gold": "15",
+      "pred": "48"
+    },
+    {
+      "index": 455,
+      "image": "455.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 459,
+      "image": "459.png",
+      "gold": "24",
+      "pred": "15"
+    },
+    {
+      "index": 463,
+      "image": "463.png",
+      "gold": "0.414285714",
+      "pred": "1.357142857"
+    },
+    {
+      "index": 464,
+      "image": "464.png",
+      "gold": "46",
+      "pred": "47"
+    },
+    {
+      "index": 467,
+      "image": "467.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 468,
+      "image": "468.png",
+      "gold": "Dark blue",
+      "pred": "Blue"
+    },
+    {
+      "index": 474,
+      "image": "474.png",
+      "gold": "45",
+      "pred": "62"
+    },
+    {
+      "index": 475,
+      "image": "475.png",
+      "gold": "1",
+      "pred": "3"
+    },
+    {
+      "index": 477,
+      "image": "477.png",
+      "gold": "50.6",
+      "pred": "44.6"
+    },
+    {
+      "index": 481,
+      "image": "481.png",
+      "gold": "3.6",
+      "pred": "4.4"
+    },
+    {
+      "index": 485,
+      "image": "485.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 486,
+      "image": "486.png",
+      "gold": "4",
+      "pred": "3"
+    },
+    {
+      "index": 495,
+      "image": "495.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 497,
+      "image": "497.png",
+      "gold": "1.111111111",
+      "pred": "1.111111"
+    },
+    {
+      "index": 498,
+      "image": "498.png",
+      "gold": "[Should not, Should]",
+      "pred": "Should not, Should"
+    },
+    {
+      "index": 499,
+      "image": "499.png",
+      "gold": "0.75",
+      "pred": "1.355555556"
+    },
+    {
+      "index": 500,
+      "image": "500.png",
+      "gold": "46",
+      "pred": "64"
+    },
+    {
+      "index": 501,
+      "image": "501.png",
+      "gold": "72",
+      "pred": "64"
+    },
+    {
+      "index": 502,
+      "image": "502.png",
+      "gold": "47",
+      "pred": "67"
+    },
+    {
+      "index": 503,
+      "image": "503.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 504,
+      "image": "504.png",
+      "gold": "Same",
+      "pred": "33"
+    },
+    {
+      "index": 505,
+      "image": "505.png",
+      "gold": "16",
+      "pred": "2"
+    },
+    {
+      "index": 507,
+      "image": "507.png",
+      "gold": "7",
+      "pred": "4"
+    },
+    {
+      "index": 509,
+      "image": "509.png",
+      "gold": "6",
+      "pred": "3"
+    },
+    {
+      "index": 511,
+      "image": "511.png",
+      "gold": "39.5",
+      "pred": "43"
+    },
+    {
+      "index": 521,
+      "image": "521.png",
+      "gold": "1",
+      "pred": "4"
+    },
+    {
+      "index": 527,
+      "image": "527.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 541,
+      "image": "541.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 545,
+      "image": "545.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 549,
+      "image": "549.png",
+      "gold": "25",
+      "pred": "0.0"
+    },
+    {
+      "index": 554,
+      "image": "554.png",
+      "gold": "Right decision",
+      "pred": "Wrong decision"
+    },
+    {
+      "index": 555,
+      "image": "555.png",
+      "gold": "64",
+      "pred": "56"
+    },
+    {
+      "index": 557,
+      "image": "557.png",
+      "gold": "Independent",
+      "pred": "Republican"
+    },
+    {
+      "index": 561,
+      "image": "561.png",
+      "gold": "1.06",
+      "pred": "0.02"
+    },
+    {
+      "index": 562,
+      "image": "562.png",
+      "gold": "Pink",
+      "pred": "pink"
+    },
+    {
+      "index": 569,
+      "image": "569.png",
+      "gold": "22.675",
+      "pred": "0.22675"
+    },
+    {
+      "index": 571,
+      "image": "571.png",
+      "gold": "9.1",
+      "pred": "9.05"
+    },
+    {
+      "index": 573,
+      "image": "573.png",
+      "gold": "0.99124",
+      "pred": "0.987152366"
+    },
+    {
+      "index": 574,
+      "image": "574.png",
+      "gold": "43",
+      "pred": "0.43"
+    },
+    {
+      "index": 577,
+      "image": "577.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 585,
+      "image": "585.png",
+      "gold": "1",
+      "pred": "0"
+    },
+    {
+      "index": 590,
+      "image": "590.png",
+      "gold": "[Lithuania, Saudi Arabia]",
+      "pred": "[Saudi Arabia, Lithuania]"
+    },
+    {
+      "index": 595,
+      "image": "595.png",
+      "gold": "1",
+      "pred": "0"
+    },
+    {
+      "index": 599,
+      "image": "599.png",
+      "gold": "1987",
+      "pred": "1988"
+    },
+    {
+      "index": 601,
+      "image": "601.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 604,
+      "image": "604.png",
+      "gold": "Facebook Messenger*",
+      "pred": "Facebook Messenger"
+    },
+    {
+      "index": 605,
+      "image": "605.png",
+      "gold": "3300",
+      "pred": "3325"
+    },
+    {
+      "index": 607,
+      "image": "607.png",
+      "gold": "14.33",
+      "pred": "14.83"
+    },
+    {
+      "index": 611,
+      "image": "611.png",
+      "gold": "39.31",
+      "pred": "30.25"
+    },
+    {
+      "index": 612,
+      "image": "612.png",
+      "gold": "[1.34, 1.37]",
+      "pred": "1.37"
+    },
+    {
+      "index": 613,
+      "image": "613.png",
+      "gold": "5.11",
+      "pred": "5.09"
+    },
+    {
+      "index": 619,
+      "image": "619.png",
+      "gold": "-1.6",
+      "pred": "1.6"
+    },
+    {
+      "index": 621,
+      "image": "621.png",
+      "gold": "7",
+      "pred": "6"
+    },
+    {
+      "index": 623,
+      "image": "623.png",
+      "gold": "0.549",
+      "pred": "0.55"
+    },
+    {
+      "index": 625,
+      "image": "625.png",
+      "gold": "3",
+      "pred": "4"
+    },
+    {
+      "index": 627,
+      "image": "627.png",
+      "gold": "73",
+      "pred": "66"
+    },
+    {
+      "index": 637,
+      "image": "637.png",
+      "gold": "828",
+      "pred": "628"
+    },
+    {
+      "index": 642,
+      "image": "642.png",
+      "gold": "increasing",
+      "pred": "increase"
+    },
+    {
+      "index": 643,
+      "image": "643.png",
+      "gold": "5",
+      "pred": "4"
+    },
+    {
+      "index": 645,
+      "image": "645.png",
+      "gold": "4",
+      "pred": "3"
+    },
+    {
+      "index": 649,
+      "image": "649.png",
+      "gold": "41",
+      "pred": "32"
+    },
+    {
+      "index": 651,
+      "image": "651.png",
+      "gold": "6",
+      "pred": "5"
+    },
+    {
+      "index": 653,
+      "image": "653.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 655,
+      "image": "655.png",
+      "gold": "2",
+      "pred": "3"
+    },
+    {
+      "index": 656,
+      "image": "656.png",
+      "gold": "3",
+      "pred": "1"
+    },
+    {
+      "index": 657,
+      "image": "657.png",
+      "gold": "70.4",
+      "pred": "65.6"
+    },
+    {
+      "index": 667,
+      "image": "667.png",
+      "gold": "19",
+      "pred": "17"
+    },
+    {
+      "index": 668,
+      "image": "668.png",
+      "gold": "2014",
+      "pred": "2021"
+    },
+    {
+      "index": 671,
+      "image": "671.png",
+      "gold": "44519",
+      "pred": "44619"
+    },
+    {
+      "index": 676,
+      "image": "676.png",
+      "gold": "2011",
+      "pred": "2021"
+    },
+    {
+      "index": 677,
+      "image": "677.png",
+      "gold": "7.76",
+      "pred": "7.5"
+    },
+    {
+      "index": 681,
+      "image": "681.png",
+      "gold": "17.3",
+      "pred": "17.33"
+    },
+    {
+      "index": 683,
+      "image": "683.png",
+      "gold": "39146",
+      "pred": "38883"
+    },
+    {
+      "index": 689,
+      "image": "689.png",
+      "gold": "2.2258",
+      "pred": "2.225806451612903"
+    },
+    {
+      "index": 692,
+      "image": "692.png",
+      "gold": "3",
+      "pred": "5"
+    },
+    {
+      "index": 693,
+      "image": "693.png",
+      "gold": "10878",
+      "pred": "11306"
+    },
+    {
+      "index": 699,
+      "image": "699.png",
+      "gold": "18.6",
+      "pred": "15.33"
+    },
+    {
+      "index": 704,
+      "image": "704.png",
+      "gold": "I do not know",
+      "pred": "Very poorly"
+    },
+    {
+      "index": 711,
+      "image": "711.png",
+      "gold": "18.3",
+      "pred": "30.3"
+    },
+    {
+      "index": 712,
+      "image": "712.png",
+      "gold": "2004",
+      "pred": "2003"
+    },
+    {
+      "index": 715,
+      "image": "715.png",
+      "gold": "5910",
+      "pred": "5510"
+    },
+    {
+      "index": 717,
+      "image": "717.png",
+      "gold": "2009",
+      "pred": "2008"
+    },
+    {
+      "index": 725,
+      "image": "725.png",
+      "gold": "67465",
+      "pred": "67461"
+    },
+    {
+      "index": 726,
+      "image": "726.png",
+      "gold": "83.29",
+      "pred": "85.29"
+    },
+    {
+      "index": 727,
+      "image": "727.png",
+      "gold": "2.87",
+      "pred": "4.12"
+    },
+    {
+      "index": 728,
+      "image": "728.png",
+      "gold": "NFL (2016)",
+      "pred": "NBA"
+    },
+    {
+      "index": 729,
+      "image": "729.png",
+      "gold": "43.44",
+      "pred": "86.88"
+    },
+    {
+      "index": 731,
+      "image": "731.png",
+      "gold": "0.19",
+      "pred": "0.18"
+    },
+    {
+      "index": 733,
+      "image": "733.png",
+      "gold": "33",
+      "pred": "29"
+    },
+    {
+      "index": 737,
+      "image": "737.png",
+      "gold": "542533",
+      "pred": "542535"
+    },
+    {
+      "index": 738,
+      "image": "738.png",
+      "gold": "[2003,2009]",
+      "pred": "2003, 2010"
+    },
+    {
+      "index": 739,
+      "image": "739.png",
+      "gold": "0",
+      "pred": "0.01"
+    },
+    {
+      "index": 741,
+      "image": "741.png",
+      "gold": "22738",
+      "pred": "22038"
+    },
+    {
+      "index": 743,
+      "image": "743.png",
+      "gold": "6411",
+      "pred": "6451"
+    },
+    {
+      "index": 745,
+      "image": "745.png",
+      "gold": "23.025",
+      "pred": "22.4"
+    },
+    {
+      "index": 749,
+      "image": "749.png",
+      "gold": "59.9",
+      "pred": "60.9"
+    },
+    {
+      "index": 753,
+      "image": "753.png",
+      "gold": "31.3",
+      "pred": "24"
+    },
+    {
+      "index": 757,
+      "image": "757.png",
+      "gold": "756.36",
+      "pred": "1070.04"
+    },
+    {
+      "index": 759,
+      "image": "759.png",
+      "gold": "100375.8",
+      "pred": "96465.8"
+    },
+    {
+      "index": 761,
+      "image": "761.png",
+      "gold": "2.93",
+      "pred": "2.87"
+    },
+    {
+      "index": 765,
+      "image": "765.png",
+      "gold": "45.28",
+      "pred": "43.53"
+    },
+    {
+      "index": 770,
+      "image": "770.png",
+      "gold": "7",
+      "pred": "6"
+    },
+    {
+      "index": 777,
+      "image": "777.png",
+      "gold": "7.23",
+      "pred": "8.23"
+    },
+    {
+      "index": 779,
+      "image": "779.png",
+      "gold": "[Germany,United States]",
+      "pred": "Germany vs. United States"
+    },
+    {
+      "index": 783,
+      "image": "783.png",
+      "gold": "11.4",
+      "pred": "42.7"
+    },
+    {
+      "index": 789,
+      "image": "789.png",
+      "gold": "60.31",
+      "pred": "59.31"
+    },
+    {
+      "index": 791,
+      "image": "791.png",
+      "gold": "12",
+      "pred": "11"
+    },
+    {
+      "index": 797,
+      "image": "797.png",
+      "gold": "3",
+      "pred": "7"
+    },
+    {
+      "index": 799,
+      "image": "799.png",
+      "gold": "93",
+      "pred": "92"
+    },
+    {
+      "index": 811,
+      "image": "811.png",
+      "gold": "200",
+      "pred": "523"
+    },
+    {
+      "index": 817,
+      "image": "817.png",
+      "gold": "2009",
+      "pred": "2008"
+    },
+    {
+      "index": 819,
+      "image": "819.png",
+      "gold": "3.38",
+      "pred": "4.6"
+    },
+    {
+      "index": 820,
+      "image": "820.png",
+      "gold": "2018",
+      "pred": "2020"
+    },
+    {
+      "index": 821,
+      "image": "821.png",
+      "gold": "2408.125",
+      "pred": "2365"
+    },
+    {
+      "index": 822,
+      "image": "822.png",
+      "gold": "red",
+      "pred": "Red"
+    },
+    {
+      "index": 823,
+      "image": "823.png",
+      "gold": "2.33",
+      "pred": "1"
+    },
+    {
+      "index": 829,
+      "image": "829.png",
+      "gold": "67.6",
+      "pred": "62.5"
+    },
+    {
+      "index": 833,
+      "image": "833.png",
+      "gold": "7",
+      "pred": "6"
+    },
+    {
+      "index": 837,
+      "image": "837.png",
+      "gold": "23",
+      "pred": "26"
+    },
+    {
+      "index": 841,
+      "image": "841.png",
+      "gold": "16.59",
+      "pred": "14.35"
+    },
+    {
+      "index": 844,
+      "image": "844.png",
+      "gold": "Just the right number",
+      "pred": "Too many"
+    },
+    {
+      "index": 845,
+      "image": "845.png",
+      "gold": "63",
+      "pred": "33"
+    },
+    {
+      "index": 847,
+      "image": "847.png",
+      "gold": "37",
+      "pred": "38"
+    },
+    {
+      "index": 849,
+      "image": "849.png",
+      "gold": "78",
+      "pred": "60"
+    },
+    {
+      "index": 853,
+      "image": "853.png",
+      "gold": "70",
+      "pred": "112.5"
+    },
+    {
+      "index": 857,
+      "image": "857.png",
+      "gold": "92.02",
+      "pred": "90"
+    },
+    {
+      "index": 859,
+      "image": "859.png",
+      "gold": "112249",
+      "pred": "29533"
+    },
+    {
+      "index": 861,
+      "image": "861.png",
+      "gold": "239.4",
+      "pred": "218.4"
+    },
+    {
+      "index": 863,
+      "image": "863.png",
+      "gold": "5.76",
+      "pred": "5.56"
+    },
+    {
+      "index": 864,
+      "image": "864.png",
+      "gold": "2019",
+      "pred": "2009"
+    },
+    {
+      "index": 865,
+      "image": "865.png",
+      "gold": "7.53",
+      "pred": "6.32"
+    },
+    {
+      "index": 869,
+      "image": "869.png",
+      "gold": "Data not reported",
+      "pred": "26-50% of retail price is tax"
+    },
+    {
+      "index": 871,
+      "image": "871.png",
+      "gold": "2.44",
+      "pred": "2.5"
+    },
+    {
+      "index": 873,
+      "image": "873.png",
+      "gold": "2005",
+      "pred": "2020"
+    },
+    {
+      "index": 875,
+      "image": "875.png",
+      "gold": "53",
+      "pred": "52"
+    },
+    {
+      "index": 876,
+      "image": "876.png",
+      "gold": "2019",
+      "pred": "2018"
+    },
+    {
+      "index": 879,
+      "image": "879.png",
+      "gold": "2014",
+      "pred": "2013"
+    },
+    {
+      "index": 885,
+      "image": "885.png",
+      "gold": "197.3",
+      "pred": "213.3"
+    },
+    {
+      "index": 889,
+      "image": "889.png",
+      "gold": "832.5",
+      "pred": "64.6"
+    },
+    {
+      "index": 890,
+      "image": "890.png",
+      "gold": "black",
+      "pred": "Black"
+    },
+    {
+      "index": 893,
+      "image": "893.png",
+      "gold": "505",
+      "pred": "1105"
+    },
+    {
+      "index": 901,
+      "image": "901.png",
+      "gold": "3594",
+      "pred": "4566"
+    },
+    {
+      "index": 903,
+      "image": "903.png",
+      "gold": "28568",
+      "pred": "28845"
+    },
+    {
+      "index": 904,
+      "image": "904.png",
+      "gold": "Pirates of the Caribbean: Dead Man's Chest",
+      "pred": "Pirates of the Caribbean: Dead Men Tell No Tales"
+    },
+    {
+      "index": 910,
+      "image": "910.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 915,
+      "image": "915.png",
+      "gold": "52",
+      "pred": "73"
+    },
+    {
+      "index": 920,
+      "image": "920.png",
+      "gold": "Jimmy Fallon",
+      "pred": "John Oliver"
+    },
+    {
+      "index": 921,
+      "image": "921.png",
+      "gold": "19",
+      "pred": "14"
+    },
+    {
+      "index": 923,
+      "image": "923.png",
+      "gold": "18019",
+      "pred": "17389"
+    },
+    {
+      "index": 933,
+      "image": "933.png",
+      "gold": "45.83",
+      "pred": "45.73"
+    },
+    {
+      "index": 937,
+      "image": "937.png",
+      "gold": "10",
+      "pred": "3.2"
+    },
+    {
+      "index": 940,
+      "image": "940.png",
+      "gold": "62",
+      "pred": "71"
+    },
+    {
+      "index": 941,
+      "image": "941.png",
+      "gold": "72",
+      "pred": "3"
+    },
+    {
+      "index": 942,
+      "image": "942.png",
+      "gold": "[2011, 2012]",
+      "pred": "2011, 2012"
+    },
+    {
+      "index": 945,
+      "image": "945.png",
+      "gold": "47",
+      "pred": "4"
+    },
+    {
+      "index": 953,
+      "image": "953.png",
+      "gold": "50",
+      "pred": "51"
+    },
+    {
+      "index": 954,
+      "image": "954.png",
+      "gold": "80",
+      "pred": "Joe Biden"
+    },
+    {
+      "index": 959,
+      "image": "959.png",
+      "gold": "2372.1",
+      "pred": "2798.1"
+    },
+    {
+      "index": 963,
+      "image": "963.png",
+      "gold": "5.66",
+      "pred": "10.26"
+    },
+    {
+      "index": 977,
+      "image": "977.png",
+      "gold": "72",
+      "pred": "20"
+    },
+    {
+      "index": 981,
+      "image": "981.png",
+      "gold": "1",
+      "pred": "0"
+    },
+    {
+      "index": 983,
+      "image": "983.png",
+      "gold": "2.72",
+      "pred": "2.36"
+    },
+    {
+      "index": 984,
+      "image": "984.png",
+      "gold": "43.9",
+      "pred": "47"
+    },
+    {
+      "index": 986,
+      "image": "986.png",
+      "gold": "5",
+      "pred": "4"
+    },
+    {
+      "index": 987,
+      "image": "987.png",
+      "gold": "5",
+      "pred": "3.5"
+    },
+    {
+      "index": 990,
+      "image": "990.png",
+      "gold": "18/19",
+      "pred": "13/14"
+    },
+    {
+      "index": 993,
+      "image": "993.png",
+      "gold": "2",
+      "pred": "2.1"
+    },
+    {
+      "index": 998,
+      "image": "998.png",
+      "gold": "light blue",
+      "pred": "blue"
+    },
+    {
+      "index": 1003,
+      "image": "1003.png",
+      "gold": "54",
+      "pred": "55"
+    },
+    {
+      "index": 1007,
+      "image": "1007.png",
+      "gold": "32.66",
+      "pred": "32.67"
+    },
+    {
+      "index": 1011,
+      "image": "1011.png",
+      "gold": "53",
+      "pred": "50"
+    },
+    {
+      "index": 1017,
+      "image": "1017.png",
+      "gold": "9.9",
+      "pred": "10.23"
+    },
+    {
+      "index": 1019,
+      "image": "1019.png",
+      "gold": "I don't discriminate against them, nor do I fear them.",
+      "pred": "I don't discriminate against them, nor do I fear them"
+    },
+    {
+      "index": 1021,
+      "image": "1021.png",
+      "gold": "Not worried at all",
+      "pred": "Not very worried"
+    },
+    {
+      "index": 1022,
+      "image": "1022.png",
+      "gold": "light blue",
+      "pred": "blue"
+    },
+    {
+      "index": 1023,
+      "image": "1023.png",
+      "gold": "Bulimia Nervosa",
+      "pred": "Bulimia nervosa"
+    },
+    {
+      "index": 1024,
+      "image": "1024.png",
+      "gold": "Preterm birth complications",
+      "pred": "Intrapartum-related events"
+    },
+    {
+      "index": 1025,
+      "image": "1025.png",
+      "gold": "12",
+      "pred": "14"
+    },
+    {
+      "index": 1031,
+      "image": "1031.png",
+      "gold": "4.2",
+      "pred": "4.1"
+    },
+    {
+      "index": 1033,
+      "image": "1033.png",
+      "gold": "1.19",
+      "pred": "1.24"
+    },
+    {
+      "index": 1035,
+      "image": "1035.png",
+      "gold": "306",
+      "pred": "207"
+    },
+    {
+      "index": 1037,
+      "image": "1037.png",
+      "gold": "7760",
+      "pred": "7600"
+    },
+    {
+      "index": 1040,
+      "image": "1040.png",
+      "gold": "100",
+      "pred": "125"
+    },
+    {
+      "index": 1041,
+      "image": "1041.png",
+      "gold": "Tech",
+      "pred": "Non-tech"
+    },
+    {
+      "index": 1042,
+      "image": "1042.png",
+      "gold": "light blue",
+      "pred": "Blue"
+    },
+    {
+      "index": 1045,
+      "image": "1045.png",
+      "gold": "7",
+      "pred": "6"
+    },
+    {
+      "index": 1048,
+      "image": "1048.png",
+      "gold": "0.1",
+      "pred": "0.001"
+    },
+    {
+      "index": 1049,
+      "image": "1049.png",
+      "gold": "0.05",
+      "pred": "0"
+    },
+    {
+      "index": 1054,
+      "image": "1054.png",
+      "gold": "Navy blue",
+      "pred": "blue"
+    },
+    {
+      "index": 1055,
+      "image": "1055.png",
+      "gold": "110",
+      "pred": "39"
+    },
+    {
+      "index": 1058,
+      "image": "1058.png",
+      "gold": "Dark blue",
+      "pred": "dark blue"
+    },
+    {
+      "index": 1061,
+      "image": "1061.png",
+      "gold": "24.75",
+      "pred": "23.5"
+    },
+    {
+      "index": 1062,
+      "image": "1062.png",
+      "gold": "Yes",
+      "pred": "No"
+    },
+    {
+      "index": 1063,
+      "image": "1063.png",
+      "gold": "35.2",
+      "pred": "34"
+    },
+    {
+      "index": 1065,
+      "image": "1065.png",
+      "gold": "98",
+      "pred": "28"
+    },
+    {
+      "index": 1066,
+      "image": "1066.png",
+      "gold": "Girls grade 10",
+      "pred": "10"
+    },
+    {
+      "index": 1069,
+      "image": "1069.png",
+      "gold": "4",
+      "pred": "8"
+    },
+    {
+      "index": 1073,
+      "image": "1073.png",
+      "gold": "80",
+      "pred": "81.33"
+    },
+    {
+      "index": 1075,
+      "image": "1075.png",
+      "gold": "75",
+      "pred": "74.22"
+    },
+    {
+      "index": 1077,
+      "image": "1077.png",
+      "gold": "46",
+      "pred": "119"
+    },
+    {
+      "index": 1078,
+      "image": "1078.png",
+      "gold": "113",
+      "pred": "103"
+    },
+    {
+      "index": 1079,
+      "image": "1079.png",
+      "gold": "4",
+      "pred": "5"
+    },
+    {
+      "index": 1083,
+      "image": "1083.png",
+      "gold": "5.546",
+      "pred": "0.18"
+    },
+    {
+      "index": 1084,
+      "image": "1084.png",
+      "gold": "No",
+      "pred": "Yes"
+    },
+    {
+      "index": 1085,
+      "image": "1085.png",
+      "gold": "1",
+      "pred": "0.98"
+    },
+    {
+      "index": 1087,
+      "image": "1087.png",
+      "gold": "273",
+      "pred": "273.5"
+    },
+    {
+      "index": 1088,
+      "image": "1088.png",
+      "gold": "2112",
+      "pred": "1512"
+    },
+    {
+      "index": 1089,
+      "image": "1089.png",
+      "gold": "5564",
+      "pred": "5133"
+    },
+    {
+      "index": 1091,
+      "image": "1091.png",
+      "gold": "216",
+      "pred": "222"
+    },
+    {
+      "index": 1093,
+      "image": "1093.png",
+      "gold": "7",
+      "pred": "5"
+    },
+    {
+      "index": 1103,
+      "image": "1103.png",
+      "gold": "53.23",
+      "pred": "49.45"
+    },
+    {
+      "index": 1105,
+      "image": "1105.png",
+      "gold": "25",
+      "pred": "12.5"
+    },
+    {
+      "index": 1112,
+      "image": "1112.png",
+      "gold": "[2015, 2016]",
+      "pred": "2018"
+    },
+    {
+      "index": 1113,
+      "image": "1113.png",
+      "gold": "39.9",
+      "pred": "40.1"
+    },
+    {
+      "index": 1114,
+      "image": "1114.png",
+      "gold": "Rabbit**",
+      "pred": "Rabbit"
+    },
+    {
+      "index": 1115,
+      "image": "1115.png",
+      "gold": "250",
+      "pred": "450"
+    },
+    {
+      "index": 1117,
+      "image": "1117.png",
+      "gold": "985468",
+      "pred": "984468"
+    },
+    {
+      "index": 1121,
+      "image": "1121.png",
+      "gold": "Opportunity to get ahead through hard work",
+      "pred": "Moral and ethical climate"
+    },
+    {
+      "index": 1122,
+      "image": "1122.png",
+      "gold": "Russia",
+      "pred": "Business owners"
+    },
+    {
+      "index": 1123,
+      "image": "1123.png",
+      "gold": "0.55",
+      "pred": "0.46"
+    },
+    {
+      "index": 1127,
+      "image": "1127.png",
+      "gold": "72",
+      "pred": "78"
+    },
+    {
+      "index": 1129,
+      "image": "1129.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 1131,
+      "image": "1131.png",
+      "gold": "1.702702703",
+      "pred": "1.7"
+    },
+    {
+      "index": 1133,
+      "image": "1133.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 1135,
+      "image": "1135.png",
+      "gold": "51.1",
+      "pred": "43.1"
+    },
+    {
+      "index": 1141,
+      "image": "1141.png",
+      "gold": "70.8",
+      "pred": "70.6"
+    },
+    {
+      "index": 1142,
+      "image": "1142.png",
+      "gold": "1.577",
+      "pred": "1.58"
+    },
+    {
+      "index": 1144,
+      "image": "1144.png",
+      "gold": "2001",
+      "pred": "2009"
+    },
+    {
+      "index": 1145,
+      "image": "1145.png",
+      "gold": "585",
+      "pred": "45"
+    },
+    {
+      "index": 1146,
+      "image": "1146.png",
+      "gold": "Navy blue",
+      "pred": "dark blue"
+    },
+    {
+      "index": 1149,
+      "image": "1149.png",
+      "gold": "42",
+      "pred": "57"
+    },
+    {
+      "index": 1151,
+      "image": "1151.png",
+      "gold": "18",
+      "pred": "17"
+    },
+    {
+      "index": 1157,
+      "image": "1157.png",
+      "gold": "74.6",
+      "pred": "6.85"
+    },
+    {
+      "index": 1163,
+      "image": "1163.png",
+      "gold": "34.98",
+      "pred": "33.6"
+    },
+    {
+      "index": 1164,
+      "image": "1164.png",
+      "gold": "3",
+      "pred": "2"
+    },
+    {
+      "index": 1167,
+      "image": "1167.png",
+      "gold": "187863.67",
+      "pred": "185490"
+    },
+    {
+      "index": 1168,
+      "image": "1168.png",
+      "gold": "green",
+      "pred": "Green"
+    },
+    {
+      "index": 1170,
+      "image": "1170.png",
+      "gold": "-30.03",
+      "pred": "-0.48"
+    },
+    {
+      "index": 1172,
+      "image": "1172.png",
+      "gold": "1343.75",
+      "pred": "1422.37"
+    },
+    {
+      "index": 1173,
+      "image": "1173.png",
+      "gold": "2000",
+      "pred": "2018"
+    },
+    {
+      "index": 1175,
+      "image": "1175.png",
+      "gold": "35",
+      "pred": "25"
+    },
+    {
+      "index": 1176,
+      "image": "1176.png",
+      "gold": "63",
+      "pred": "70"
+    },
+    {
+      "index": 1177,
+      "image": "1177.png",
+      "gold": "Tablets",
+      "pred": "Laptop"
+    },
+    {
+      "index": 1179,
+      "image": "1179.png",
+      "gold": "[Casual consumers**, Non-consumers]",
+      "pred": "Casual consumers"
+    },
+    {
+      "index": 1181,
+      "image": "1181.png",
+      "gold": "10.57",
+      "pred": "10.7"
+    },
+    {
+      "index": 1183,
+      "image": "1183.png",
+      "gold": "9.66",
+      "pred": "9.62"
+    },
+    {
+      "index": 1193,
+      "image": "1193.png",
+      "gold": "Online shoppers",
+      "pred": "Facebook users"
+    },
+    {
+      "index": 1195,
+      "image": "1195.png",
+      "gold": "4.9",
+      "pred": "5.3"
+    },
+    {
+      "index": 1199,
+      "image": "1199.png",
+      "gold": "85.55",
+      "pred": "85.25"
+    },
+    {
+      "index": 1203,
+      "image": "1203.png",
+      "gold": "[42.47, 54.91]",
+      "pred": "42.47"
+    },
+    {
+      "index": 1209,
+      "image": "1209.png",
+      "gold": "5864",
+      "pred": "5414"
+    },
+    {
+      "index": 1211,
+      "image": "1211.png",
+      "gold": "399075",
+      "pred": "418075"
+    },
+    {
+      "index": 1212,
+      "image": "1212.png",
+      "gold": "Other medical device",
+      "pred": "Connected medical device device"
+    },
+    {
+      "index": 1214,
+      "image": "1214.png",
+      "gold": "blue",
+      "pred": "Blue"
+    },
+    {
+      "index": 1215,
+      "image": "1215.png",
+      "gold": "2.7",
+      "pred": "1.6"
+    },
+    {
+      "index": 1217,
+      "image": "1217.png",
+      "gold": "29.33",
+      "pred": "28.4"
+    },
+    {
+      "index": 1221,
+      "image": "1221.png",
+      "gold": "5.2",
+      "pred": "5.9"
+    },
+    {
+      "index": 1233,
+      "image": "1233.png",
+      "gold": "2.315",
+      "pred": "2.21"
+    },
+    {
+      "index": 1234,
+      "image": "1234.png",
+      "gold": "Very concerned",
+      "pred": "Compatibility"
+    },
+    {
+      "index": 1235,
+      "image": "1235.png",
+      "gold": "101",
+      "pred": "100"
+    },
+    {
+      "index": 1245,
+      "image": "1245.png",
+      "gold": "74.6",
+      "pred": "77.4"
+    },
+    {
+      "index": 1254,
+      "image": "1254.png",
+      "gold": "36",
+      "pred": "30"
+    },
+    {
+      "index": 1255,
+      "image": "1255.png",
+      "gold": "23",
+      "pred": "28"
+    },
+    {
+      "index": 1257,
+      "image": "1257.png",
+      "gold": "2011",
+      "pred": "2020"
+    },
+    {
+      "index": 1261,
+      "image": "1261.png",
+      "gold": "74",
+      "pred": "193"
+    },
+    {
+      "index": 1262,
+      "image": "1262.png",
+      "gold": "32",
+      "pred": "17"
+    },
+    {
+      "index": 1263,
+      "image": "1263.png",
+      "gold": "2019",
+      "pred": "2018"
+    },
+    {
+      "index": 1271,
+      "image": "1271.png",
+      "gold": "Jimmy Fallon",
+      "pred": "John Oliver"
+    },
+    {
+      "index": 1273,
+      "image": "1273.png",
+      "gold": "361",
+      "pred": "315"
+    },
+    {
+      "index": 1278,
+      "image": "1278.png",
+      "gold": "2000",
+      "pred": "2019"
+    },
+    {
+      "index": 1280,
+      "image": "1280.png",
+      "gold": "1921",
+      "pred": "1999"
+    },
+    {
+      "index": 1299,
+      "image": "1299.png",
+      "gold": "France",
+      "pred": "United States"
+    },
+    {
+      "index": 1327,
+      "image": "1327.png",
+      "gold": "87.25",
+      "pred": "87.47"
+    },
+    {
+      "index": 1328,
+      "image": "1328.png",
+      "gold": "40.13",
+      "pred": "40.1"
+    },
+    {
+      "index": 1341,
+      "image": "1341.png",
+      "gold": "3613",
+      "pred": "3922"
+    },
+    {
+      "index": 1360,
+      "image": "1360.png",
+      "gold": "25",
+      "pred": "27"
+    },
+    {
+      "index": 1362,
+      "image": "1362.png",
+      "gold": "83",
+      "pred": "84"
+    },
+    {
+      "index": 1390,
+      "image": "1390.png",
+      "gold": "Newport",
+      "pred": "Marlboro"
+    },
+    {
+      "index": 1391,
+      "image": "1391.png",
+      "gold": "8.8",
+      "pred": "8.7"
+    },
+    {
+      "index": 1393,
+      "image": "1393.png",
+      "gold": "15.61",
+      "pred": "15.7"
+    },
+    {
+      "index": 1427,
+      "image": "1427.png",
+      "gold": "1980",
+      "pred": "2008"
+    },
+    {
+      "index": 1430,
+      "image": "1430.png",
+      "gold": "320.66",
+      "pred": "323.6"
+    },
+    {
+      "index": 1431,
+      "image": "1431.png",
+      "gold": "320.66",
+      "pred": "322.49"
+    },
+    {
+      "index": 1435,
+      "image": "1435.png",
+      "gold": "UniCredit",
+      "pred": "Unicredit"
+    },
+    {
+      "index": 1447,
+      "image": "1447.png",
+      "gold": "2994.52",
+      "pred": "3002"
+    },
+    {
+      "index": 1448,
+      "image": "1448.png",
+      "gold": "3.4",
+      "pred": "2.52"
+    },
+    {
+      "index": 1450,
+      "image": "1450.png",
+      "gold": "100.6",
+      "pred": "100.5"
+    },
+    {
+      "index": 1454,
+      "image": "1454.png",
+      "gold": "2601",
+      "pred": "2565"
+    },
+    {
+      "index": 1463,
+      "image": "1463.png",
+      "gold": "Paraguay",
+      "pred": "Argentina"
+    },
+    {
+      "index": 1464,
+      "image": "1464.png",
+      "gold": "1407401",
+      "pred": "1433934"
+    },
+    {
+      "index": 1478,
+      "image": "1478.png",
+      "gold": "2020",
+      "pred": "2012"
+    },
+    {
+      "index": 1485,
+      "image": "1485.png",
+      "gold": "5",
+      "pred": "10"
+    },
+    {
+      "index": 1488,
+      "image": "1488.png",
+      "gold": "0.28",
+      "pred": "0.27"
+    },
+    {
+      "index": 1509,
+      "image": "1509.png",
+      "gold": "377043.2",
+      "pred": "377737"
+    },
+    {
+      "index": 1519,
+      "image": "1519.png",
+      "gold": "40.03",
+      "pred": "49.18"
+    },
+    {
+      "index": 1533,
+      "image": "1533.png",
+      "gold": "Kyiv",
+      "pred": "Vinnystia Oblast"
+    },
+    {
+      "index": 1536,
+      "image": "1536.png",
+      "gold": "17.82",
+      "pred": "17.83"
+    },
+    {
+      "index": 1548,
+      "image": "1548.png",
+      "gold": "10.38",
+      "pred": "10.33"
+    },
+    {
+      "index": 1553,
+      "image": "1553.png",
+      "gold": "883.42",
+      "pred": "887.3"
+    },
+    {
+      "index": 1554,
+      "image": "1554.png",
+      "gold": "576.65",
+      "pred": "574.84"
+    },
+    {
+      "index": 1556,
+      "image": "1556.png",
+      "gold": "43.2",
+      "pred": "43.3"
+    },
+    {
+      "index": 1561,
+      "image": "1561.png",
+      "gold": "3.3",
+      "pred": "3.25"
+    },
+    {
+      "index": 1562,
+      "image": "1562.png",
+      "gold": "6.8",
+      "pred": "6.7"
+    },
+    {
+      "index": 1572,
+      "image": "1572.png",
+      "gold": "30.15",
+      "pred": "30.14"
+    },
+    {
+      "index": 1573,
+      "image": "1573.png",
+      "gold": "965",
+      "pred": "964.9"
+    },
+    {
+      "index": 1574,
+      "image": "1574.png",
+      "gold": "510",
+      "pred": "504.5"
+    },
+    {
+      "index": 1582,
+      "image": "1582.png",
+      "gold": "9464482",
+      "pred": "9370000"
+    },
+    {
+      "index": 1596,
+      "image": "1596.png",
+      "gold": "2.5",
+      "pred": "2.45"
+    },
+    {
+      "index": 1599,
+      "image": "1599.png",
+      "gold": "28.1",
+      "pred": "28.04"
+    },
+    {
+      "index": 1601,
+      "image": "1601.png",
+      "gold": "2014",
+      "pred": "2012"
+    },
+    {
+      "index": 1606,
+      "image": "1606.png",
+      "gold": "44.3",
+      "pred": "24.9"
+    },
+    {
+      "index": 1624,
+      "image": "1624.png",
+      "gold": "46.93",
+      "pred": "46.49"
+    },
+    {
+      "index": 1625,
+      "image": "1625.png",
+      "gold": "146.29",
+      "pred": "146.35"
+    },
+    {
+      "index": 1628,
+      "image": "1628.png",
+      "gold": "54",
+      "pred": "40"
+    },
+    {
+      "index": 1630,
+      "image": "1630.png",
+      "gold": "Catalonia",
+      "pred": "Melilla"
+    },
+    {
+      "index": 1637,
+      "image": "1637.png",
+      "gold": "10.3",
+      "pred": "10.4"
+    },
+    {
+      "index": 1644,
+      "image": "1644.png",
+      "gold": "46337",
+      "pred": "46205"
+    },
+    {
+      "index": 1647,
+      "image": "1647.png",
+      "gold": "55.85",
+      "pred": "55.8"
+    },
+    {
+      "index": 1666,
+      "image": "1666.png",
+      "gold": "124.77",
+      "pred": "125.76"
+    },
+    {
+      "index": 1671,
+      "image": "1671.png",
+      "gold": "May 2020",
+      "pred": "May 2019"
+    },
+    {
+      "index": 1674,
+      "image": "1674.png",
+      "gold": "Syria",
+      "pred": "Israel"
+    },
+    {
+      "index": 1681,
+      "image": "1681.png",
+      "gold": "252",
+      "pred": "259"
+    },
+    {
+      "index": 1683,
+      "image": "1683.png",
+      "gold": "Monini",
+      "pred": "Filippo Berio"
+    },
+    {
+      "index": 1684,
+      "image": "1684.png",
+      "gold": "84.94",
+      "pred": "84.37"
+    },
+    {
+      "index": 1686,
+      "image": "1686.png",
+      "gold": "2015/16",
+      "pred": "2006/07"
+    },
+    {
+      "index": 1687,
+      "image": "1687.png",
+      "gold": "2914.18",
+      "pred": "2927.59"
+    },
+    {
+      "index": 1697,
+      "image": "1697.png",
+      "gold": "Germany",
+      "pred": "United States"
+    },
+    {
+      "index": 1705,
+      "image": "1705.png",
+      "gold": "2013",
+      "pred": "2010"
+    },
+    {
+      "index": 1713,
+      "image": "1713.png",
+      "gold": "76",
+      "pred": "37"
+    },
+    {
+      "index": 1714,
+      "image": "1714.png",
+      "gold": "8",
+      "pred": "3.2"
+    },
+    {
+      "index": 1721,
+      "image": "1721.png",
+      "gold": "95",
+      "pred": "97"
+    },
+    {
+      "index": 1725,
+      "image": "1725.png",
+      "gold": "336.73",
+      "pred": "237.9"
+    },
+    {
+      "index": 1726,
+      "image": "1726.png",
+      "gold": "212536",
+      "pred": "212786"
+    },
+    {
+      "index": 1733,
+      "image": "1733.png",
+      "gold": "8092208",
+      "pred": "8053268"
+    },
+    {
+      "index": 1734,
+      "image": "1734.png",
+      "gold": "8092208",
+      "pred": "6000000"
+    },
+    {
+      "index": 1735,
+      "image": "1735.png",
+      "gold": "Amazon",
+      "pred": "Netflix"
+    },
+    {
+      "index": 1740,
+      "image": "1740.png",
+      "gold": "14600",
+      "pred": "14562"
+    },
+    {
+      "index": 1743,
+      "image": "1743.png",
+      "gold": "70",
+      "pred": "71"
+    },
+    {
+      "index": 1746,
+      "image": "1746.png",
+      "gold": "23555.3",
+      "pred": "23588.17"
+    },
+    {
+      "index": 1750,
+      "image": "1750.png",
+      "gold": "5857",
+      "pred": "5014"
+    },
+    {
+      "index": 1751,
+      "image": "1751.png",
+      "gold": "5857",
+      "pred": "6174"
+    },
+    {
+      "index": 1755,
+      "image": "1755.png",
+      "gold": "2.4",
+      "pred": "3.3"
+    },
+    {
+      "index": 1759,
+      "image": "1759.png",
+      "gold": "Eden Hazard",
+      "pred": "Romelu Lukaku"
+    },
+    {
+      "index": 1761,
+      "image": "1761.png",
+      "gold": "14005615",
+      "pred": "14195100"
+    },
+    {
+      "index": 1784,
+      "image": "1784.png",
+      "gold": "48.8",
+      "pred": "40.3"
+    },
+    {
+      "index": 1785,
+      "image": "1785.png",
+      "gold": "48.8",
+      "pred": "85.3"
+    },
+    {
+      "index": 1790,
+      "image": "1790.png",
+      "gold": "77658792",
+      "pred": "150105400"
+    },
+    {
+      "index": 1796,
+      "image": "1796.png",
+      "gold": "28.6",
+      "pred": "28.4"
+    },
+    {
+      "index": 1797,
+      "image": "1797.png",
+      "gold": "9.9",
+      "pred": "13.5"
+    },
+    {
+      "index": 1815,
+      "image": "1815.png",
+      "gold": "2019/20",
+      "pred": "2017/18"
+    },
+    {
+      "index": 1816,
+      "image": "1816.png",
+      "gold": "3069",
+      "pred": "3039"
+    },
+    {
+      "index": 1817,
+      "image": "1817.png",
+      "gold": "109",
+      "pred": "142"
+    },
+    {
+      "index": 1820,
+      "image": "1820.png",
+      "gold": "2014",
+      "pred": "2017"
+    },
+    {
+      "index": 1834,
+      "image": "1834.png",
+      "gold": "669.2",
+      "pred": "673"
+    },
+    {
+      "index": 1835,
+      "image": "1835.png",
+      "gold": "1842.1",
+      "pred": "1895"
+    },
+    {
+      "index": 1839,
+      "image": "1839.png",
+      "gold": "30.74",
+      "pred": "30.73"
+    },
+    {
+      "index": 1853,
+      "image": "1853.png",
+      "gold": "GQ",
+      "pred": "CQ"
+    },
+    {
+      "index": 1864,
+      "image": "1864.png",
+      "gold": "113",
+      "pred": "116"
+    },
+    {
+      "index": 1866,
+      "image": "1866.png",
+      "gold": "1999",
+      "pred": "2001"
+    },
+    {
+      "index": 1873,
+      "image": "1873.png",
+      "gold": "12.1",
+      "pred": "12.2"
+    },
+    {
+      "index": 1878,
+      "image": "1878.png",
+      "gold": "July 2014",
+      "pred": "July 2012"
+    },
+    {
+      "index": 1886,
+      "image": "1886.png",
+      "gold": "2015",
+      "pred": "2020"
+    },
+    {
+      "index": 1895,
+      "image": "1895.png",
+      "gold": "Rice",
+      "pred": "Wheat"
+    },
+    {
+      "index": 1896,
+      "image": "1896.png",
+      "gold": "117.94",
+      "pred": "118.5"
+    },
+    {
+      "index": 1901,
+      "image": "1901.png",
+      "gold": "481.55",
+      "pred": "479.6"
+    },
+    {
+      "index": 1902,
+      "image": "1902.png",
+      "gold": "2016",
+      "pred": "2019"
+    },
+    {
+      "index": 1903,
+      "image": "1903.png",
+      "gold": "5",
+      "pred": "5.05"
+    },
+    {
+      "index": 1908,
+      "image": "1908.png",
+      "gold": "France",
+      "pred": "Montenegro"
+    },
+    {
+      "index": 1912,
+      "image": "1912.png",
+      "gold": "6.5",
+      "pred": "6.51"
+    },
+    {
+      "index": 1913,
+      "image": "1913.png",
+      "gold": "207.1",
+      "pred": "177.8"
+    },
+    {
+      "index": 1914,
+      "image": "1914.png",
+      "gold": "2011",
+      "pred": "2016"
+    },
+    {
+      "index": 1923,
+      "image": "1923.png",
+      "gold": "3718.4",
+      "pred": "3736.55"
+    },
+    {
+      "index": 1924,
+      "image": "1924.png",
+      "gold": "2012",
+      "pred": "2018"
+    },
+    {
+      "index": 1927,
+      "image": "1927.png",
+      "gold": "2019",
+      "pred": "2016"
+    },
+    {
+      "index": 1954,
+      "image": "1954.png",
+      "gold": "23.7",
+      "pred": "23.6"
+    },
+    {
+      "index": 1960,
+      "image": "1960.png",
+      "gold": "42755",
+      "pred": "42600"
+    },
+    {
+      "index": 1961,
+      "image": "1961.png",
+      "gold": "32702",
+      "pred": "32574"
+    },
+    {
+      "index": 1963,
+      "image": "1963.png",
+      "gold": "13",
+      "pred": "8"
+    },
+    {
+      "index": 1968,
+      "image": "1968.png",
+      "gold": "2582603",
+      "pred": "2772000"
+    },
+    {
+      "index": 1983,
+      "image": "1983.png",
+      "gold": "676411",
+      "pred": "685206"
+    },
+    {
+      "index": 1984,
+      "image": "1984.png",
+      "gold": "509175",
+      "pred": "510672"
+    },
+    {
+      "index": 1986,
+      "image": "1986.png",
+      "gold": "0.1",
+      "pred": "0.2"
+    },
+    {
+      "index": 1987,
+      "image": "1987.png",
+      "gold": "2022",
+      "pred": "2020"
+    },
+    {
+      "index": 1999,
+      "image": "1999.png",
+      "gold": "3710",
+      "pred": "3760"
+    },
+    {
+      "index": 2001,
+      "image": "2001.png",
+      "gold": "Conservative",
+      "pred": "Labour"
+    },
+    {
+      "index": 2013,
+      "image": "2013.png",
+      "gold": "23.31",
+      "pred": "23.73"
+    },
+    {
+      "index": 2015,
+      "image": "2015.png",
+      "gold": "419.35",
+      "pred": "414.66"
+    },
+    {
+      "index": 2019,
+      "image": "2019.png",
+      "gold": "31",
+      "pred": "122"
+    },
+    {
+      "index": 2031,
+      "image": "2031.png",
+      "gold": "132.7",
+      "pred": "132.46"
+    },
+    {
+      "index": 2043,
+      "image": "2043.png",
+      "gold": "258.4",
+      "pred": "789"
+    },
+    {
+      "index": 2047,
+      "image": "2047.png",
+      "gold": "1923.63",
+      "pred": "1935.6"
+    },
+    {
+      "index": 2053,
+      "image": "2053.png",
+      "gold": "233851",
+      "pred": "42182"
+    },
+    {
+      "index": 2056,
+      "image": "2056.png",
+      "gold": "Saudi Arabia",
+      "pred": "Iran"
+    },
+    {
+      "index": 2065,
+      "image": "2065.png",
+      "gold": "1.1",
+      "pred": "1.51"
+    },
+    {
+      "index": 2070,
+      "image": "2070.png",
+      "gold": "322817",
+      "pred": "322404"
+    },
+    {
+      "index": 2071,
+      "image": "2071.png",
+      "gold": "2.76",
+      "pred": "2.8"
+    },
+    {
+      "index": 2093,
+      "image": "2093.png",
+      "gold": "1.6",
+      "pred": "1.44"
+    },
+    {
+      "index": 2113,
+      "image": "2113.png",
+      "gold": "439.37",
+      "pred": "437.9"
+    },
+    {
+      "index": 2114,
+      "image": "2114.png",
+      "gold": "517",
+      "pred": "528"
+    },
+    {
+      "index": 2120,
+      "image": "2120.png",
+      "gold": "1115.7",
+      "pred": "1111.7"
+    },
+    {
+      "index": 2143,
+      "image": "2143.png",
+      "gold": "31.7",
+      "pred": "31.6"
+    },
+    {
+      "index": 2155,
+      "image": "2155.png",
+      "gold": "75.54",
+      "pred": "75.2"
+    },
+    {
+      "index": 2166,
+      "image": "2166.png",
+      "gold": "124.65",
+      "pred": "123.28"
+    },
+    {
+      "index": 2171,
+      "image": "2171.png",
+      "gold": "30",
+      "pred": "25"
+    },
+    {
+      "index": 2175,
+      "image": "2175.png",
+      "gold": "1125",
+      "pred": "1141"
+    },
+    {
+      "index": 2178,
+      "image": "2178.png",
+      "gold": "194.3",
+      "pred": "194.4"
+    },
+    {
+      "index": 2185,
+      "image": "2185.png",
+      "gold": "8544",
+      "pred": "38884"
+    },
+    {
+      "index": 2191,
+      "image": "2191.png",
+      "gold": "3.89",
+      "pred": "3.87"
+    },
+    {
+      "index": 2194,
+      "image": "2194.png",
+      "gold": "71",
+      "pred": "70.87"
+    },
+    {
+      "index": 2209,
+      "image": "2209.png",
+      "gold": "19098",
+      "pred": "19164"
+    },
+    {
+      "index": 2210,
+      "image": "2210.png",
+      "gold": "20656",
+      "pred": "20775"
+    },
+    {
+      "index": 2219,
+      "image": "2219.png",
+      "gold": "16.9",
+      "pred": "17.8"
+    },
+    {
+      "index": 2225,
+      "image": "2225.png",
+      "gold": "667.61",
+      "pred": "667.6"
+    },
+    {
+      "index": 2227,
+      "image": "2227.png",
+      "gold": "2006/07",
+      "pred": "2005/06"
+    },
+    {
+      "index": 2261,
+      "image": "2261.png",
+      "gold": "267579",
+      "pred": "267494"
+    },
+    {
+      "index": 2267,
+      "image": "2267.png",
+      "gold": "627.31",
+      "pred": "626.54"
+    },
+    {
+      "index": 2274,
+      "image": "2274.png",
+      "gold": "Bridal Guide",
+      "pred": "Bride's"
+    },
+    {
+      "index": 2279,
+      "image": "2279.png",
+      "gold": "810",
+      "pred": "814"
+    },
+    {
+      "index": 2280,
+      "image": "2280.png",
+      "gold": "656",
+      "pred": "657"
+    },
+    {
+      "index": 2290,
+      "image": "2290.png",
+      "gold": "1.6",
+      "pred": "2.4"
+    },
+    {
+      "index": 2306,
+      "image": "2306.png",
+      "gold": "14.36",
+      "pred": "12.15"
+    },
+    {
+      "index": 2308,
+      "image": "2308.png",
+      "gold": "653.98",
+      "pred": "664.37"
+    },
+    {
+      "index": 2327,
+      "image": "2327.png",
+      "gold": "2111",
+      "pred": "2100"
+    },
+    {
+      "index": 2337,
+      "image": "2337.png",
+      "gold": "1130.2",
+      "pred": "1130.3"
+    },
+    {
+      "index": 2338,
+      "image": "2338.png",
+      "gold": "27935",
+      "pred": "37827"
+    },
+    {
+      "index": 2353,
+      "image": "2353.png",
+      "gold": "944",
+      "pred": "940"
+    },
+    {
+      "index": 2356,
+      "image": "2356.png",
+      "gold": "77517",
+      "pred": "75505"
+    },
+    {
+      "index": 2357,
+      "image": "2357.png",
+      "gold": "77517",
+      "pred": "77000"
+    },
+    {
+      "index": 2360,
+      "image": "2360.png",
+      "gold": "7.1",
+      "pred": "6.9"
+    },
+    {
+      "index": 2367,
+      "image": "2367.png",
+      "gold": "2015",
+      "pred": "2085"
+    },
+    {
+      "index": 2368,
+      "image": "2368.png",
+      "gold": "7.71",
+      "pred": "7.66"
+    },
+    {
+      "index": 2369,
+      "image": "2369.png",
+      "gold": "10.87",
+      "pred": "10.8"
+    },
+    {
+      "index": 2371,
+      "image": "2371.png",
+      "gold": "111.55",
+      "pred": "111.5"
+    },
+    {
+      "index": 2372,
+      "image": "2372.png",
+      "gold": "102.44",
+      "pred": "102.2"
+    },
+    {
+      "index": 2375,
+      "image": "2375.png",
+      "gold": "849.87",
+      "pred": "852.36"
+    },
+    {
+      "index": 2376,
+      "image": "2376.png",
+      "gold": "718.69",
+      "pred": "722.23"
+    },
+    {
+      "index": 2387,
+      "image": "2387.png",
+      "gold": "162",
+      "pred": "161.3"
+    },
+    {
+      "index": 2414,
+      "image": "2414.png",
+      "gold": "87.89",
+      "pred": "87.4"
+    },
+    {
+      "index": 2442,
+      "image": "2442.png",
+      "gold": "263878",
+      "pred": "264200"
+    },
+    {
+      "index": 2466,
+      "image": "2466.png",
+      "gold": "5515.82",
+      "pred": "5517.84"
+    },
+    {
+      "index": 2476,
+      "image": "2476.png",
+      "gold": "209.75",
+      "pred": "208.29"
+    },
+    {
+      "index": 2477,
+      "image": "2477.png",
+      "gold": "75.19",
+      "pred": "48.55"
+    },
+    {
+      "index": 2479,
+      "image": "2479.png",
+      "gold": "9.3",
+      "pred": "9.2"
+    },
+    {
+      "index": 2480,
+      "image": "2480.png",
+      "gold": "3.2",
+      "pred": "2.9"
+    },
+    {
+      "index": 2498,
+      "image": "2498.png",
+      "gold": "Autonomous Province of Bolzano",
+      "pred": "Lombardy"
+    }
+  ]
+}

@@ -1,0 +1,1315 @@
+{
+  "zero_shot": "base model",
+  "lora_finetune": "./checkpoints/qwen3vl-lora-final2",
+  "metric": "exact",
+  "zero_shot_failed_total": 616,
+  "lora_finetune_failed_total": 575,
+  "n_disagreements": 163,
+  "note": "Only samples where exactly one technique failed. For the technique that did NOT fail, pred == gold (exact metric).",
+  "disagreements": [
+    {
+      "index": 6,
+      "image": "6.png",
+      "gold": "62",
+      "pred_zero_shot": "62",
+      "pred_lora_finetune": "0.62",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 17,
+      "image": "17.png",
+      "gold": "2011",
+      "pred_zero_shot": "2011",
+      "pred_lora_finetune": "2014",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 33,
+      "image": "33.png",
+      "gold": "No",
+      "pred_zero_shot": "Yes",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 53,
+      "image": "53.png",
+      "gold": "No",
+      "pred_zero_shot": "Yes",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 69,
+      "image": "69.png",
+      "gold": "No",
+      "pred_zero_shot": "Yes",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 87,
+      "image": "87.png",
+      "gold": "141",
+      "pred_zero_shot": "138",
+      "pred_lora_finetune": "141",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 98,
+      "image": "98.png",
+      "gold": "977633",
+      "pred_zero_shot": "977,633",
+      "pred_lora_finetune": "977633",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 110,
+      "image": "110.png",
+      "gold": "Gray",
+      "pred_zero_shot": "Gray",
+      "pred_lora_finetune": "gray",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 117,
+      "image": "117.png",
+      "gold": "Yes",
+      "pred_zero_shot": "Yes",
+      "pred_lora_finetune": "No",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 130,
+      "image": "130.png",
+      "gold": "30",
+      "pred_zero_shot": "30",
+      "pred_lora_finetune": "0.3",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 145,
+      "image": "145.png",
+      "gold": "3",
+      "pred_zero_shot": "3",
+      "pred_lora_finetune": "2",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 174,
+      "image": "174.png",
+      "gold": "41",
+      "pred_zero_shot": "41",
+      "pred_lora_finetune": "0.41",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 179,
+      "image": "179.png",
+      "gold": "53",
+      "pred_zero_shot": "53",
+      "pred_lora_finetune": "0.53",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 182,
+      "image": "182.png",
+      "gold": "Important, but lower priority",
+      "pred_zero_shot": "40%",
+      "pred_lora_finetune": "Important, but lower priority",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 185,
+      "image": "185.png",
+      "gold": "3.9",
+      "pred_zero_shot": "3.9",
+      "pred_lora_finetune": "3.85",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 198,
+      "image": "198.png",
+      "gold": "5.32",
+      "pred_zero_shot": "5.32",
+      "pred_lora_finetune": "Libya",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 221,
+      "image": "221.png",
+      "gold": "10.2",
+      "pred_zero_shot": "10.2%",
+      "pred_lora_finetune": "10.2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 233,
+      "image": "233.png",
+      "gold": "0.02",
+      "pred_zero_shot": "0.010000000000000002",
+      "pred_lora_finetune": "0.02",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 236,
+      "image": "236.png",
+      "gold": "20.98",
+      "pred_zero_shot": "20.98 m²",
+      "pred_lora_finetune": "20.98",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 242,
+      "image": "242.png",
+      "gold": "5.25",
+      "pred_zero_shot": "5.25 trillion",
+      "pred_lora_finetune": "5.25",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 246,
+      "image": "246.png",
+      "gold": "96.4",
+      "pred_zero_shot": "96.4%",
+      "pred_lora_finetune": "96.4",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 271,
+      "image": "271.png",
+      "gold": "Yes",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 272,
+      "image": "272.png",
+      "gold": "gray",
+      "pred_zero_shot": "Dark blue",
+      "pred_lora_finetune": "gray",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 287,
+      "image": "287.png",
+      "gold": "6.2",
+      "pred_zero_shot": "6.2%",
+      "pred_lora_finetune": "6.2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 298,
+      "image": "298.png",
+      "gold": "95",
+      "pred_zero_shot": "95",
+      "pred_lora_finetune": "0.95",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 301,
+      "image": "301.png",
+      "gold": "Yes",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 303,
+      "image": "303.png",
+      "gold": "[Gambia, Niger]",
+      "pred_zero_shot": "Gambia, Niger",
+      "pred_lora_finetune": "[Gambia, Niger]",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 306,
+      "image": "306.png",
+      "gold": "13",
+      "pred_zero_shot": "12",
+      "pred_lora_finetune": "13",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 307,
+      "image": "307.png",
+      "gold": "Yes",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 311,
+      "image": "311.png",
+      "gold": "Yes",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 338,
+      "image": "338.png",
+      "gold": "Pink",
+      "pred_zero_shot": "Pink",
+      "pred_lora_finetune": "Dark pink",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 341,
+      "image": "341.png",
+      "gold": "Yes",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 345,
+      "image": "345.png",
+      "gold": "1.88",
+      "pred_zero_shot": "1.85",
+      "pred_lora_finetune": "1.88",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 363,
+      "image": "363.png",
+      "gold": "[2003, 2004]",
+      "pred_zero_shot": "2004 and 2005",
+      "pred_lora_finetune": "[2003, 2004]",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 365,
+      "image": "365.png",
+      "gold": "Pink",
+      "pred_zero_shot": "Pink",
+      "pred_lora_finetune": "Red",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 377,
+      "image": "377.png",
+      "gold": "[Germany, Bolivia, Dominican Republic]",
+      "pred_zero_shot": "Germany, Bolivia, Dominican Republic",
+      "pred_lora_finetune": "[Germany, Bolivia, Dominican Republic]",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 379,
+      "image": "379.png",
+      "gold": "3",
+      "pred_zero_shot": "2",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 381,
+      "image": "381.png",
+      "gold": "3",
+      "pred_zero_shot": "3.0",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 391,
+      "image": "391.png",
+      "gold": "[United Kingdom, Cape Verde]",
+      "pred_zero_shot": "United Kingdom, Cape Verde",
+      "pred_lora_finetune": "[United Kingdom, Cape Verde]",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 412,
+      "image": "412.png",
+      "gold": "Botswana",
+      "pred_zero_shot": "Chile",
+      "pred_lora_finetune": "Botswana",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 415,
+      "image": "415.png",
+      "gold": "2014",
+      "pred_zero_shot": "2014",
+      "pred_lora_finetune": "[2014, 2015]",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 418,
+      "image": "418.png",
+      "gold": "Child (before age 5)",
+      "pred_zero_shot": "Neonatal (first 28 days of life)",
+      "pred_lora_finetune": "Child (before age 5)",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 429,
+      "image": "429.png",
+      "gold": "Taiwan",
+      "pred_zero_shot": "Iran",
+      "pred_lora_finetune": "Taiwan",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 435,
+      "image": "435.png",
+      "gold": "1",
+      "pred_zero_shot": "2",
+      "pred_lora_finetune": "1",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 437,
+      "image": "437.png",
+      "gold": "No",
+      "pred_zero_shot": "Yes",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 446,
+      "image": "446.png",
+      "gold": "Yes",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 451,
+      "image": "451.png",
+      "gold": "62.6",
+      "pred_zero_shot": "62.6",
+      "pred_lora_finetune": "61.6",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 461,
+      "image": "461.png",
+      "gold": "44",
+      "pred_zero_shot": "24",
+      "pred_lora_finetune": "44",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 465,
+      "image": "465.png",
+      "gold": "No",
+      "pred_zero_shot": "Yes",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 479,
+      "image": "479.png",
+      "gold": "99",
+      "pred_zero_shot": "100",
+      "pred_lora_finetune": "99",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 489,
+      "image": "489.png",
+      "gold": "No",
+      "pred_zero_shot": "Yes",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 512,
+      "image": "512.png",
+      "gold": "47",
+      "pred_zero_shot": "47.0",
+      "pred_lora_finetune": "47",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 513,
+      "image": "513.png",
+      "gold": "35",
+      "pred_zero_shot": "31.67",
+      "pred_lora_finetune": "35",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 514,
+      "image": "514.png",
+      "gold": "213",
+      "pred_zero_shot": "213k",
+      "pred_lora_finetune": "213",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 534,
+      "image": "534.png",
+      "gold": "98",
+      "pred_zero_shot": "98.0",
+      "pred_lora_finetune": "98",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 541,
+      "image": "541.png",
+      "gold": "Yes",
+      "pred_zero_shot": "Yes",
+      "pred_lora_finetune": "No",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 549,
+      "image": "549.png",
+      "gold": "25",
+      "pred_zero_shot": "25",
+      "pred_lora_finetune": "0.0",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 562,
+      "image": "562.png",
+      "gold": "Pink",
+      "pred_zero_shot": "Pink",
+      "pred_lora_finetune": "pink",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 574,
+      "image": "574.png",
+      "gold": "43",
+      "pred_zero_shot": "43",
+      "pred_lora_finetune": "0.43",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 575,
+      "image": "575.png",
+      "gold": "33.25",
+      "pred_zero_shot": "33.25%",
+      "pred_lora_finetune": "33.25",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 581,
+      "image": "581.png",
+      "gold": "[Australia, Italy]",
+      "pred_zero_shot": "Australia, Italy",
+      "pred_lora_finetune": "[Australia, Italy]",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 582,
+      "image": "582.png",
+      "gold": "[Slovenia, Turkey]",
+      "pred_zero_shot": "Slovenia, Turkey",
+      "pred_lora_finetune": "[Slovenia, Turkey]",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 587,
+      "image": "587.png",
+      "gold": "3",
+      "pred_zero_shot": "2",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 588,
+      "image": "588.png",
+      "gold": "[Austria, Chile]",
+      "pred_zero_shot": "Austria, Chile",
+      "pred_lora_finetune": "[Austria, Chile]",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 598,
+      "image": "598.png",
+      "gold": "1994",
+      "pred_zero_shot": "1988",
+      "pred_lora_finetune": "1994",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 604,
+      "image": "604.png",
+      "gold": "Facebook Messenger*",
+      "pred_zero_shot": "Facebook Messenger*",
+      "pred_lora_finetune": "Facebook Messenger",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 614,
+      "image": "614.png",
+      "gold": "Increased",
+      "pred_zero_shot": "Increased 35%",
+      "pred_lora_finetune": "Increased",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 617,
+      "image": "617.png",
+      "gold": "1",
+      "pred_zero_shot": "0.2",
+      "pred_lora_finetune": "1",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 629,
+      "image": "629.png",
+      "gold": "2",
+      "pred_zero_shot": "3",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 631,
+      "image": "631.png",
+      "gold": "59.8",
+      "pred_zero_shot": "60.02",
+      "pred_lora_finetune": "59.8",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 647,
+      "image": "647.png",
+      "gold": "3.7",
+      "pred_zero_shot": "2.7",
+      "pred_lora_finetune": "3.7",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 653,
+      "image": "653.png",
+      "gold": "Yes",
+      "pred_zero_shot": "Yes",
+      "pred_lora_finetune": "No",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 659,
+      "image": "659.png",
+      "gold": "3",
+      "pred_zero_shot": "0.03",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 680,
+      "image": "680.png",
+      "gold": "Kit (Nike)",
+      "pred_zero_shot": "Nike",
+      "pred_lora_finetune": "Kit (Nike)",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 695,
+      "image": "695.png",
+      "gold": "3",
+      "pred_zero_shot": "3.0",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 703,
+      "image": "703.png",
+      "gold": "22",
+      "pred_zero_shot": "22.0",
+      "pred_lora_finetune": "22",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 711,
+      "image": "711.png",
+      "gold": "18.3",
+      "pred_zero_shot": "18.3",
+      "pred_lora_finetune": "30.3",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 713,
+      "image": "713.png",
+      "gold": "10.53",
+      "pred_zero_shot": "10.43",
+      "pred_lora_finetune": "10.53",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 719,
+      "image": "719.png",
+      "gold": "6",
+      "pred_zero_shot": "3",
+      "pred_lora_finetune": "6",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 726,
+      "image": "726.png",
+      "gold": "83.29",
+      "pred_zero_shot": "83.29",
+      "pred_lora_finetune": "85.29",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 733,
+      "image": "733.png",
+      "gold": "33",
+      "pred_zero_shot": "33",
+      "pred_lora_finetune": "29",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 737,
+      "image": "737.png",
+      "gold": "542533",
+      "pred_zero_shot": "542533",
+      "pred_lora_finetune": "542535",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 761,
+      "image": "761.png",
+      "gold": "2.93",
+      "pred_zero_shot": "2.93",
+      "pred_lora_finetune": "2.87",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 804,
+      "image": "804.png",
+      "gold": "10",
+      "pred_zero_shot": "9",
+      "pred_lora_finetune": "10",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 805,
+      "image": "805.png",
+      "gold": "[Thailand, South Korea]",
+      "pred_zero_shot": "Thailand, South Korea",
+      "pred_lora_finetune": "[Thailand, South Korea]",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 826,
+      "image": "826.png",
+      "gold": "8",
+      "pred_zero_shot": "7",
+      "pred_lora_finetune": "8",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 833,
+      "image": "833.png",
+      "gold": "7",
+      "pred_zero_shot": "7",
+      "pred_lora_finetune": "6",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 835,
+      "image": "835.png",
+      "gold": "70",
+      "pred_zero_shot": "70.2",
+      "pred_lora_finetune": "70",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 838,
+      "image": "838.png",
+      "gold": "15.75",
+      "pred_zero_shot": "15.755",
+      "pred_lora_finetune": "15.75",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 844,
+      "image": "844.png",
+      "gold": "Just the right number",
+      "pred_zero_shot": "Just the right number",
+      "pred_lora_finetune": "Too many",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 850,
+      "image": "850.png",
+      "gold": "[2017, 2023]",
+      "pred_zero_shot": "2017 and 2023",
+      "pred_lora_finetune": "[2017, 2023]",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 898,
+      "image": "898.png",
+      "gold": "2017",
+      "pred_zero_shot": "2016",
+      "pred_lora_finetune": "2017",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 902,
+      "image": "902.png",
+      "gold": "2010/11",
+      "pred_zero_shot": "2018/19",
+      "pred_lora_finetune": "2010/11",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 904,
+      "image": "904.png",
+      "gold": "Pirates of the Caribbean: Dead Man's Chest",
+      "pred_zero_shot": "Pirates of the Caribbean: Dead Man's Chest",
+      "pred_lora_finetune": "Pirates of the Caribbean: Dead Men Tell No Tales",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 908,
+      "image": "908.png",
+      "gold": "Cooking (e.g., MasterChef, Chopped, etc.)",
+      "pred_zero_shot": "Travel / aspirational (e.g., Lifestyles of the Rich and Famous, MTV Cribs, etc.)",
+      "pred_lora_finetune": "Cooking (e.g., MasterChef, Chopped, etc.)",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 913,
+      "image": "913.png",
+      "gold": "479.5",
+      "pred_zero_shot": "430.5",
+      "pred_lora_finetune": "479.5",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 925,
+      "image": "925.png",
+      "gold": "60",
+      "pred_zero_shot": "20",
+      "pred_lora_finetune": "60",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 935,
+      "image": "935.png",
+      "gold": "66",
+      "pred_zero_shot": "68",
+      "pred_lora_finetune": "66",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 949,
+      "image": "949.png",
+      "gold": "14",
+      "pred_zero_shot": "18",
+      "pred_lora_finetune": "14",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 957,
+      "image": "957.png",
+      "gold": "6.7",
+      "pred_zero_shot": "7.7",
+      "pred_lora_finetune": "6.7",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 982,
+      "image": "982.png",
+      "gold": "gray",
+      "pred_zero_shot": "Blue",
+      "pred_lora_finetune": "gray",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 986,
+      "image": "986.png",
+      "gold": "5",
+      "pred_zero_shot": "5",
+      "pred_lora_finetune": "4",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1013,
+      "image": "1013.png",
+      "gold": "2015",
+      "pred_zero_shot": "2013",
+      "pred_lora_finetune": "2015",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1023,
+      "image": "1023.png",
+      "gold": "Bulimia Nervosa",
+      "pred_zero_shot": "Bulimia Nervosa",
+      "pred_lora_finetune": "Bulimia nervosa",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1040,
+      "image": "1040.png",
+      "gold": "100",
+      "pred_zero_shot": "100",
+      "pred_lora_finetune": "125",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1044,
+      "image": "1044.png",
+      "gold": "Year",
+      "pred_zero_shot": "Academic years",
+      "pred_lora_finetune": "Year",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1048,
+      "image": "1048.png",
+      "gold": "0.1",
+      "pred_zero_shot": "0.1",
+      "pred_lora_finetune": "0.001",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1052,
+      "image": "1052.png",
+      "gold": "No",
+      "pred_zero_shot": "Yes",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1057,
+      "image": "1057.png",
+      "gold": "11",
+      "pred_zero_shot": "Not enough data to calculate.**",
+      "pred_lora_finetune": "11",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1058,
+      "image": "1058.png",
+      "gold": "Dark blue",
+      "pred_zero_shot": "Dark blue",
+      "pred_lora_finetune": "dark blue",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1060,
+      "image": "1060.png",
+      "gold": "11",
+      "pred_zero_shot": "10",
+      "pred_lora_finetune": "11",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1067,
+      "image": "1067.png",
+      "gold": "30.33",
+      "pred_zero_shot": "27.67",
+      "pred_lora_finetune": "30.33",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1071,
+      "image": "1071.png",
+      "gold": "Public institutions",
+      "pred_zero_shot": "Private for-profit institution",
+      "pred_lora_finetune": "Public institutions",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1078,
+      "image": "1078.png",
+      "gold": "113",
+      "pred_zero_shot": "113",
+      "pred_lora_finetune": "103",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1079,
+      "image": "1079.png",
+      "gold": "4",
+      "pred_zero_shot": "4",
+      "pred_lora_finetune": "5",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1087,
+      "image": "1087.png",
+      "gold": "273",
+      "pred_zero_shot": "273",
+      "pred_lora_finetune": "273.5",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1090,
+      "image": "1090.png",
+      "gold": "2021",
+      "pred_zero_shot": "2021*",
+      "pred_lora_finetune": "2021",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1109,
+      "image": "1109.png",
+      "gold": "7",
+      "pred_zero_shot": "6.5",
+      "pred_lora_finetune": "7",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1119,
+      "image": "1119.png",
+      "gold": "25",
+      "pred_zero_shot": "33",
+      "pred_lora_finetune": "25",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1131,
+      "image": "1131.png",
+      "gold": "1.702702703",
+      "pred_zero_shot": "1.702702703",
+      "pred_lora_finetune": "1.7",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1176,
+      "image": "1176.png",
+      "gold": "63",
+      "pred_zero_shot": "63",
+      "pred_lora_finetune": "70",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1192,
+      "image": "1192.png",
+      "gold": "Facebook users",
+      "pred_zero_shot": "The provided bar chart does not contain information about retailers or their social media presence in the United Kingdom. It shows survey data on consumer trust levels toward retailers based on user categories (Online shoppers, Facebook users, Twitter users), but it does not identify specific retailers or rank them by social media presence. Therefore, the question cannot be answered from the given data.",
+      "pred_lora_finetune": "Facebook users",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1212,
+      "image": "1212.png",
+      "gold": "Other medical device",
+      "pred_zero_shot": "Other medical device",
+      "pred_lora_finetune": "Connected medical device device",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1235,
+      "image": "1235.png",
+      "gold": "101",
+      "pred_zero_shot": "101",
+      "pred_lora_finetune": "100",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1242,
+      "image": "1242.png",
+      "gold": "Philippines",
+      "pred_zero_shot": "philippines",
+      "pred_lora_finetune": "Philippines",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1254,
+      "image": "1254.png",
+      "gold": "36",
+      "pred_zero_shot": "36",
+      "pred_lora_finetune": "30",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1258,
+      "image": "1258.png",
+      "gold": "80.2",
+      "pred_zero_shot": "72.3",
+      "pred_lora_finetune": "80.2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1261,
+      "image": "1261.png",
+      "gold": "74",
+      "pred_zero_shot": "74",
+      "pred_lora_finetune": "193",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1276,
+      "image": "1276.png",
+      "gold": "144",
+      "pred_zero_shot": "2097",
+      "pred_lora_finetune": "144",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1286,
+      "image": "1286.png",
+      "gold": "Tizen",
+      "pred_zero_shot": "WebOS",
+      "pred_lora_finetune": "Tizen",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1341,
+      "image": "1341.png",
+      "gold": "3613",
+      "pred_zero_shot": "3613",
+      "pred_lora_finetune": "3922",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1435,
+      "image": "1435.png",
+      "gold": "UniCredit",
+      "pred_zero_shot": "UniCredit",
+      "pred_lora_finetune": "Unicredit",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1536,
+      "image": "1536.png",
+      "gold": "17.82",
+      "pred_zero_shot": "17.82",
+      "pred_lora_finetune": "17.83",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1555,
+      "image": "1555.png",
+      "gold": "12.3",
+      "pred_zero_shot": "12.5",
+      "pred_lora_finetune": "12.3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1596,
+      "image": "1596.png",
+      "gold": "2.5",
+      "pred_zero_shot": "2.5",
+      "pred_lora_finetune": "2.45",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1599,
+      "image": "1599.png",
+      "gold": "28.1",
+      "pred_zero_shot": "28.1",
+      "pred_lora_finetune": "28.04",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1614,
+      "image": "1614.png",
+      "gold": "2018",
+      "pred_zero_shot": "2019",
+      "pred_lora_finetune": "2018",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1680,
+      "image": "1680.png",
+      "gold": "2006",
+      "pred_zero_shot": "2006 to 2020",
+      "pred_lora_finetune": "2006",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1681,
+      "image": "1681.png",
+      "gold": "252",
+      "pred_zero_shot": "252",
+      "pred_lora_finetune": "259",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1682,
+      "image": "1682.png",
+      "gold": "17",
+      "pred_zero_shot": "540",
+      "pred_lora_finetune": "17",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1683,
+      "image": "1683.png",
+      "gold": "Monini",
+      "pred_zero_shot": "Monini",
+      "pred_lora_finetune": "Filippo Berio",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1723,
+      "image": "1723.png",
+      "gold": "95",
+      "pred_zero_shot": "5",
+      "pred_lora_finetune": "95",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1741,
+      "image": "1741.png",
+      "gold": "22600",
+      "pred_zero_shot": "22674",
+      "pred_lora_finetune": "22600",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1746,
+      "image": "1746.png",
+      "gold": "23555.3",
+      "pred_zero_shot": "23555.3",
+      "pred_lora_finetune": "23588.17",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1770,
+      "image": "1770.png",
+      "gold": "130.57",
+      "pred_zero_shot": "128.23",
+      "pred_lora_finetune": "130.57",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1870,
+      "image": "1870.png",
+      "gold": "Scotland",
+      "pred_zero_shot": "United Kingdom",
+      "pred_lora_finetune": "Scotland",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1895,
+      "image": "1895.png",
+      "gold": "Rice",
+      "pred_zero_shot": "Rice",
+      "pred_lora_finetune": "Wheat",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1942,
+      "image": "1942.png",
+      "gold": "6.3",
+      "pred_zero_shot": "106.3",
+      "pred_lora_finetune": "6.3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1967,
+      "image": "1967.png",
+      "gold": "2021",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2021",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2001,
+      "image": "2001.png",
+      "gold": "Conservative",
+      "pred_zero_shot": "Conservative",
+      "pred_lora_finetune": "Labour",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2043,
+      "image": "2043.png",
+      "gold": "258.4",
+      "pred_zero_shot": "258.4",
+      "pred_lora_finetune": "789",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2071,
+      "image": "2071.png",
+      "gold": "2.76",
+      "pred_zero_shot": "2.76",
+      "pred_lora_finetune": "2.8",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2143,
+      "image": "2143.png",
+      "gold": "31.7",
+      "pred_zero_shot": "31.7",
+      "pred_lora_finetune": "31.6",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2185,
+      "image": "2185.png",
+      "gold": "8544",
+      "pred_zero_shot": "8544",
+      "pred_lora_finetune": "38884",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2215,
+      "image": "2215.png",
+      "gold": "1273.27",
+      "pred_zero_shot": "21.9",
+      "pred_lora_finetune": "1273.27",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2227,
+      "image": "2227.png",
+      "gold": "2006/07",
+      "pred_zero_shot": "2006/07",
+      "pred_lora_finetune": "2005/06",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2274,
+      "image": "2274.png",
+      "gold": "Bridal Guide",
+      "pred_zero_shot": "Bridal Guide",
+      "pred_lora_finetune": "Bride's",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2291,
+      "image": "2291.png",
+      "gold": "98.7",
+      "pred_zero_shot": "99",
+      "pred_lora_finetune": "98.7",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2306,
+      "image": "2306.png",
+      "gold": "14.36",
+      "pred_zero_shot": "14.36",
+      "pred_lora_finetune": "12.15",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2351,
+      "image": "2351.png",
+      "gold": "2007",
+      "pred_zero_shot": "2016",
+      "pred_lora_finetune": "2007",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2358,
+      "image": "2358.png",
+      "gold": "144.8",
+      "pred_zero_shot": "620.2",
+      "pred_lora_finetune": "144.8",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2381,
+      "image": "2381.png",
+      "gold": "Hindus",
+      "pred_zero_shot": "Muslim",
+      "pred_lora_finetune": "Hindus",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2387,
+      "image": "2387.png",
+      "gold": "162",
+      "pred_zero_shot": "162",
+      "pred_lora_finetune": "161.3",
+      "failed_by": "lora_finetune"
+    }
+  ]
+}

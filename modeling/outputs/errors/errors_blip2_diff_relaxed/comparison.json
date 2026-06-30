@@ -1,0 +1,1355 @@
+{
+  "zero_shot": "base model",
+  "lora_finetune": "./checkpoints/blip2-lora-final",
+  "metric": "relaxed",
+  "zero_shot_failed_total": 2290,
+  "lora_finetune_failed_total": 2190,
+  "n_disagreements": 168,
+  "note": "Only samples where exactly one technique failed. For the technique that did NOT fail, pred == gold (exact metric).",
+  "disagreements": [
+    {
+      "index": 2,
+      "image": "2.png",
+      "gold": "3",
+      "pred_zero_shot": "four",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 3,
+      "image": "3.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 17,
+      "image": "17.png",
+      "gold": "2011",
+      "pred_zero_shot": "between 2010 and 2014",
+      "pred_lora_finetune": "2011",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 21,
+      "image": "21.png",
+      "gold": "2008",
+      "pred_zero_shot": "when they are between ages 15 and 17",
+      "pred_lora_finetune": "2008",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 53,
+      "image": "53.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 54,
+      "image": "54.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 62,
+      "image": "62.png",
+      "gold": "UK",
+      "pred_zero_shot": "UK",
+      "pred_lora_finetune": "Germany",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 77,
+      "image": "77.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 91,
+      "image": "91.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 105,
+      "image": "105.png",
+      "gold": "2",
+      "pred_zero_shot": "12",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 113,
+      "image": "113.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 115,
+      "image": "115.png",
+      "gold": "0.77",
+      "pred_zero_shot": "- - - - - - - - - - - - - - - -",
+      "pred_lora_finetune": "0.77",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 117,
+      "image": "117.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 125,
+      "image": "125.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 132,
+      "image": "132.png",
+      "gold": "83",
+      "pred_zero_shot": "% of voters who voted for president",
+      "pred_lora_finetune": "83",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 134,
+      "image": "134.png",
+      "gold": "57",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "57",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 136,
+      "image": "136.png",
+      "gold": "61",
+      "pred_zero_shot": "- - - - - - - - - - - - - - - -",
+      "pred_lora_finetune": "61",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 137,
+      "image": "137.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 140,
+      "image": "140.png",
+      "gold": "2013",
+      "pred_zero_shot": "russian ratings of eu collapse",
+      "pred_lora_finetune": "2013",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 152,
+      "image": "152.png",
+      "gold": "2014",
+      "pred_zero_shot": "when the percentage of people who support legalization reaches the peak",
+      "pred_lora_finetune": "2014",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 153,
+      "image": "153.png",
+      "gold": "1969",
+      "pred_zero_shot": "when the gap between support and against legalization reaches its peak",
+      "pred_lora_finetune": "1969",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 155,
+      "image": "155.png",
+      "gold": "57",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "57",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 166,
+      "image": "166.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 169,
+      "image": "169.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 175,
+      "image": "175.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 177,
+      "image": "177.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 186,
+      "image": "186.png",
+      "gold": "76",
+      "pred_zero_shot": "% of respondents who think food near fukushima is not safe",
+      "pred_lora_finetune": "76",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 188,
+      "image": "188.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 193,
+      "image": "193.png",
+      "gold": "60",
+      "pred_zero_shot": "most americans say small owners and women should play role in gm policy",
+      "pred_lora_finetune": "60",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 201,
+      "image": "201.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 205,
+      "image": "205.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 210,
+      "image": "210.png",
+      "gold": "2",
+      "pred_zero_shot": "two",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 212,
+      "image": "212.png",
+      "gold": "2",
+      "pred_zero_shot": "two bars",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 213,
+      "image": "213.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 247,
+      "image": "247.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 254,
+      "image": "254.png",
+      "gold": "2",
+      "pred_zero_shot": "four",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 259,
+      "image": "259.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 282,
+      "image": "282.png",
+      "gold": "56.6",
+      "pred_zero_shot": "boys are valued at a higher rate than girls",
+      "pred_lora_finetune": "56.6",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 298,
+      "image": "298.png",
+      "gold": "95",
+      "pred_zero_shot": "% of one-year olds vaccinated against hepb3 in bhutan",
+      "pred_lora_finetune": "95",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 326,
+      "image": "326.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 330,
+      "image": "330.png",
+      "gold": "Argentina",
+      "pred_zero_shot": "Argentina",
+      "pred_lora_finetune": "Brazil",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 333,
+      "image": "333.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 339,
+      "image": "339.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 359,
+      "image": "359.png",
+      "gold": "2014",
+      "pred_zero_shot": "when the gap between the two lines becomes smallest",
+      "pred_lora_finetune": "2014",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 367,
+      "image": "367.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 371,
+      "image": "371.png",
+      "gold": "1990",
+      "pred_zero_shot": "when the gap is highest",
+      "pred_lora_finetune": "1990",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 373,
+      "image": "373.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 395,
+      "image": "395.png",
+      "gold": "2005",
+      "pred_zero_shot": "between 2010 and 2012",
+      "pred_lora_finetune": "2005",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 397,
+      "image": "397.png",
+      "gold": "1992",
+      "pred_zero_shot": "in 2010",
+      "pred_lora_finetune": "1992",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 399,
+      "image": "399.png",
+      "gold": "2",
+      "pred_zero_shot": "2",
+      "pred_lora_finetune": "3",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 403,
+      "image": "403.png",
+      "gold": "Fiji",
+      "pred_zero_shot": "the united states virgin islands",
+      "pred_lora_finetune": "Fiji",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 406,
+      "image": "406.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 419,
+      "image": "419.png",
+      "gold": "1990",
+      "pred_zero_shot": "0 - 5 years",
+      "pred_lora_finetune": "1990",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 420,
+      "image": "420.png",
+      "gold": "1970",
+      "pred_zero_shot": "-2014",
+      "pred_lora_finetune": "1970",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 421,
+      "image": "421.png",
+      "gold": "1978",
+      "pred_zero_shot": "share of gdp",
+      "pred_lora_finetune": "1978",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 428,
+      "image": "428.png",
+      "gold": "3",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 431,
+      "image": "431.png",
+      "gold": "Primary school",
+      "pred_zero_shot": "Primary school",
+      "pred_lora_finetune": "Rural",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 432,
+      "image": "432.png",
+      "gold": "Switzerland",
+      "pred_zero_shot": "Switzerland",
+      "pred_lora_finetune": "China",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 437,
+      "image": "437.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 442,
+      "image": "442.png",
+      "gold": "Blue",
+      "pred_zero_shot": "Blue",
+      "pred_lora_finetune": "Black",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 446,
+      "image": "446.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 453,
+      "image": "453.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 455,
+      "image": "455.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 457,
+      "image": "457.png",
+      "gold": "2",
+      "pred_zero_shot": "3",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 473,
+      "image": "473.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 483,
+      "image": "483.png",
+      "gold": "58",
+      "pred_zero_shot": "%",
+      "pred_lora_finetune": "58",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 485,
+      "image": "485.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 487,
+      "image": "487.png",
+      "gold": "60",
+      "pred_zero_shot": "most americans say reports of sexual misconduct reflect social problems",
+      "pred_lora_finetune": "60",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 493,
+      "image": "493.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 503,
+      "image": "503.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 506,
+      "image": "506.png",
+      "gold": "62",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "62",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 524,
+      "image": "524.png",
+      "gold": "2",
+      "pred_zero_shot": "one",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 525,
+      "image": "525.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 527,
+      "image": "527.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 529,
+      "image": "529.png",
+      "gold": "0.5",
+      "pred_zero_shot": "the blue bar is higher than the red bar",
+      "pred_lora_finetune": "0.5",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 535,
+      "image": "535.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 545,
+      "image": "545.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 546,
+      "image": "546.png",
+      "gold": "2",
+      "pred_zero_shot": "two",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 550,
+      "image": "550.png",
+      "gold": "89",
+      "pred_zero_shot": "98%",
+      "pred_lora_finetune": "89",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 577,
+      "image": "577.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 587,
+      "image": "587.png",
+      "gold": "3",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 602,
+      "image": "602.png",
+      "gold": "2016",
+      "pred_zero_shot": "in 2010",
+      "pred_lora_finetune": "2016",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 625,
+      "image": "625.png",
+      "gold": "3",
+      "pred_zero_shot": "1",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 629,
+      "image": "629.png",
+      "gold": "2",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 641,
+      "image": "641.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 650,
+      "image": "650.png",
+      "gold": "2009",
+      "pred_zero_shot": "when it reaches the peak",
+      "pred_lora_finetune": "2009",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 656,
+      "image": "656.png",
+      "gold": "3",
+      "pred_zero_shot": "5",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 684,
+      "image": "684.png",
+      "gold": "4",
+      "pred_zero_shot": "5",
+      "pred_lora_finetune": "4",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 686,
+      "image": "686.png",
+      "gold": "2",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 717,
+      "image": "717.png",
+      "gold": "2009",
+      "pred_zero_shot": "during the first quarter of 2018",
+      "pred_lora_finetune": "2009",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 768,
+      "image": "768.png",
+      "gold": "2",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 789,
+      "image": "789.png",
+      "gold": "60.31",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "60.31",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 807,
+      "image": "807.png",
+      "gold": "61.2",
+      "pred_zero_shot": "",
+      "pred_lora_finetune": "61.2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 825,
+      "image": "825.png",
+      "gold": "59",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "59",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 866,
+      "image": "866.png",
+      "gold": "58",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "58",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 897,
+      "image": "897.png",
+      "gold": "56",
+      "pred_zero_shot": "45%",
+      "pred_lora_finetune": "56",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 910,
+      "image": "910.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 940,
+      "image": "940.png",
+      "gold": "62",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "62",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 960,
+      "image": "960.png",
+      "gold": "Male",
+      "pred_zero_shot": "female",
+      "pred_lora_finetune": "Male",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 977,
+      "image": "977.png",
+      "gold": "72",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "72",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1026,
+      "image": "1026.png",
+      "gold": "2019",
+      "pred_zero_shot": "in 2018",
+      "pred_lora_finetune": "2019",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1052,
+      "image": "1052.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1062,
+      "image": "1062.png",
+      "gold": "Yes",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1072,
+      "image": "1072.png",
+      "gold": "2019",
+      "pred_zero_shot": "when the blue bar reached the peak",
+      "pred_lora_finetune": "2019",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1074,
+      "image": "1074.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1084,
+      "image": "1084.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1092,
+      "image": "1092.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1108,
+      "image": "1108.png",
+      "gold": "Female",
+      "pred_zero_shot": "Female",
+      "pred_lora_finetune": "Male",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1140,
+      "image": "1140.png",
+      "gold": "No",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1143,
+      "image": "1143.png",
+      "gold": "61.2",
+      "pred_zero_shot": "% of men users",
+      "pred_lora_finetune": "61.2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1154,
+      "image": "1154.png",
+      "gold": "2",
+      "pred_zero_shot": "one",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1164,
+      "image": "1164.png",
+      "gold": "3",
+      "pred_zero_shot": "2",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1165,
+      "image": "1165.png",
+      "gold": "3",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1166,
+      "image": "1166.png",
+      "gold": "California",
+      "pred_zero_shot": "California",
+      "pred_lora_finetune": "New York",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1213,
+      "image": "1213.png",
+      "gold": "62",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "62",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1256,
+      "image": "1256.png",
+      "gold": "63",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "63",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1258,
+      "image": "1258.png",
+      "gold": "80.2",
+      "pred_zero_shot": "% of female students achieved a c/4 grade or higher in the united kingdom in 2020",
+      "pred_lora_finetune": "80.2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1264,
+      "image": "1264.png",
+      "gold": "5G",
+      "pred_zero_shot": "augmented reality",
+      "pred_lora_finetune": "5G",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1271,
+      "image": "1271.png",
+      "gold": "Jimmy Fallon",
+      "pred_zero_shot": "steve harrison",
+      "pred_lora_finetune": "Jimmy Fallon",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1274,
+      "image": "1274.png",
+      "gold": "Germany",
+      "pred_zero_shot": "switzerland",
+      "pred_lora_finetune": "Germany",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1295,
+      "image": "1295.png",
+      "gold": "1.38",
+      "pred_zero_shot": "sgd/usd",
+      "pred_lora_finetune": "1.38",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1297,
+      "image": "1297.png",
+      "gold": "Carrefour",
+      "pred_zero_shot": "saina",
+      "pred_lora_finetune": "Carrefour",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1299,
+      "image": "1299.png",
+      "gold": "France",
+      "pred_zero_shot": "argentina",
+      "pred_lora_finetune": "France",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1346,
+      "image": "1346.png",
+      "gold": "4.1",
+      "pred_zero_shot": "12%",
+      "pred_lora_finetune": "4.1",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1362,
+      "image": "1362.png",
+      "gold": "83",
+      "pred_zero_shot": "65%",
+      "pred_lora_finetune": "83",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1422,
+      "image": "1422.png",
+      "gold": "Germany",
+      "pred_zero_shot": "uk",
+      "pred_lora_finetune": "Germany",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1438,
+      "image": "1438.png",
+      "gold": "Brazil",
+      "pred_zero_shot": "argentina",
+      "pred_lora_finetune": "Brazil",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1439,
+      "image": "1439.png",
+      "gold": "17.6",
+      "pred_zero_shot": "17.6",
+      "pred_lora_finetune": "59",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1476,
+      "image": "1476.png",
+      "gold": "57",
+      "pred_zero_shot": "% of imports",
+      "pred_lora_finetune": "57",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1483,
+      "image": "1483.png",
+      "gold": "New York",
+      "pred_zero_shot": "texas",
+      "pred_lora_finetune": "New York",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1526,
+      "image": "1526.png",
+      "gold": "2014",
+      "pred_zero_shot": "in 2015",
+      "pred_lora_finetune": "2014",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1612,
+      "image": "1612.png",
+      "gold": "121",
+      "pred_zero_shot": "$ 0",
+      "pred_lora_finetune": "121",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1614,
+      "image": "1614.png",
+      "gold": "2018",
+      "pred_zero_shot": "in the first quarter of 2018",
+      "pred_lora_finetune": "2018",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1623,
+      "image": "1623.png",
+      "gold": "Volkswagen",
+      "pred_zero_shot": "audi",
+      "pred_lora_finetune": "Volkswagen",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1633,
+      "image": "1633.png",
+      "gold": "64.9",
+      "pred_zero_shot": "64.9",
+      "pred_lora_finetune": "79.7",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1639,
+      "image": "1639.png",
+      "gold": "78",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "78",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1666,
+      "image": "1666.png",
+      "gold": "124.77",
+      "pred_zero_shot": "",
+      "pred_lora_finetune": "124.77",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1675,
+      "image": "1675.png",
+      "gold": "Afghanistan",
+      "pred_zero_shot": "iraq",
+      "pred_lora_finetune": "Afghanistan",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1680,
+      "image": "1680.png",
+      "gold": "2006",
+      "pred_zero_shot": "between 2010 and 2015",
+      "pred_lora_finetune": "2006",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1705,
+      "image": "1705.png",
+      "gold": "2013",
+      "pred_zero_shot": "in 2013",
+      "pred_lora_finetune": "2013",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1719,
+      "image": "1719.png",
+      "gold": "57.04",
+      "pred_zero_shot": "$ 59",
+      "pred_lora_finetune": "57.04",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1721,
+      "image": "1721.png",
+      "gold": "95",
+      "pred_zero_shot": "79 %",
+      "pred_lora_finetune": "95",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1840,
+      "image": "1840.png",
+      "gold": "Hank Aaron",
+      "pred_zero_shot": "bobby sanchez",
+      "pred_lora_finetune": "Hank Aaron",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1845,
+      "image": "1845.png",
+      "gold": "Aeroflot",
+      "pred_zero_shot": "russian airways",
+      "pred_lora_finetune": "Aeroflot",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1865,
+      "image": "1865.png",
+      "gold": "China",
+      "pred_zero_shot": "in the united states",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1892,
+      "image": "1892.png",
+      "gold": "120",
+      "pred_zero_shot": "$ 0",
+      "pred_lora_finetune": "120",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1893,
+      "image": "1893.png",
+      "gold": "China",
+      "pred_zero_shot": "argentina",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1895,
+      "image": "1895.png",
+      "gold": "Rice",
+      "pred_zero_shot": "naan",
+      "pred_lora_finetune": "Rice",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1912,
+      "image": "1912.png",
+      "gold": "6.5",
+      "pred_zero_shot": "%",
+      "pred_lora_finetune": "6.5",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1924,
+      "image": "1924.png",
+      "gold": "2012",
+      "pred_zero_shot": "april 2017",
+      "pred_lora_finetune": "2012",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1979,
+      "image": "1979.png",
+      "gold": "92.01",
+      "pred_zero_shot": "99%",
+      "pred_lora_finetune": "92.01",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2035,
+      "image": "2035.png",
+      "gold": "China",
+      "pred_zero_shot": "korea",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2044,
+      "image": "2044.png",
+      "gold": "2013",
+      "pred_zero_shot": "in 2013",
+      "pred_lora_finetune": "2013",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2102,
+      "image": "2102.png",
+      "gold": "1.41",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "1.41",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2117,
+      "image": "2117.png",
+      "gold": "Thailand",
+      "pred_zero_shot": "Thailand",
+      "pred_lora_finetune": "China",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2122,
+      "image": "2122.png",
+      "gold": "China",
+      "pred_zero_shot": "russia",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2146,
+      "image": "2146.png",
+      "gold": "2020",
+      "pred_zero_shot": "in 2018",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2148,
+      "image": "2148.png",
+      "gold": "2020",
+      "pred_zero_shot": "in 2018",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2155,
+      "image": "2155.png",
+      "gold": "75.54",
+      "pred_zero_shot": "75.54",
+      "pred_lora_finetune": "79.7",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2177,
+      "image": "2177.png",
+      "gold": "China",
+      "pred_zero_shot": "india",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2192,
+      "image": "2192.png",
+      "gold": "56.6",
+      "pred_zero_shot": "$ 0",
+      "pred_lora_finetune": "56.6",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2293,
+      "image": "2293.png",
+      "gold": "London",
+      "pred_zero_shot": "san francisco",
+      "pred_lora_finetune": "London",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2310,
+      "image": "2310.png",
+      "gold": "Medicaid",
+      "pred_zero_shot": "cigna",
+      "pred_lora_finetune": "Medicaid",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2388,
+      "image": "2388.png",
+      "gold": "China",
+      "pred_zero_shot": "thailand",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2392,
+      "image": "2392.png",
+      "gold": "58",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "58",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2449,
+      "image": "2449.png",
+      "gold": "Carrefour",
+      "pred_zero_shot": "sainsbury's",
+      "pred_lora_finetune": "Carrefour",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2463,
+      "image": "2463.png",
+      "gold": "Germany",
+      "pred_zero_shot": "russia",
+      "pred_lora_finetune": "Germany",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2497,
+      "image": "2497.png",
+      "gold": "4.89",
+      "pred_zero_shot": "12%",
+      "pred_lora_finetune": "4.89",
+      "failed_by": "zero_shot"
+    }
+  ]
+}

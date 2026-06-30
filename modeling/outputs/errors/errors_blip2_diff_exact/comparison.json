@@ -1,0 +1,1171 @@
+{
+  "zero_shot": "base model",
+  "lora_finetune": "./checkpoints/blip2-lora-final",
+  "metric": "exact",
+  "zero_shot_failed_total": 2479,
+  "lora_finetune_failed_total": 2360,
+  "n_disagreements": 145,
+  "note": "Only samples where exactly one technique failed. For the technique that did NOT fail, pred == gold (exact metric).",
+  "disagreements": [
+    {
+      "index": 2,
+      "image": "2.png",
+      "gold": "3",
+      "pred_zero_shot": "four",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 7,
+      "image": "7.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 16,
+      "image": "16.png",
+      "gold": "2014",
+      "pred_zero_shot": "2014",
+      "pred_lora_finetune": "2013",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 25,
+      "image": "25.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 33,
+      "image": "33.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 54,
+      "image": "54.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 69,
+      "image": "69.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 77,
+      "image": "77.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 101,
+      "image": "101.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 105,
+      "image": "105.png",
+      "gold": "2",
+      "pred_zero_shot": "12",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 117,
+      "image": "117.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 127,
+      "image": "127.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 134,
+      "image": "134.png",
+      "gold": "57",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "57",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 138,
+      "image": "138.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 151,
+      "image": "151.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 155,
+      "image": "155.png",
+      "gold": "57",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "57",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 158,
+      "image": "158.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 161,
+      "image": "161.png",
+      "gold": "Favor",
+      "pred_zero_shot": "favor",
+      "pred_lora_finetune": "Favor",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 166,
+      "image": "166.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 171,
+      "image": "171.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 175,
+      "image": "175.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 187,
+      "image": "187.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 188,
+      "image": "188.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 196,
+      "image": "196.png",
+      "gold": "Japan",
+      "pred_zero_shot": "japan",
+      "pred_lora_finetune": "Japan",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 203,
+      "image": "203.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 204,
+      "image": "204.png",
+      "gold": "Heart disease",
+      "pred_zero_shot": "heart disease",
+      "pred_lora_finetune": "Heart disease",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 205,
+      "image": "205.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 207,
+      "image": "207.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 210,
+      "image": "210.png",
+      "gold": "2",
+      "pred_zero_shot": "two",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 212,
+      "image": "212.png",
+      "gold": "2",
+      "pred_zero_shot": "two bars",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 213,
+      "image": "213.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 219,
+      "image": "219.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 241,
+      "image": "241.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 247,
+      "image": "247.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 254,
+      "image": "254.png",
+      "gold": "2",
+      "pred_zero_shot": "four",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 259,
+      "image": "259.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 261,
+      "image": "261.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 265,
+      "image": "265.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 269,
+      "image": "269.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 273,
+      "image": "273.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 292,
+      "image": "292.png",
+      "gold": "Philippines",
+      "pred_zero_shot": "philippines",
+      "pred_lora_finetune": "Philippines",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 301,
+      "image": "301.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 307,
+      "image": "307.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 309,
+      "image": "309.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 311,
+      "image": "311.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 329,
+      "image": "329.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 333,
+      "image": "333.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 349,
+      "image": "349.png",
+      "gold": "2015",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2015",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 373,
+      "image": "373.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 399,
+      "image": "399.png",
+      "gold": "2",
+      "pred_zero_shot": "2",
+      "pred_lora_finetune": "3",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 403,
+      "image": "403.png",
+      "gold": "Fiji",
+      "pred_zero_shot": "the united states virgin islands",
+      "pred_lora_finetune": "Fiji",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 406,
+      "image": "406.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 407,
+      "image": "407.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 415,
+      "image": "415.png",
+      "gold": "2014",
+      "pred_zero_shot": "2014",
+      "pred_lora_finetune": "2020",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 428,
+      "image": "428.png",
+      "gold": "3",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 446,
+      "image": "446.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 457,
+      "image": "457.png",
+      "gold": "2",
+      "pred_zero_shot": "3",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 467,
+      "image": "467.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 473,
+      "image": "473.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 489,
+      "image": "489.png",
+      "gold": "No",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "No",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 503,
+      "image": "503.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 524,
+      "image": "524.png",
+      "gold": "2",
+      "pred_zero_shot": "one",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 525,
+      "image": "525.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 526,
+      "image": "526.png",
+      "gold": "Blue",
+      "pred_zero_shot": "blue",
+      "pred_lora_finetune": "Blue",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 527,
+      "image": "527.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 529,
+      "image": "529.png",
+      "gold": "0.5",
+      "pred_zero_shot": "the blue bar is higher than the red bar",
+      "pred_lora_finetune": "0.5",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 530,
+      "image": "530.png",
+      "gold": "Blue",
+      "pred_zero_shot": "blue",
+      "pred_lora_finetune": "Blue",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 535,
+      "image": "535.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 541,
+      "image": "541.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 545,
+      "image": "545.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 546,
+      "image": "546.png",
+      "gold": "2",
+      "pred_zero_shot": "two",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 550,
+      "image": "550.png",
+      "gold": "89",
+      "pred_zero_shot": "98%",
+      "pred_lora_finetune": "89",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 559,
+      "image": "559.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 577,
+      "image": "577.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 587,
+      "image": "587.png",
+      "gold": "3",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 625,
+      "image": "625.png",
+      "gold": "3",
+      "pred_zero_shot": "1",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 629,
+      "image": "629.png",
+      "gold": "2",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 641,
+      "image": "641.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 656,
+      "image": "656.png",
+      "gold": "3",
+      "pred_zero_shot": "5",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 684,
+      "image": "684.png",
+      "gold": "4",
+      "pred_zero_shot": "5",
+      "pred_lora_finetune": "4",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 686,
+      "image": "686.png",
+      "gold": "2",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 768,
+      "image": "768.png",
+      "gold": "2",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 774,
+      "image": "774.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 825,
+      "image": "825.png",
+      "gold": "59",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "59",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 832,
+      "image": "832.png",
+      "gold": "2014",
+      "pred_zero_shot": "2014",
+      "pred_lora_finetune": "2016",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 848,
+      "image": "848.png",
+      "gold": "WhatsApp",
+      "pred_zero_shot": "whatsapp",
+      "pred_lora_finetune": "WhatsApp",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 894,
+      "image": "894.png",
+      "gold": "2020",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 895,
+      "image": "895.png",
+      "gold": "2020",
+      "pred_zero_shot": "2018",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 911,
+      "image": "911.png",
+      "gold": "2020",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 960,
+      "image": "960.png",
+      "gold": "Male",
+      "pred_zero_shot": "female",
+      "pred_lora_finetune": "Male",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1053,
+      "image": "1053.png",
+      "gold": "They are downplaying the situation",
+      "pred_zero_shot": "they are downplaying the situation",
+      "pred_lora_finetune": "They are downplaying the situation",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1062,
+      "image": "1062.png",
+      "gold": "Yes",
+      "pred_zero_shot": "No",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1092,
+      "image": "1092.png",
+      "gold": "Yes",
+      "pred_zero_shot": "no",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1106,
+      "image": "1106.png",
+      "gold": "Netflix",
+      "pred_zero_shot": "netflix",
+      "pred_lora_finetune": "Netflix",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1110,
+      "image": "1110.png",
+      "gold": "2018",
+      "pred_zero_shot": "2018",
+      "pred_lora_finetune": "2020",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1132,
+      "image": "1132.png",
+      "gold": "2020",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1154,
+      "image": "1154.png",
+      "gold": "2",
+      "pred_zero_shot": "one",
+      "pred_lora_finetune": "2",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1161,
+      "image": "1161.png",
+      "gold": "2017",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2020",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1164,
+      "image": "1164.png",
+      "gold": "3",
+      "pred_zero_shot": "2",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1165,
+      "image": "1165.png",
+      "gold": "3",
+      "pred_zero_shot": "0",
+      "pred_lora_finetune": "3",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1190,
+      "image": "1190.png",
+      "gold": "Leave",
+      "pred_zero_shot": "leave",
+      "pred_lora_finetune": "Leave",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1214,
+      "image": "1214.png",
+      "gold": "blue",
+      "pred_zero_shot": "blue",
+      "pred_lora_finetune": "Blue",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1223,
+      "image": "1223.png",
+      "gold": "Yes",
+      "pred_zero_shot": "yes",
+      "pred_lora_finetune": "Yes",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1230,
+      "image": "1230.png",
+      "gold": "Chinese",
+      "pred_zero_shot": "chinese",
+      "pred_lora_finetune": "Chinese",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1248,
+      "image": "1248.png",
+      "gold": "2013",
+      "pred_zero_shot": "2013",
+      "pred_lora_finetune": "2014",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1264,
+      "image": "1264.png",
+      "gold": "5G",
+      "pred_zero_shot": "augmented reality",
+      "pred_lora_finetune": "5G",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1271,
+      "image": "1271.png",
+      "gold": "Jimmy Fallon",
+      "pred_zero_shot": "steve harrison",
+      "pred_lora_finetune": "Jimmy Fallon",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1274,
+      "image": "1274.png",
+      "gold": "Germany",
+      "pred_zero_shot": "switzerland",
+      "pred_lora_finetune": "Germany",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1292,
+      "image": "1292.png",
+      "gold": "LinkedIn",
+      "pred_zero_shot": "Linkedin",
+      "pred_lora_finetune": "LinkedIn",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1297,
+      "image": "1297.png",
+      "gold": "Carrefour",
+      "pred_zero_shot": "saina",
+      "pred_lora_finetune": "Carrefour",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1299,
+      "image": "1299.png",
+      "gold": "France",
+      "pred_zero_shot": "argentina",
+      "pred_lora_finetune": "France",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1411,
+      "image": "1411.png",
+      "gold": "Facebook",
+      "pred_zero_shot": "facebook",
+      "pred_lora_finetune": "Facebook",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1422,
+      "image": "1422.png",
+      "gold": "Germany",
+      "pred_zero_shot": "uk",
+      "pred_lora_finetune": "Germany",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1438,
+      "image": "1438.png",
+      "gold": "Brazil",
+      "pred_zero_shot": "argentina",
+      "pred_lora_finetune": "Brazil",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1478,
+      "image": "1478.png",
+      "gold": "2020",
+      "pred_zero_shot": "2014",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1483,
+      "image": "1483.png",
+      "gold": "New York",
+      "pred_zero_shot": "texas",
+      "pred_lora_finetune": "New York",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1571,
+      "image": "1571.png",
+      "gold": "2017",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2015",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1601,
+      "image": "1601.png",
+      "gold": "2014",
+      "pred_zero_shot": "2014",
+      "pred_lora_finetune": "2010",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1623,
+      "image": "1623.png",
+      "gold": "Volkswagen",
+      "pred_zero_shot": "audi",
+      "pred_lora_finetune": "Volkswagen",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1665,
+      "image": "1665.png",
+      "gold": "2020",
+      "pred_zero_shot": "2018",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1675,
+      "image": "1675.png",
+      "gold": "Afghanistan",
+      "pred_zero_shot": "iraq",
+      "pred_lora_finetune": "Afghanistan",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1728,
+      "image": "1728.png",
+      "gold": "2017",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2020",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 1742,
+      "image": "1742.png",
+      "gold": "2020",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1840,
+      "image": "1840.png",
+      "gold": "Hank Aaron",
+      "pred_zero_shot": "bobby sanchez",
+      "pred_lora_finetune": "Hank Aaron",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1845,
+      "image": "1845.png",
+      "gold": "Aeroflot",
+      "pred_zero_shot": "russian airways",
+      "pred_lora_finetune": "Aeroflot",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1865,
+      "image": "1865.png",
+      "gold": "China",
+      "pred_zero_shot": "in the united states",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1893,
+      "image": "1893.png",
+      "gold": "China",
+      "pred_zero_shot": "argentina",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 1895,
+      "image": "1895.png",
+      "gold": "Rice",
+      "pred_zero_shot": "naan",
+      "pred_lora_finetune": "Rice",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2035,
+      "image": "2035.png",
+      "gold": "China",
+      "pred_zero_shot": "korea",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2062,
+      "image": "2062.png",
+      "gold": "Lisbon",
+      "pred_zero_shot": "lisbon",
+      "pred_lora_finetune": "Lisbon",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2122,
+      "image": "2122.png",
+      "gold": "China",
+      "pred_zero_shot": "russia",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2146,
+      "image": "2146.png",
+      "gold": "2020",
+      "pred_zero_shot": "in 2018",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2148,
+      "image": "2148.png",
+      "gold": "2020",
+      "pred_zero_shot": "in 2018",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2177,
+      "image": "2177.png",
+      "gold": "China",
+      "pred_zero_shot": "india",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2184,
+      "image": "2184.png",
+      "gold": "2020",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2245,
+      "image": "2245.png",
+      "gold": "2017",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2020",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2252,
+      "image": "2252.png",
+      "gold": "2020",
+      "pred_zero_shot": "2018",
+      "pred_lora_finetune": "2020",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2282,
+      "image": "2282.png",
+      "gold": "2017",
+      "pred_zero_shot": "2017",
+      "pred_lora_finetune": "2020",
+      "failed_by": "lora_finetune"
+    },
+    {
+      "index": 2293,
+      "image": "2293.png",
+      "gold": "London",
+      "pred_zero_shot": "san francisco",
+      "pred_lora_finetune": "London",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2301,
+      "image": "2301.png",
+      "gold": "Android",
+      "pred_zero_shot": "android",
+      "pred_lora_finetune": "Android",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2310,
+      "image": "2310.png",
+      "gold": "Medicaid",
+      "pred_zero_shot": "cigna",
+      "pred_lora_finetune": "Medicaid",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2388,
+      "image": "2388.png",
+      "gold": "China",
+      "pred_zero_shot": "thailand",
+      "pred_lora_finetune": "China",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2403,
+      "image": "2403.png",
+      "gold": "Ontario",
+      "pred_zero_shot": "ontario",
+      "pred_lora_finetune": "Ontario",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2449,
+      "image": "2449.png",
+      "gold": "Carrefour",
+      "pred_zero_shot": "sainsbury's",
+      "pred_lora_finetune": "Carrefour",
+      "failed_by": "zero_shot"
+    },
+    {
+      "index": 2463,
+      "image": "2463.png",
+      "gold": "Germany",
+      "pred_zero_shot": "russia",
+      "pred_lora_finetune": "Germany",
+      "failed_by": "zero_shot"
+    }
+  ]
+}
