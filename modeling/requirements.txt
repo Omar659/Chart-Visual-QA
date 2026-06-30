@@ -1,0 +1,13 @@
+# Core deep-learning stack (directly imported by the package)
+torch
+torchvision         # required by the Qwen3-VL processor (video sub-processor)
+transformers        # must be recent enough for Qwen3-VL (Qwen3VLForConditionalGeneration)
+peft                # LoRA fine-tuning
+datasets            # ChartQA dataset loading
+matplotlib          # training-loss plots
+tqdm                # progress bars
+
+# Runtime deps required by the above but not imported directly
+accelerate          # transformers device_map="auto"
+pillow              # datasets decodes the image column into PIL images
+sentencepiece       # BLIP-2 / Flan-T5 tokenizer
