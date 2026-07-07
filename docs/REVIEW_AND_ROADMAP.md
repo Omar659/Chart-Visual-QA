@@ -11,6 +11,36 @@
 
 ---
 
+## Execution progress (updated 2026-07-07)
+
+Work so far lives on branch **`feat/quantization-flag`** as 5 logical commits (not pushed):
+
+- **Phase 1.3 — quantization flag** ✅ (reviewer-approved): `--quantization {none,8bit,4bit}`
+  in `evaluate.py`, `QWEN_QUANTIZATION` env in the backend, NF4+double-quant+bf16 for 4-bit,
+  LoRA stays attached (no merge) when quantized, fail-loud without bitsandbytes.
+- **Phase 1.2 — analysis pipeline validated** ✅: 8/8 result JSONs reproduce byte-identical
+  from the committed error dumps (no GPU/model).
+- **§1.2b — Windows segfault FIXED** ✅: `datasets` now imports before `torch` in
+  `chartqa_dataset.py` (pyarrow DLL crash, exit 139 → 0); eval + analysis run on Windows.
+- **Phase 2.1 — de-dup** ✅ (reviewer-approved): root `model/` + `data/` deleted, `modeling/`
+  is an installable package, `backend/qwen_vl_chat.py` is a CI-drift-checked vendored copy.
+- **Phase 2.2 — reproducibility** ✅: per-model LoRA r/α (qwen 16/32, blip2 32/64), qwen
+  target_modules cut to the committed 7 LM-only, `max_steps` recovered (qwen **200** from
+  `training_args.bin`, blip2 **884** from `trainer_state.json`), MODELCARDs with HF-Trainer-
+  vs-custom-loop provenance caveats.
+- **Phase 2.3 — MLflow local tracking** ✅ (eval path): fail-open `chartqa/tracking.py`,
+  `evaluate.py` logs params + accuracy + latency/VRAM/load/size to a local `./mlruns`,
+  `test_tracking.py` green. **Deferred:** `finetune_lora.py` instrumentation (untested
+  without a GPU run) and the Docker/Postgres MLflow **server + registry** (→ Phase 3.6).
+
+Backend suite: **48 passed / 2 skipped** throughout. **Next up: Phase 1.5** (run the
+quantization experiments) — local BLIP-2 4-bit smoke, then Qwen 4-bit on a free T4.
+Open items: `bitsandbytes` not yet installed; `datasets`/`mlflow` were installed into
+`backend/.venv` (no dedicated modeling venv yet); dataset-source decision (HuggingFaceM4
+vs lmms-lab) still open.
+
+---
+
 ## 0. Executive summary
 
 - **The system is code-complete and well-architected for v1.0**, with one real gap: the
