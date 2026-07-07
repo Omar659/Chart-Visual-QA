@@ -48,9 +48,11 @@ def build_wrapper(model: str):
 
 
 def build_lora_config(model: str) -> LoraConfig:
+    # LORA_R / LORA_ALPHA are per-model dicts (the committed adapters used different
+    # ranks: qwen r=16/alpha=32, blip2 r=32/alpha=64), so index them by model.
     return LoraConfig(
-        r=LORA_R,
-        lora_alpha=LORA_ALPHA,
+        r=LORA_R[model],
+        lora_alpha=LORA_ALPHA[model],
         lora_dropout=LORA_DROPOUT,
         bias=LORA_BIAS,
         target_modules=LORA_TARGET_MODULES[model],
@@ -109,9 +111,37 @@ def main():
         default=None,
         help="Run folder name under checkpoint_train/. Default: <model>_lora_<timestamp>.",
     )
+    parser.add_argument(
+        "--max-steps",
+        type=int,
+        default=None,
+        help=(
+            "Cap on optimizer steps (overrides HPARAMS[model]['max_steps']). "
+            "blip2 default = 884 (recovered from the committed trainer_state.json). "
+            "qwen default = 200 (recovered from the committed training_args.bin). Both "
+            "are reproduction targets, not bit-for-bit guarantees (see MODELCARD)."
+        ),
+    )
     args = parser.parse_args()
     model_name = args.model
     hp = HPARAMS[model_name]
+
+    # Resolve the optimizer-step budget: CLI overrides the per-model constants default.
+    # This makes the step count a conscious choice instead of an accidental toy value.
+    max_steps = args.max_steps if args.max_steps is not None else hp["max_steps"]
+    if model_name == "qwen":
+        # 200 steps is the recovered budget from the committed qwen3vl-lora-final2
+        # training_args.bin, so the step count is known. The remaining provenance gap is
+        # the SCHEDULER/SCRIPT: that checkpoint was trained by an HF Trainer with a
+        # LINEAR scheduler (lr_scheduler_type=linear, warmup 0), while this custom loop
+        # hardcodes get_cosine_schedule_with_warmup (cosine) below -- so even with the
+        # right steps/lr this run approximates rather than bit-for-bit reproduces it.
+        print(
+            f"NOTE: qwen optimizer-step budget = {max_steps} (recovered from the "
+            "committed training_args.bin). Provenance caveat: the committed adapter used "
+            "an HF Trainer with a LINEAR scheduler; this loop uses cosine, so it is a "
+            "reproduction target, not a bit-for-bit guarantee (see MODELCARD)."
+        )
 
     # All run artifacts (checkpoint-<N>, checkpoint-best, checkpoint-final, live
     # loss plot) live in one run folder under checkpoint_train/ (gitignored). Copy
@@ -180,11 +210,11 @@ def main():
     # optionally clamped to the max_steps cap.
     steps_per_epoch = len(train_dataloader) // hp["grad_accum"]
     total_steps = steps_per_epoch * hp["num_epochs"]
-    if hp["max_steps"] is not None:
-        total_steps = min(total_steps, hp["max_steps"])
+    if max_steps is not None:
+        total_steps = min(total_steps, max_steps)
     print(
         f"Steps/epoch: {steps_per_epoch} | epochs: {hp['num_epochs']} | "
-        f"cap (max_steps): {hp['max_steps']} -> total optimizer steps: {total_steps}"
+        f"cap (max_steps): {max_steps} -> total optimizer steps: {total_steps}"
     )
 
     # Cosine schedule with a fixed warmup.
@@ -277,7 +307,7 @@ def main():
                 plot_log_history(log_history, live_loss_png)
 
                 # max_steps cap: stop once the optimizer-step budget is reached.
-                if hp["max_steps"] is not None and optimizer_step >= hp["max_steps"]:
+                if max_steps is not None and optimizer_step >= max_steps:
                     stop = True
                     break
         pbar.close()

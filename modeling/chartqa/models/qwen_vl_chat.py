@@ -1,5 +1,46 @@
-from transformers import Qwen3VLForConditionalGeneration, AutoProcessor
-from datasets import load_dataset
+# --- vendor-sync:ignore-start ---
+# Shared Qwen3-VL serving wrapper — source of truth.
+# backend/qwen_vl_chat.py vendors a copy of this file so the backend image builds
+# without the modeling tree or its training-only deps; backend/tests/test_vendor_sync.py
+# fails if the shared logic (everything outside the vendor-sync:ignore markers)
+# diverges. Edit both files together.
+# --- vendor-sync:ignore-end ---
+import importlib.util
+
+import torch
+from transformers import Qwen3VLForConditionalGeneration, AutoProcessor, BitsAndBytesConfig
+
+
+def build_quantization_config(quantization: str | None) -> BitsAndBytesConfig | None:
+    """Map a quantization mode to a `BitsAndBytesConfig` (None = full precision).
+
+    Modes: "none"/None -> full precision (returns None); "4bit" -> NF4 with
+    double quantization and bf16 compute dtype; "8bit" -> standard LLM.int8().
+
+    Quantization is an explicit opt-in: if it is requested and `bitsandbytes`
+    is not installed, fail loudly here with an actionable message instead of
+    erroring later inside `from_pretrained` — this is not a fail-open gate.
+    """
+    mode = (quantization or "none").strip().lower()
+    if mode == "none":
+        return None
+    if mode not in ("4bit", "8bit"):
+        raise ValueError(
+            f"Unknown quantization mode {quantization!r}; expected 'none', '8bit' or '4bit'."
+        )
+    if importlib.util.find_spec("bitsandbytes") is None:
+        raise RuntimeError(
+            f"Quantization {mode!r} was requested but 'bitsandbytes' is not installed. "
+            "Install it (pip install bitsandbytes) or use quantization 'none'."
+        )
+    if mode == "4bit":
+        return BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=torch.bfloat16,
+        )
+    return BitsAndBytesConfig(load_in_8bit=True)
 
 
 class QwenVLChat:
@@ -12,21 +53,32 @@ class QwenVLChat:
         device_map: str = "auto",
         attn_implementation: str = "sdpa",
         adapter_path: str | None = None,
+        quantization: str | None = None,
     ):
+        # Opt-in 4-bit/8-bit loading; None/"none" keeps full precision.
+        quantization_config = build_quantization_config(quantization)
+        quant_kwargs = (
+            {"quantization_config": quantization_config} if quantization_config else {}
+        )
         # Load the model on the available device(s) (device_map="auto" uses the GPU).
         self.model = Qwen3VLForConditionalGeneration.from_pretrained(
             model_name,
             dtype=dtype,
             device_map=device_map,
             attn_implementation=attn_implementation,
+            **quant_kwargs,
         )
         # Optionally load a LoRA adapter checkpoint on top of the base model.
         if adapter_path:
             from peft import PeftModel
 
             self.model = PeftModel.from_pretrained(self.model, adapter_path)
-            # Fold the LoRA weights into the base model for faster inference.
-            self.model = self.model.merge_and_unload()
+            if quantization_config is None:
+                # Fold the LoRA weights into the base model for faster inference.
+                self.model = self.model.merge_and_unload()
+            # With a quantized base the adapter must stay attached: merge_and_unload()
+            # cannot fold LoRA deltas into 4-/8-bit weights, so inference runs
+            # through the PeftModel wrapper (slightly slower, memory-cheap).
         # Prefer the checkpoint's processor (in case it added tokens) and fall
         # back to the base model's when running without an adapter.
         self.processor = AutoProcessor.from_pretrained(adapter_path or model_name)
@@ -98,9 +150,15 @@ class QwenVLChat:
             clean_up_tokenization_spaces=False,
         )
         return output_text[0]
+# --- vendor-sync:ignore-start ---
 
 
 if __name__ == "__main__":
+    # Ad-hoc manual smoke test (the real eval lives in chartqa.evaluation.evaluate).
+    # `datasets` is imported lazily here so the module top-level stays free of the
+    # training-only dependency — importing this wrapper never pulls in datasets.
+    from datasets import load_dataset
+
     model = QwenVLChat()
     # print(model.model)
     # exit()
@@ -111,7 +169,7 @@ if __name__ == "__main__":
             image=i['image'],
             text=i['query'] + " Please answer directly.",
         )
-        
+
         if output == i['label'][0]:
             counter_correct += 1
         counter_total += 1
@@ -122,3 +180,4 @@ if __name__ == "__main__":
         print(f"Correct: {counter_correct}/{counter_total}")
         print("\n\n")
     print(f"Accuracy: {counter_correct / counter_total * 100:.2f}%")
+# --- vendor-sync:ignore-end ---

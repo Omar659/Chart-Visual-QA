@@ -35,6 +35,10 @@ DEFAULT_METRIC = "relaxed"
 METRIC_NAMES = ["relaxed", "exact"]
 # Default generation budget for the (short) answer, per model.
 EVAL_MAX_NEW_TOKENS = {"qwen": 1024, "blip2": 32}
+# Opt-in bitsandbytes quantization for model loading (--quantization).
+# "4bit" = NF4 + double quant + bf16 compute; "8bit" = LLM.int8().
+QUANTIZATION_MODES = ["none", "8bit", "4bit"]
+DEFAULT_QUANTIZATION = "none"
 # Per-sample result labels written by results_from_errors.py.
 RESULT_SUCCESS = "success"
 RESULT_FAILURE = "failure"
@@ -47,15 +51,30 @@ MAX_GRAD_NORM = 1.0
 
 HPARAMS = {
     "qwen": {
-        "batch_size": 2,          # BS=1/2 on a 4090 because of the large images
-        "grad_accum": 16,         # Simulates a total batch size of (2 * 16) = 32
-        "learning_rate": 1e-4,
-        "num_epochs": 1,          # Full passes over the training set
-        "max_steps": 20,          # Cap on optimizer steps (None = full epochs). NOTE: 20 is a quick-test value.
-        "warmup_steps": 1,        # Fixed LR warmup steps (cosine schedule)
-        "save_steps": 10,         # Save a checkpoint every N optimizer steps
-        "logging_steps": 1,       # Record the loss every N optimizer steps
-        "eval_steps": 20,         # Run validation every N optimizer steps
+        # RECOVERED schedule: the values below are read from the committed
+        # checkpoints/qwen3vl-lora-final2/training_args.bin (a genuine HF
+        # transformers.TrainingArguments saved by an HF Trainer run). Effective budget =
+        # max_steps=200 optimizer steps (max_steps>0 overrides epochs), lr 5e-5,
+        # warmup_steps 0, per_device_train_batch_size 1 * grad_accum 16 = eff. batch 16.
+        # PROVENANCE CAVEAT: the committed adapter came from an HF *Trainer* run
+        # (training_args.bin present + NO trainer_state.json = a Trainer final
+        # save_model()), whereas this file's training script (finetune_lora.py) is a
+        # *custom* PyTorch loop. Two mismatches make these the reproduction TARGET, not a
+        # bit-for-bit guarantee: (1) SCHEDULER — training_args.bin says
+        # lr_scheduler_type=linear with 0 warmup, but finetune_lora.py hardcodes
+        # get_cosine_schedule_with_warmup (cosine) in its "OPTIMIZER AND SCHEDULER"
+        # block; the scheduler type is NOT read from these constants, so changing
+        # warmup_steps here does NOT switch cosine -> linear. (2) the training script
+        # itself differs (HF Trainer vs this custom loop).
+        "batch_size": 1,          # per_device_train_batch_size (from training_args.bin)
+        "grad_accum": 16,         # 1 * 16 = effective batch 16 (from training_args.bin)
+        "learning_rate": 5e-5,    # training_args.bin learning_rate
+        "num_epochs": 3,          # training_args.bin num_train_epochs (capped by max_steps=200)
+        "max_steps": 200,         # training_args.bin max_steps: recovered optimizer-step budget
+        "warmup_steps": 0,        # training_args.bin warmup_steps=0 (see SCHEDULER caveat above)
+        "save_steps": 10,         # Save a checkpoint every N optimizer steps (repo-loop cadence)
+        "logging_steps": 1,       # Record the loss every N optimizer steps (repo-loop cadence)
+        "eval_steps": 20,         # Run validation every N optimizer steps (repo-loop only; committed run used eval_strategy=no)
         "eval_max_batches": None,  # Cap val batches per eval for speed (None = full val split)
     },
     "blip2": {
@@ -63,7 +82,12 @@ HPARAMS = {
         "grad_accum": 16,
         "learning_rate": 5e-5,
         "num_epochs": 1,
-        "max_steps": 20,
+        # Recovered from checkpoints/blip2-lora-final/trainer_state.json: 884 optimizer
+        # steps (= one full epoch of the train split; final train loss 2.946, val loss
+        # 3.536 @ step 20 -> 2.558 @ step 880 best). This reproduces the committed
+        # adapter's step budget. (trainer_state records only step/loss/eval_loss, so the
+        # lr / warmup / batch below are the repo's declared config, not in that file.)
+        "max_steps": 884,
         "warmup_steps": 20,
         "save_steps": 10,
         "logging_steps": 1,
@@ -75,21 +99,30 @@ HPARAMS = {
 # --------------------------------------------------------------------------- #
 # LoRA (target modules / task type differ per architecture)
 # --------------------------------------------------------------------------- #
-LORA_R = 32
-LORA_ALPHA = 64
-LORA_DROPOUT = 0.05
-LORA_BIAS = "none"
+# LoRA rank/alpha are PER MODEL — the two committed adapters were trained with
+# different ranks, so these are dicts keyed by model (mirroring LORA_TARGET_MODULES /
+# LORA_TASK_TYPE below), not global scalars. Values are pinned to each checkpoint's
+# committed adapter_config.json (the source of truth for reproduction):
+#   qwen  -> checkpoints/qwen3vl-lora-final2/adapter_config.json  (r=16, alpha=32)
+#   blip2 -> checkpoints/blip2-lora-final/adapter_config.json     (r=32, alpha=64)
+LORA_R = {"qwen": 16, "blip2": 32}
+LORA_ALPHA = {"qwen": 32, "blip2": 64}
+LORA_DROPOUT = 0.05  # matches both committed adapters
+LORA_BIAS = "none"   # matches both committed adapters
 LORA_TARGET_MODULES = {
+    # Qwen3-VL: the committed qwen3vl-lora-final2 adapter adapted the LANGUAGE MODEL
+    # ONLY (these 7 modules) — the vision tower was NOT targeted. This is the exact
+    # config that produced the reported 84.60% -> 86.08% relaxed (75.36% -> 77.00%
+    # exact). Do NOT re-add the vision modules (qkv/proj/linear_fc1/linear_fc2): that
+    # changes the adapter and no longer reproduces the committed checkpoint.
     "qwen": [
-        # Language model
         "q_proj", "k_proj", "v_proj", "o_proj",
         "gate_proj", "up_proj", "down_proj",
-        # Vision encoder (Qwen3VLVisionAttention and MLP / merger)
-        "qkv", "proj", "linear_fc1", "linear_fc2",
     ],
-    # BLIP-2: LoRA on the Flan-T5 language model only. The ViT ("qkv"/"projection")
-    # and Q-Former ("query"/"key"/"value"/"dense") use different names, so these
-    # T5 names leave both frozen automatically.
+    # BLIP-2: LoRA on the Flan-T5 language model only (7 modules, order-independent;
+    # matches checkpoints/blip2-lora-final/adapter_config.json). The ViT ("qkv"/
+    # "projection") and Q-Former ("query"/"key"/"value"/"dense") use different names,
+    # so these T5 names leave both frozen automatically.
     "blip2": ["q", "k", "v", "o", "wi_0", "wi_1", "wo"],
 }
 LORA_TASK_TYPE = {"qwen": "CAUSAL_LM", "blip2": "SEQ_2_SEQ_LM"}

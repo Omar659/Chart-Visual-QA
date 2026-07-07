@@ -11,3 +11,12 @@ tqdm                # progress bars
 accelerate          # transformers device_map="auto"
 pillow              # datasets decodes the image column into PIL images
 sentencepiece       # BLIP-2 / Flan-T5 tokenizer
+
+# Experiment tracking (chartqa.tracking): pure-Python, no torch. Fail-open — if
+# absent, evaluate.py / finetune_lora.py run unchanged (tracking becomes a no-op).
+# The local file store (./mlruns) is the v1-local backend; browse it with `mlflow ui`.
+mlflow>=2.14,<3
+
+# Optional: 4-/8-bit quantized loading (evaluate.py --quantization 4bit|8bit).
+# Opt-in — uncomment to enable; the loader fails loudly if requested but missing.
+# bitsandbytes>=0.43
