@@ -11,6 +11,7 @@ matching ``env_config``:
     USE_MOCK=0
     QWEN_MODEL_ID=Qwen/Qwen3-VL-8B-Instruct            # base VLM (downloaded from HF)
     QWEN_ADAPTER_PATH=checkpoints/qwen3vl-lora-final2   # LoRA dir; '' = base model
+    QWEN_QUANTIZATION=none                              # none|8bit|4bit (bitsandbytes)
     QWEN_MAX_NEW_TOKENS=64
     QWEN_ANSWER_SUFFIX=" Please answer directly."
 
@@ -49,7 +50,14 @@ def _load_model():
 
     model_id = env_str("QWEN_MODEL_ID")
     adapter_path = _resolve_adapter_path(env_str("QWEN_ADAPTER_PATH"))
-    return QwenVLChat(model_name=model_id, adapter_path=adapter_path)
+    # Opt-in bitsandbytes quantization ('none' = full precision). With 8bit/4bit
+    # the wrapper keeps the LoRA adapter attached instead of merging it (a
+    # quantized base cannot be merged) and fails loudly if bitsandbytes is missing.
+    return QwenVLChat(
+        model_name=model_id,
+        adapter_path=adapter_path,
+        quantization=env_str("QWEN_QUANTIZATION"),
+    )
 
 
 def predict(image_bytes: bytes, question: str) -> str:
