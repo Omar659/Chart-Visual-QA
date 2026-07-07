@@ -6,7 +6,9 @@ A Visual Question Answering system for **charts**. Input: a chart image + a ques
 Output: a short answer. We measure a zero-shot VLM against a fine-tuned VLM and ship a
 small web UI on top.
 
-- **Dataset:** ChartQA (`lmms-lab/ChartQA`) — chart reasoning.
+- **Dataset:** ChartQA — chart reasoning. The assignment brief names `lmms-lab/ChartQA`;
+  the implemented modeling code loads the **`HuggingFaceM4/ChartQA`** mirror
+  (`modeling/chartqa/constants.py`), which is what produced the committed results.
 - **Metrics:** Exact-match for text answers, numeric tolerance (±5%) for numeric answers,
   plus per-question-type breakdown (single value, comparison, calculation, trend).
 

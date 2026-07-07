@@ -8,7 +8,10 @@
 Build a **Visual Question Answering (VQA)** system for **charts**: given a chart image
 and a natural-language question, return a short answer (1–10 words). Compare a
 **zero-shot VLM baseline** vs a **fine-tuned VLM** on the same eval set, with an error
-analysis. Dataset: **ChartQA** (`lmms-lab/ChartQA`).
+analysis. Dataset: **ChartQA** — the assignment names `lmms-lab/ChartQA`, but the
+modeling code actually loads the **`HuggingFaceM4/ChartQA`** mirror (see
+`modeling/chartqa/constants.py` `DATASET_NAME`; columns `image/query/label/
+human_or_machine`). The committed results were produced with that mirror.
 
 ## Team & ownership
 
@@ -44,6 +47,14 @@ real inference call without touching the frontend.
   its **real boundary** (an enable flag like `GUARD_ENABLED=0`, or a model loader like
   `_load_clip → None`) so the **real** code path runs fail-open — never `monkeypatch` the
   public function with a constant. See `backend/test_chart_check.py` for the pattern.
+- **Shared modeling code lives in `modeling/chartqa`** (installable: `pip install -e ./modeling`).
+  There is one exception, `qwen_vl_chat.py`: the backend serves inference without the
+  modeling tree, so `backend/qwen_vl_chat.py` is a **vendored copy** of
+  `modeling/chartqa/models/qwen_vl_chat.py`. It is not a free-for-all copy — it is verified
+  by `backend/tests/test_vendor_sync.py`, which strips the `# --- vendor-sync:ignore-… ---`
+  regions (the header + the modeling-only `__main__` demo) and asserts the shared logic is
+  byte-identical. **Any edit to the shared wrapper logic must be mirrored in both files or
+  that test fails.** Do not add new vendored copies of modeling code.
 - Python 3.10+ for the backend. React (Vite) for the frontend.
 - Planned layout (once approved):
   - `frontend/` — React app (question box + image picker + answer display).
