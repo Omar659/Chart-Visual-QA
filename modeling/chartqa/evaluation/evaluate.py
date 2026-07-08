@@ -102,7 +102,6 @@ def evaluate(
     metric: str = DEFAULT_METRIC,
     errors_dir: str | None = None,
     quantization: str = DEFAULT_QUANTIZATION,
-    cpu_offload: bool = False,
 ) -> float:
     match_fn = METRICS[metric]
 
@@ -120,9 +119,7 @@ def evaluate(
     # quantization != "none" loads the base 4-/8-bit (bitsandbytes) and keeps
     # any LoRA adapter attached instead of merging it.
     load_start = time.perf_counter()
-    chat_model = WRAPPERS[model](
-        adapter_path=checkpoint, quantization=quantization, cpu_offload=cpu_offload
-    )
+    chat_model = WRAPPERS[model](adapter_path=checkpoint, quantization=quantization)
     load_time_s = time.perf_counter() - load_start
 
     dataset = ChartQADataset(split=split)
@@ -150,7 +147,6 @@ def evaluate(
             "n": n,
             "metric": metric,
             "quantization": quantization,
-            "cpu_offload": cpu_offload,
             "max_new_tokens": max_new_tokens,
         }
         if checkpoint:
@@ -279,18 +275,11 @@ def main():
         "'8bit' = LLM.int8(). Default: full precision. With --checkpoint, quantized "
         "runs keep the LoRA adapter attached (a quantized base cannot be merged).",
     )
-    parser.add_argument(
-        "--cpu-offload",
-        action="store_true",
-        help="With --quantization, allow spilling layers to CPU "
-        "(llm_int8_enable_fp32_cpu_offload) so an 8B 4-bit model loads on a small GPU "
-        "(e.g. 6 GB). Much slower; use only when it would otherwise OOM at load.",
-    )
     args = parser.parse_args()
 
     evaluate(
         args.model, args.checkpoint, args.split, args.limit, args.max_new_tokens,
-        args.metric, args.errors_dir, args.quantization, args.cpu_offload,
+        args.metric, args.errors_dir, args.quantization,
     )
 
 

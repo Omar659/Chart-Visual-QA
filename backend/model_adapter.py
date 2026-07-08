@@ -12,7 +12,6 @@ matching ``env_config``:
     QWEN_MODEL_ID=Qwen/Qwen3-VL-8B-Instruct            # base VLM (downloaded from HF)
     QWEN_ADAPTER_PATH=checkpoints/qwen3vl-lora-final2   # LoRA dir; '' = base model
     QWEN_QUANTIZATION=none                              # none|8bit|4bit (bitsandbytes)
-    QWEN_CPU_OFFLOAD=0                                  # 1 = spill layers to CPU if VRAM-tight
     QWEN_MAX_NEW_TOKENS=64
     QWEN_ANSWER_SUFFIX=" Please answer directly."
 
@@ -28,7 +27,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from env_config import env_bool, env_int, env_str
+from env_config import env_int, env_str
 
 # Repo root (backend/ -> repo). The backend process runs with cwd=backend/, so a
 # relative QWEN_ADAPTER_PATH is resolved against the repo root, not backend/.
@@ -58,7 +57,6 @@ def _load_model():
         model_name=model_id,
         adapter_path=adapter_path,
         quantization=env_str("QWEN_QUANTIZATION"),
-        cpu_offload=env_bool("QWEN_CPU_OFFLOAD"),
     )
 
 

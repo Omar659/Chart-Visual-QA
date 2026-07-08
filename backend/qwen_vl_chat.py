@@ -14,18 +14,11 @@ import torch
 from transformers import Qwen3VLForConditionalGeneration, AutoProcessor, BitsAndBytesConfig
 
 
-def build_quantization_config(
-    quantization: str | None, cpu_offload: bool = False
-) -> BitsAndBytesConfig | None:
+def build_quantization_config(quantization: str | None) -> BitsAndBytesConfig | None:
     """Map a quantization mode to a `BitsAndBytesConfig` (None = full precision).
 
     Modes: "none"/None -> full precision (returns None); "4bit" -> NF4 with
     double quantization and bf16 compute dtype; "8bit" -> standard LLM.int8().
-
-    `cpu_offload` sets `llm_int8_enable_fp32_cpu_offload`, letting a model that does
-    not fully fit in VRAM dispatch some layers to CPU under device_map="auto". It
-    makes inference much slower but lets an 8B 4-bit model load on a small GPU
-    (e.g. 6 GB); leave it False when the model fits.
 
     Quantization is an explicit opt-in: if it is requested and `bitsandbytes`
     is not installed, fail loudly here with an actionable message instead of
@@ -49,11 +42,8 @@ def build_quantization_config(
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
             bnb_4bit_compute_dtype=torch.bfloat16,
-            llm_int8_enable_fp32_cpu_offload=cpu_offload,
         )
-    return BitsAndBytesConfig(
-        load_in_8bit=True, llm_int8_enable_fp32_cpu_offload=cpu_offload
-    )
+    return BitsAndBytesConfig(load_in_8bit=True)
 
 
 class QwenVLChat:
@@ -67,11 +57,9 @@ class QwenVLChat:
         attn_implementation: str = "sdpa",
         adapter_path: str | None = None,
         quantization: str | None = None,
-        cpu_offload: bool = False,
     ):
-        # Opt-in 4-bit/8-bit loading; None/"none" keeps full precision. cpu_offload
-        # lets a model that doesn't fit in VRAM spill some layers to CPU (slow).
-        quantization_config = build_quantization_config(quantization, cpu_offload)
+        # Opt-in 4-bit/8-bit loading; None/"none" keeps full precision.
+        quantization_config = build_quantization_config(quantization)
         quant_kwargs = (
             {"quantization_config": quantization_config} if quantization_config else {}
         )

@@ -24,11 +24,9 @@ class Blip2Chat:
         device_map: str = "auto",
         adapter_path: str | None = None,
         quantization: str | None = None,
-        cpu_offload: bool = False,
     ):
-        # Opt-in 4-bit/8-bit loading; None/"none" keeps full precision. cpu_offload
-        # lets a model that doesn't fit in VRAM spill some layers to CPU (slow).
-        quantization_config = build_quantization_config(quantization, cpu_offload)
+        # Opt-in 4-bit/8-bit loading; None/"none" keeps full precision.
+        quantization_config = build_quantization_config(quantization)
         quant_kwargs = (
             {"quantization_config": quantization_config} if quantization_config else {}
         )
