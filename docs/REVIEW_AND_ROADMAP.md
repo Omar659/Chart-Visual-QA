@@ -123,6 +123,11 @@ identity-token client, tracked in 3.7); nothing pushed.
 
 ## 0. Executive summary
 
+> **Update (2026-07-08):** the GPU VLM service gap below is closed — `vlm_service/`
+> exists, runs the real quantized Qwen3-VL-8B + LoRA, and deploys two ways (RunPod dev /
+> Cloud Run GPU prod, Phase 3.8). Left as originally written for history; see the
+> "Execution progress" section at the top of this doc for current status.
+
 - **The system is code-complete and well-architected for v1.0**, with one real gap: the
   main VLM is *wired* (real `model_adapter.predict`) but **not deployable** yet — the
   backend Docker image is CPU-only and the planned **GPU VLM service (scale-to-zero) does
@@ -149,21 +154,21 @@ identity-token client, tracked in 3.7); nothing pushed.
 | Frontend (React 19 + Vite)       | `frontend/`                                                        | ✅ Integrated                       | Single-shot;`FormData → POST /api/ask`; `useState` only; **no chat history**                  |
 | Flask API                        | `backend/app.py`                                                   | ✅ Integrated                       | `GET /api/health`, `POST /api/ask`; latency wraps inference only                                     |
 | Mock/real seam                   | `backend/inference.py`, `backend/model_adapter.py`               | ✅ Integrated                       | `USE_MOCK` flag; real path = `predict()` → `QwenVLChat`                                           |
-| Real VLM (Qwen3-VL-8B + LoRA)    | `backend/qwen_vl_chat.py`                                          | ⚠️ Wired,**not deployable** | Loads base +`merge_and_unload`; **no quant**, **CPU-only image**, **no GPU service** |
+| Real VLM (Qwen3-VL-8B + LoRA)    | `backend/qwen_vl_chat.py`, `vlm_service/`                          | ✅ Wired + deployable | Quant support (4/8-bit); GPU service exists (`vlm_service/`), deploys via RunPod (dev) or Cloud Run GPU (prod, Phase 3.8) |
 | Layer-1 guard (cheap rules)      | `backend/app.py`                                                   | ✅ Integrated                       | Empty/weak-question + image-present checks → 400                                                        |
 | Layer-2 guard (encoders)         | `backend/guard.py`                                                 | ✅ Integrated + tested              | detoxify toxicity, deberta prompt-injection, Presidio PII; fail-open                                     |
 | Layer-3 guard (Llama Guard 3 1B) | `backend/guard_llm.py`, `guard/Dockerfile`                       | ✅ Integrated + tested              | Ollama, CPU, baked at build; custom`S99` off-topic code; fail-open                                     |
 | Chart gate                       | `backend/chart_check.py`                                           | ✅ Integrated + tested              | CLIP zero-shot + OCR "has-data" gate + pixel-heuristic fallback                                          |
 | Orchestrator                     | `app.py` (root)                                                    | ✅ Integrated                       | `--dev` (venv) vs prod (`docker compose up backend guard` + host Vite)                               |
-| Containers                       | `docker-compose.yml`, `backend/Dockerfile`, `guard/Dockerfile` | ⚠️ Partial                        | backend + guard only;**frontend prod & GPU VLM not containerized**                                 |
+| Containers                       | `docker-compose.yml`, `backend/`, `guard/`, `frontend/`, `vlm_service/` | ✅ Complete           | backend + guard + frontend (nginx) + observability in compose; GPU VLM containerized separately (RunPod/Cloud Run, Phase 3.8) |
 | Training pipeline                | `modeling/chartqa/training/finetune_lora.py`                       | ✅ Complete                         | Custom loop, PEFT LoRA, bf16, grad-checkpoint, cosine, best-by-val-loss                                  |
 | Eval + error analysis            | `modeling/chartqa/evaluation/`, `modeling/chartqa/analysis/`     | ✅ Complete                         | relaxed (5%) + exact; error dumps; disagreement sets; category table                                     |
 | Committed adapters               | `modeling/checkpoints/{qwen3vl-lora-final2, blip2-lora-final}`     | ✅ Present (LFS)                    | Real runs (BLIP-2 trainer_state logs 700+ steps)                                                         |
 
 **Integration verdict:** the mock-first contract held — the frontend never has to change.
-The real model dropped cleanly behind `model_adapter.predict`. The only thing standing
-between "demo in mock mode" and "real answers in prod" is a **GPU serving path** for the
-8B VLM (see Phase 3).
+The real model dropped cleanly behind `model_adapter.predict`. The **GPU serving path**
+now exists and has answered real questions end-to-end (RunPod dev pod, Phase 3.8); what's
+left is running it on **Cloud Run** for the first time (needs a real GCP project/billing).
 
 ---
 
@@ -184,37 +189,29 @@ between "demo in mock mode" and "real answers in prod" is a **GPU serving path**
 
 ### Improvement opportunities (ranked)
 
-1. **[High] The VLM runs in-process in a CPU-only image.** `backend/Dockerfile` installs
-   CPU torch; setting `USE_MOCK=0` there would try to load an 8B VLM on CPU → unusable.
-   The scale-to-zero design *names* a GPU VLM service but it isn't built. → **Phase 3.1**.
-2. **[Med] `merge_and_unload()` at load blocks quantized serving.** Folding LoRA requires a
-   full-precision base in memory, so you can't serve a 4-bit base this way. For
-   memory-bound or vLLM serving, keep the adapter attached (vLLM supports LoRA) **or**
-   pre-merge once and save merged fp16 weights to disk. → **Phase 3.1**.
-3. **[Med] Source duplication / drift.** `qwen_vl_chat.py` exists in **three** places
-   (`backend/`, `model/`, `modeling/chartqa/models/`) and `chartqa_dataset.py` in **two**
-   (`data/`, `modeling/`). The `backend/` copy is intentionally vendored for Docker
-   isolation, but the repo-root `model/` and `data/` look like pre-`modeling/` leftovers.
-   → **Phase 2.1**.
-4. **[Med] Config↔checkpoint drift in modeling — blocks reproducing the team's Qwen result.**
-   Verified on disk: the committed **Qwen** adapter (`qwen3vl-lora-final2/adapter_config.json`)
-   is **`r=16, alpha=32`** (dropout 0.05, 7 target modules), but `constants.py` declares
-   **`LORA_R=32, LORA_ALPHA=64`** and `max_steps=20` (a "quick-test value"), and the committed
-   runs used far more than 20 steps (BLIP-2 `trainer_state` logs 700+). **Re-running
-   `run_trainings.sh` as-is would NOT reproduce the 84.60%→86.08% Qwen numbers** — it would
-   train a *different* config (`r=32`) for only 20 steps → a toy adapter. The open question
-   the team must nail down: **which exact config (`r`, `alpha`, `max_steps`, lr, eff. batch)
-   reproduces the committed Qwen checkpoint.** Start from the adapter's own
-   `adapter_config.json` (`r=16/alpha=32`) as ground truth. → **Phase 2.2** (reproducibility).
-5. **[Med] No answer cache / rate limit / upload re-encode.** Already on the authors'
-   `NEXT_STEPS`. Cache by `(image_hash, question)` short-circuits repeats; re-encoding
-   uploads via PIL strips malicious payloads. → **Phase 3.4**.
-6. **[Med] No observability.** No per-stage latency, no metrics endpoint — hard to see
-   which layer spends the time or how often the expensive VLM path fires (= cost).
-   → **Phase 3.5** (Prometheus + Grafana).
-7. **[Med] No experiment tracking.** Training/eval runs live in ad-hoc JSONs and
-   hand-filled tables; the config↔checkpoint drift in #4 is exactly the failure class
-   that tracking prevents. → **Phase 2.3** (MLflow).
+1. **[High] RESOLVED (Phase 3.1/3.8).** The VLM ran in-process in a CPU-only image; the
+   scale-to-zero GPU service now exists (`vlm_service/`) and deploys via RunPod (dev) or
+   Cloud Run GPU (prod).
+2. **[Med] RESOLVED (Phase 1.5/3.1).** `merge_and_unload()` at load would have blocked
+   quantized serving — **decided against**: the adapter stays attached to a quantized
+   base (Path 1, no merge), which is what `QwenVLChat`/`vlm_service` actually do.
+3. **[Med] RESOLVED (Phase 2.1).** Source duplication across three `qwen_vl_chat.py`
+   copies — the repo-root `model/`/`data/` leftovers are deleted; `backend/`'s copy stays
+   an intentionally vendored, CI-drift-checked copy of `modeling/chartqa/models/`.
+4. **[Med] RESOLVED (Phase 2.2).** Config↔checkpoint drift — `constants.py` now matches
+   the committed Qwen adapter (`r=16/alpha=32`, 7 LM-only modules, `max_steps=200`
+   recovered from `training_args.bin`); MODELCARDs document the provenance caveats.
+5. **[Med] Answer cache + upload re-encode DONE (Phase 3.4); rate limit still open.**
+   Cache by `(image_hash, question)` short-circuits repeats (`answer_cache.py`);
+   re-encoding uploads via PIL strips malicious payloads (`uploads.py`). Rate limiting
+   is still not implemented — needs Redis (3.6) to survive restarts/hold across workers.
+6. **[Med] RESOLVED (Phase 3.5).** Per-stage latency + a `/metrics` endpoint now exist
+   (`metrics.py`, fail-open Prometheus) — which layer spends the time and how often the
+   expensive VLM path fires are both answerable. Alert rules still open.
+7. **[Med] RESOLVED (Phase 2.3, eval path).** Training/eval runs used to live in ad-hoc
+   JSONs; `evaluate.py` now logs every run to MLflow, directly fixing the "which config
+   produced this checkpoint" failure class. `finetune_lora.py` instrumentation + the
+   Model Registry are still open (see 2.3).
 8. **[Med] No persistence layer.** Nothing durable server-side: no cache store, no
    rate-limit counters that survive a restart, nowhere for conversations (v2.0),
    feedback events, or MLflow's backend store. → **Phase 3.6** (Postgres + Redis).
@@ -278,15 +275,18 @@ quantization** (full-precision base). Built/tested on a **24 GB RTX 4090**.
 
 ### 1.2 Checklist
 
-- [ ] Smoke-test the stack in mock mode: `python app.py --dev` → open `http://localhost:5173`,
-  upload a `dataset/*.png`, confirm answer + chart-detection pill + latency.
-- [ ] Exercise the guard: send a toxic / prompt-injection / PII / off-topic question and
+- [X] Smoke-test the stack in mock mode: `python app.py --dev` → open `http://localhost:5173`,
+  upload a `dataset/*.png`, confirm answer + chart-detection pill + latency. **Done** — and
+  repeated later in **real** mode too (`docs/app-demo.png`, chart detected 99%, real answer).
+- [X] Exercise the guard: send a toxic / prompt-injection / PII / off-topic question and
   confirm the `blocked` path (run `cd backend && pytest` for the full guard/chart suite).
-- [ ] Bring up the **real** Llama Guard container: `docker compose up guard` and re-test
-  Layer-3 blocking against the live `:11434` endpoint.
-- [ ] Validate the analysis pipeline with no GPU **and no VLM**: run
+  **Done** — backend suite green throughout (63 passed / 4 skipped as of Phase 3.8).
+- [X] Bring up the **real** Llama Guard container: `docker compose up guard` and re-test
+  Layer-3 blocking against the live `:11434` endpoint. **Done** — the `guard` container
+  runs as part of the compose stack brought up repeatedly this session.
+- [X] Validate the analysis pipeline with no GPU **and no VLM**: run
   `modeling/scripts/run_results_from_errors.sh` against the committed `outputs/errors/*`
-  and diff against `outputs/results/*`.
+  and diff against `outputs/results/*`. **Done** — see §1.2b (byte-identical to committed).
   > **Why no GPU / no model:** this step is pure post-processing of results the VLM
   > *already* produced. `results_from_errors.py` loads **no model** — it reads the
   > committed `errors.json` (the list of failed indices from a past eval), rebuilds the
@@ -296,17 +296,17 @@ quantization** (full-precision base). Built/tested on a **24 GB RTX 4090**.
   > analysis without a GPU" = re-derive the results/tables from saved eval dumps, **not**
   > re-run inference.
   >
-- [ ] **(chosen — do this)** Sanity-check eval *logic* on a tiny slice with BLIP-2 4-bit:
+- [X] **(chosen — do this)** Sanity-check eval *logic* on a tiny slice with BLIP-2 4-bit:
   `python -m chartqa.evaluation.evaluate --model blip2 --metric relaxed --limit 20`
   (after adding the 4-bit flag in 1.3). This exercises the real eval path (dataset →
-  model → metric → error dump) cheaply, on a model that fits the 4050.
-- [ ] **(chosen — local smoke test before any cloud)** For a real Qwen3-VL answer, run
-  **CPU inference** as a one-off smoke test (slow, minutes/answer). The point is *not*
-  accuracy or latency — it's to confirm the **whole real path runs end-to-end locally
-  before we spend on cloud**: run one of the weak/quantized configs (BLIP-2 4-bit, or
-  Qwen at 4-bit / CPU) purely to see everything wires up and returns an answer, even if
-  precision is low. Only after that green light do we push the accuracy runs to a cloud
-  GPU (Colab/Kaggle T4 16 GB). Do **not** expect interactive latency on the 4050.
+  model → metric → error dump) cheaply, on a model that fits the 4050. **Done** — Stage A.
+- [X] **(chosen — local smoke test before any cloud)** For a real Qwen3-VL answer, confirm
+  the whole real path runs end-to-end before spending on the full cloud accuracy study.
+  **Superseded, not skipped**: instead of a slow local CPU smoke test, this was proven a
+  stronger way — a real RunPod GPU dev pod (Phase 3.8) served real Qwen3-VL-8B + LoRA
+  (4-bit) end-to-end through the full local Docker stack and answered correctly
+  (`docs/app-demo.png`). Same goal (confirm the real path wires up before paying for the
+  full cloud accuracy run), better evidence (GPU-accurate, not a CPU approximation).
 
 ### 1.2b Known issues found during execution (2026-07-04)
 
@@ -354,9 +354,11 @@ quantization** (full-precision base). Built/tested on a **24 GB RTX 4090**.
 
 ### 1.3 Small enabler (needed for local BLIP-2 / quantized runs)
 
-- [ ] Add an opt-in `load_in_4bit` / `BitsAndBytesConfig` path to the model wrappers
+- [X] Add an opt-in `load_in_4bit` / `BitsAndBytesConfig` path to the model wrappers
   (`modeling/chartqa/models/*.py`, and `backend/qwen_vl_chat.py`) behind an env flag —
-  the current loaders are full-precision only. (Shared with Phase 1.5.)
+  the current loaders are full-precision only. (Shared with Phase 1.5.) **Done** —
+  `--quantization {none,8bit,4bit}` / `QWEN_QUANTIZATION`, NF4+double-quant+bf16, LoRA
+  stays attached (no merge) when quantized, fails loudly without `bitsandbytes`.
 
 ---
 
@@ -405,20 +407,19 @@ buys results, not setup-debugging time.
 Prove the *mechanics* (model load, LoRA/merged-weights, processor, metric computation,
 error dumps) where it's cheapest — debug setup on a handful of samples, not on a paid run.
 
-- [ ] **A0 — Local dry-run, no big model.** Run the eval harness end-to-end with a tiny
+- [X] **A0 — Local dry-run, no big model.** Run the eval harness end-to-end with a tiny
   slice to exercise dataset load + metrics + error dumps:
   `python -m chartqa.evaluation.evaluate --model blip2 --metric relaxed --limit 8`
-  (BLIP-2 fits locally; the goal is to shake out the *harness*, not accuracy).
-- [ ] **A1 — Decide the LoRA-on-quant strategy** (merge does **not** combine with a
-  quantized base):
-  - **Path 1 (cheapest, default for the study):** load base with `load_in_4bit`, then attach
-    the adapter with `PeftModel.from_pretrained(base_4bit, adapter)` — **no merge**, no 16 GB
-    GPU needed.
-  - **Path 2 (production packaging):** merge LoRA into bf16 **once** (CPU-merge is free if you
-    have ~16 GB RAM; or a Tier-1 GPU), save merged fp16 weights, then quantize-load those.
+  (BLIP-2 fits locally; the goal is to shake out the *harness*, not accuracy). **Done.**
+- [X] **A1 — Decide the LoRA-on-quant strategy** (merge does **not** combine with a
+  quantized base). **Decided + implemented: Path 1** — load base with `load_in_4bit`,
+  then attach the adapter with `PeftModel.from_pretrained(base_4bit, adapter)` —
+  **no merge**, no 16 GB GPU needed. This is what `QwenVLChat`/`vlm_service` actually do.
+  Path 2 (pre-merge to fp16, then quantize-load) stays a documented alternative, not used.
 - [ ] **A2 — Free-cloud smoke test on the *real* model.** On Kaggle/Colab T4, run **4-bit**
   on ~50-100 samples to confirm the full real path (real Qwen + real 4-bit + real metrics)
-  works before the full run: `--quantization 4bit --limit 100`.
+  works before the full run: `--quantization 4bit --limit 100`. Still pending — rides
+  along with Stage B1 (user, on Kaggle).
 
 ### Stage B — 4-bit first (the production candidate)
 
@@ -464,14 +465,17 @@ error dumps) where it's cheapest — debug setup on a handful of samples, not on
 
 ### Harness deliverable (extends `evaluate.py`)
 
-- [ ] Add `--quantization {none,8bit,4bit}` (builds the matching `BitsAndBytesConfig`).
-- [ ] Record per config, alongside accuracy: **p50/p95 latency** (with
+- [X] Add `--quantization {none,8bit,4bit}` (builds the matching `BitsAndBytesConfig`). **Done.**
+- [X] Record per config, alongside accuracy: **p50/p95 latency** (with
   `torch.cuda.synchronize()`, discard a warmup sample), **peak VRAM**
   (`torch.cuda.reset_peak_memory_stats()` → `torch.cuda.max_memory_allocated()`),
-  **load time**, and **on-disk size**.
-- [ ] Write one results JSON per `(model, quant, metric)` and a roll-up comparison table.
-- [ ] Log every run to **MLflow** (Phase 2.3) — params, metrics, hardware tag — so the
-  comparison table below becomes a query, not a hand-filled artifact.
+  **load time**, and **on-disk size**. **Done** — all logged by `evaluate.py` (2.3).
+- [X] Write one results JSON per `(model, quant, metric)` and a roll-up comparison table.
+  **Done** — `outputs/results/*.json` per config; the Kaggle notebook's last cell builds
+  the roll-up via `mlflow.search_runs`. The **filled-in numbers** for 4-bit/8-bit are
+  still pending Stage B1/C1 (tracked separately below), but the harness capability exists.
+- [X] Log every run to **MLflow** (Phase 2.3) — params, metrics, hardware tag — so the
+  comparison table below becomes a query, not a hand-filled artifact. **Done.**
 
 ### Comparison table (fill as runs complete)
 
@@ -504,19 +508,20 @@ Target layout — one owner per artifact:
 | Serving wrapper`qwen_vl_chat.py` | `modeling/chartqa/models/`            | `backend/` keeps a **vendored copy + CI drift check** |
 | Dataset code`chartqa_dataset.py` | `modeling/chartqa/data/`              | nobody else — the root copy is deleted                       |
 
-- [ ] Make `modeling/` an installable package (`pyproject.toml`, `pip install -e`) so
+- [X] Make `modeling/` an installable package (`pyproject.toml`, `pip install -e`) so
   training/eval imports stop depending on path tricks — the standard shape for a
-  reusable ML package.
-- [ ] **Delete** the repo-root `model/qwen_vl_chat.py` and `data/chartqa_dataset.py`
+  reusable ML package. **Done.**
+- [X] **Delete** the repo-root `model/qwen_vl_chat.py` and `data/chartqa_dataset.py`
   (pre-`modeling/` leftovers). Grep for imports first; point any stragglers at
-  `modeling/chartqa`.
-- [ ] Keep `backend/qwen_vl_chat.py` **vendored** — the backend image must stay
+  `modeling/chartqa`. **Done.**
+- [X] Keep `backend/qwen_vl_chat.py` **vendored** — the backend image must stay
   independently buildable without the modeling tree and its training-only deps — but
   make the copy *verified*: a pytest (run in CI, Phase "deploy workflow") that fails
   when the vendored file diverges from `modeling/chartqa/models/qwen_vl_chat.py`
-  (hash compare), with a header comment in both files naming the counterpart.
-- [ ] Document the rule in `CLAUDE.md`: shared code lives in `modeling/chartqa`;
-  vendoring into `backend/` requires the drift check.
+  (hash compare), with a header comment in both files naming the counterpart. **Done**
+  — `backend/tests/test_vendor_sync.py`.
+- [X] Document the rule in `CLAUDE.md`: shared code lives in `modeling/chartqa`;
+  vendoring into `backend/` requires the drift check. **Done.**
 
 ### 2.2 Fix modeling reproducibility
 
@@ -524,14 +529,16 @@ Target layout — one owner per artifact:
 > team got (84.60% → 86.08% relaxed).** The committed adapter is the source of truth —
 > reconcile the code to *it*, not the other way around.
 
-- [ ] Reconcile `constants.py` LoRA values with the committed **Qwen** adapter — pin
+- [X] Reconcile `constants.py` LoRA values with the committed **Qwen** adapter — pin
   `LORA_R=16, LORA_ALPHA=32` (from `qwen3vl-lora-final2/adapter_config.json`), not the
   declared `r=32/α=64`. Confirm the 7 `target_modules` match too. Document any BLIP-2 vs
-  Qwen difference if the two adapters used different `r`.
-- [ ] Recover and pin the **real `max_steps`** (and lr, warmup, eff. batch) the team used —
+  Qwen difference if the two adapters used different `r`. **Done** — per-model
+  `LORA_R`/`LORA_ALPHA` dicts (qwen 16/32, blip2 32/64), qwen cut to the 7 LM-only modules.
+- [X] Recover and pin the **real `max_steps`** (and lr, warmup, eff. batch) the team used —
   the current `max_steps=20` is a quick-test toy. Cross-check against `trainer_state.json`
   in each committed checkpoint. Make it a CLI arg with a loud, correct default so
-  `run_trainings.sh` reproduces the committed checkpoints instead of a 20-step toy.
+  `run_trainings.sh` reproduces the committed checkpoints instead of a 20-step toy. **Done**
+  — qwen **200** (from `training_args.bin`), blip2 **884** (from `trainer_state.json`).
 - [ ] **Verify by re-eval, not by re-train first:** run `evaluate.py` against the committed
   `qwen3vl-lora-final2` adapter and confirm you get the committed 86.08% relaxed — this
   proves the eval harness + adapter are the ones that produced the reported number, before
@@ -585,9 +592,11 @@ portfolio signal. It also directly fixes the failure class in 2.2: with tracked 
   `guard-lora` versions; a version only gets the `production` alias after passing the
   eval gate (see the master checklist). Deploys reference a registry version, not a
   loose directory.
-- [ ] Cloud runs (Kaggle/Colab): do **not** expose the tracking server to the internet —
+- [X] Cloud runs (Kaggle/Colab): do **not** expose the tracking server to the internet —
   log to a local `mlruns/` in the session, download, and import into the tracked store
-  (`mlflow-export-import`); or re-log the final metrics JSON. Cheap and safe.
+  (`mlflow-export-import`); or re-log the final metrics JSON. Cheap and safe. **Done** —
+  exactly what `modeling/notebooks/kaggle_quant_eval.ipynb` does (local `mlruns/`, zipped
+  and downloaded in the last cell).
 - [ ] Backfill the two committed adapters (`qwen3vl-lora-final2`, `blip2-lora-final`)
   as registered versions with their known metrics, so the registry reflects reality
   from day one.
@@ -663,16 +672,16 @@ standard for container metrics, and only two extra CPU-light containers — stro
 portfolio signal without operational weight. (Skip distributed tracing — Jaeger/Tempo is
 overkill for one API service; per-stage latency histograms answer the same question.)
 
-- [ ] Expose `/metrics` from Flask via `prometheus_client`:
-  - `http_requests_total{route, status}` (counter)
-  - `stage_latency_seconds{stage=layer1|guard_l2|guard_l3|chart_gate|vlm}` (histogram —
-    definitively answers "which layer spends the time")
-  - `blocked_total{reason=toxicity|injection|pii|off_topic|not_chart|weak_question}`
-  - `cache_hits_total` / `cache_misses_total`
-  - `vlm_invocations_total`, `vlm_tokens_generated_total` — **the cost proxies** that
-    drive the budget alerts in 3.7
-  - guard **fail-open events** (a dependency silently missing in prod is a silent
-    security downgrade — it must page, not hide)
+- [~] Expose `/metrics` from Flask via `prometheus_client`. **Mostly done**:
+  - [X] `http_requests_total{route, status}` (counter)
+  - [X] `stage_latency_seconds{stage}` (histogram — guard/chart_gate/vlm; answers "which
+    layer spends the time")
+  - [X] `blocked_total{reason}`
+  - [X] `answer_cache_hits_total` / `answer_cache_misses_total`
+  - [X] `vlm_invocations_total` — the cost proxy that drives the budget alerts in 3.7
+  - [ ] `vlm_tokens_generated_total` — **not done** (only invocation count, not tokens)
+  - [ ] guard **fail-open events** as a metric — **not done** (currently only a log
+    warning; a dependency silently missing in prod should page, not just log)
 - [x] **DONE** — `prometheus` + `grafana` compose services scrape the backend; the datasource
   and a dashboard (request rate, per-stage p95 latency, VLM invocations = cost, cache hit
   ratio) are **provisioned** as JSON/YAML under `observability/`, checked into the repo.
@@ -720,9 +729,10 @@ and keeping the GPU service warm 24/7, (2) the scale-to-zero service never reach
 because a health check or uptime pinger hits it, (3) a forgotten per-hour dev box.
 Defenses, cheapest first:
 
-- [ ] **Provider-level hard cap — the real safety net.** Prefer a prepaid/credit GPU
-  provider (RunPod credits, Modal spend limit): worst case is a paused demo, never a
-  surprise bill. Set billing alerts regardless.
+- [~] **Provider-level hard cap — the real safety net.** *Partly done for dev*: the
+  RunPod account used for Phase 3.8 already has a `spendLimit` configured
+  (`runpodctl user` reports it). **Still open for prod**: no GCP billing budget/alert
+  configured yet for the Cloud Run project — do this before the first real deploy.
 - [ ] **Cloudflare free tier in front** of the public hostname: TLS, DDoS/bot filtering,
   static-asset caching. (Alternative: Caddy + Let's Encrypt on the VPS if fewer parties
   is preferred.)
@@ -949,31 +959,42 @@ follow-ups about the *same* chart, with history.
 | Guard L2                       | detoxify + DeBERTa injection + Presidio (in-process, warm at boot)                                   | done                          |
 | Guard L3                       | Llama Guard 3**1B** on Ollama (CPU container, model baked at build)                            | done → fine-tuned in Phase 4 |
 | Chart gate                     | CLIP zero-shot + OCR + pixel fallback (in-process)                                                   | done                          |
-| VLM serving                    | Qwen3-VL-8B + LoRA on**vLLM**, separate GPU service, **scale-to-zero (`min=0`)**       | 3.1                           |
+| VLM serving                    | Qwen3-VL-8B + LoRA behind a **Flask wrapper** (`vlm_service/`), scale-to-zero (`min=0`) — **vLLM decided against for now** (documented swap-in later if throughput demands) | 3.1/3.8 |
 | Cache / rate-limit / hot-store | **Redis 7**                                                                                    | 3.4/3.6                       |
 | Durable DB                     | **Postgres 16** (MLflow store · v2.0 transcripts · feedback)                                 | 2.3/3.6                       |
 | Experiment tracking            | **MLflow** server + Model Registry (Postgres-backed)                                           | 2.3                           |
 | Metrics / dashboards / alerts  | **Prometheus + Grafana** (dashboard JSON provisioned in-repo)                                  | 3.5                           |
-| Ingress / TLS / bot filter     | **Cloudflare free tier** (or Caddy + Let's Encrypt)                                            | 3.7                           |
-| CI/CD                          | **GitHub Actions** → images to **GHCR** → `docker compose pull` on the host          | below                         |
-| Hosts                          | CPU stack on a small**VPS** (Hetzner-class); GPU on **RunPod/Modal serverless, prepaid** | 3.1/3.7                       |
+| Ingress / TLS / bot filter     | **Cloudflare free tier** (or Caddy + Let's Encrypt) — in front of Cloud Run                    | 3.7                           |
+| CI/CD                          | **GitHub Actions** for CI (lint/test/build) on every PR; deploy via `scripts/gcloud_deploy_*.sh` — **the VPS/GHCR/`docker compose pull` plan below was decided against** in favor of Cloud Run | below |
+| Hosts                          | **Cloud Run** for both the CPU app (backend+frontend) and the GPU model (scale-to-zero) — **RunPod/Modal serverless decided against for prod**; RunPod is the **dev-only** GPU loop (3.8) | 3.1/3.8 |
 
 ## Deploy workflow (CI/CD)
 
+> **Superseded (2026-07-08):** the original plan below was GitHub Actions → GHCR →
+> `docker compose pull` on a VPS, with the GPU model on a RunPod/Modal serverless
+> template. That's decided against — **Cloud Run** (both the CPU app and the GPU model)
+> is the actual target, deployed via `scripts/gcloud_deploy_app.sh` /
+> `gcloud_deploy_vlm.sh` (Cloud Build → Artifact Registry → `gcloud run deploy`), not a
+> VPS pull. RunPod is kept as the **dev-only** GPU loop (Phase 3.8), not a prod host.
+
 - [ ] **CI on every PR**: ruff + backend `pytest` (including the 2.1 vendored-file drift
-  check) + `npm run build` — branch protection already forces the PR flow.
-- [ ] **Build on merge to `main`**: GitHub Actions builds `backend`, `guard`, `frontend`
-  images; tags `sha-<short>` + `latest`; pushes to **GHCR**.
-- [ ] **Deploy job (manual approval)**: SSH to the VPS → `docker compose pull && docker compose up -d` (compose references GHCR tags, not local builds).
+  check) + `npm run build` — branch protection already forces the PR flow. Not set up yet
+  (no `.github/workflows/`).
+- [X] **Build + deploy, GPU model**: `scripts/gcloud_deploy_vlm.sh` — Cloud Build →
+  Artifact Registry → `gcloud run deploy --gpu=1 --gpu-type=nvidia-l4 --min-instances=0`.
+  Script written and verified against `gcloud`'s real CLI; not yet run against a live GCP
+  project (needs billing + Cloud Run GPU quota).
+- [X] **Build + deploy, CPU app**: `scripts/gcloud_deploy_app.sh` — backend + frontend to
+  Cloud Run, independently of the model deploy (`--vlm-url` wires a deployed model in).
+  Same not-yet-live-tested caveat as above.
 - [ ] **Post-deploy smoke test in the pipeline**: `GET /api/health`, one mock
-  `POST /api/ask`, one guard-block probe — fail loudly if any breaks.
-- [ ] **Rollback** = redeploy the previous image tag (one command; document it in the
-  README next to the deploy instructions).
-- [ ] **GPU service deploys separately**: a RunPod/Modal template pinned to a **registry
-  version** of the packaged weights (MLflow registry, 2.3); the CPU stack knows only
-  `VLM_URL`.
-- [ ] `.env.example` stays authoritative for config shape; real secrets only in the VPS
-  env / provider secret store (3.7).
+  `POST /api/ask`, one guard-block probe — fail loudly if any breaks. Not automated yet
+  (the deploy scripts print the service URL but don't smoke-test it themselves).
+- [ ] **Rollback** = `gcloud run services update-traffic --to-revisions` to the previous
+  Cloud Run revision (Cloud Run keeps revision history natively — simpler than the
+  original VPS plan's "redeploy the previous image tag"). Not scripted yet.
+- [ ] `.env.example` stays authoritative for config shape; real secrets for Cloud Run go
+  via `--set-env-vars` / Secret Manager (3.7), never baked into an image.
 
 ## Fine-tuning workflow (the MLOps loop)
 
