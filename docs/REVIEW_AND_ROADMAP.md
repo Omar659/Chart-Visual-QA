@@ -543,13 +543,21 @@ portfolio signal. It also directly fixes the failure class in 2.2: with tracked 
 
 ### 3.2 Containerize the frontend (prod)
 
-- [ ] Add an nginx static-build container for the React app (currently host Vite even in
-  "prod"). Wire it into compose; proxy `/api` to the backend.
+- [x] **DONE** — `frontend/Dockerfile` (multi-stage: `node:20-alpine` builds the Vite app →
+  `nginx:1.27-alpine` serves the static `dist/`), `frontend/nginx.conf` (static + SPA
+  fallback + `/api` proxy to `backend:5000` + `client_max_body_size 10m` + security
+  headers), `frontend/.dockerignore`, and a `frontend` service in `docker-compose.yml`
+  (`8080:80`, `depends_on: backend`). Same-origin in prod (no CORS). `docker compose config`
+  validates; run `docker build ./frontend` on a Docker host to produce the image.
 
 ### 3.3 Slim the backend image
 
-- [ ] Multi-stage build (builder → slim runtime); drop build tooling; keep the baked CLIP +
-  Layer-2 encoders. Consider a weights volume vs bake trade-off and document image size.
+- [~] **Partly done.** `backend/.dockerignore` already excludes the big/dev items —
+  critically `.venv/` (can be several GB) so `COPY . .` doesn't bake it — plus
+  `__pycache__`, `tests/`, `*.md`, and now `.env*` (secrets never in the image). *Remaining
+  (optional):* a true multi-stage builder→runtime split; the baked CLIP + Layer-2 encoder
+  weights (~1 GB+) dominate size, so the gain is modest — do it with a `docker build` on a
+  host to measure before/after.
 
 ### 3.4 Request hardening
 

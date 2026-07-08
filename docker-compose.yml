@@ -23,6 +23,16 @@ services:
     depends_on:
       - guard
 
+  # Frontend (prod): nginx serves the built React app and proxies /api to the backend,
+  # so the browser talks to ONE origin (no CORS needed in prod). Dev still uses Vite
+  # (`python app.py --dev`). Open the app at http://localhost:8080.
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
   # CPU-only guard: Ollama serving Llama Guard over the OpenAI API
   # (/v1/chat/completions — the same endpoint guard_llm.py calls). The model is
   # BAKED into the image (guard/Dockerfile), so there's no runtime pull and cold

@@ -3,5 +3,9 @@
 **/__pycache__/
 *.pyc
 .pytest_cache/
+.ruff_cache/
 tests/
 *.md
+# Secrets never belong in the image — config arrives via env_file/compose.
+.env
+.env.*
