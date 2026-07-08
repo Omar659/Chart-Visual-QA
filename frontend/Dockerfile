@@ -11,8 +11,15 @@ COPY . .
 RUN npm run build          # -> /app/dist
 
 FROM nginx:1.27-alpine
-# SPA config: static assets + /api proxy to the backend (see nginx.conf).
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# SPA config: static assets + /api proxy to the backend. Templated (see
+# nginx.conf.template) — nginx:alpine's entrypoint envsubst's files under
+# /etc/nginx/templates/*.template into /etc/nginx/conf.d/ at container start, using
+# whatever PORT/BACKEND_URL/DNS_RESOLVER are in the environment. Defaults below match
+# local docker-compose; Cloud Run overrides them (see scripts/gcloud_deploy_app.sh).
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
+ENV PORT=80 \
+    BACKEND_URL=http://backend:5000 \
+    DNS_RESOLVER=127.0.0.11
 EXPOSE 80
 # nginx:alpine's base CMD already runs nginx in the foreground.

@@ -1,7 +1,18 @@
 # nginx serves the built SPA and proxies /api to the backend, so the browser makes
 # same-origin requests (no CORS in prod) — mirrors the Vite dev proxy (vite.config.js).
+#
+# Template (not a static .conf): PORT/BACKEND_URL/DNS_RESOLVER are substituted at
+# container start by nginx:1.27-alpine's built-in envsubst-on-templates entrypoint step
+# (only variables that are actually set in the environment get replaced — nginx's own
+# runtime variables like $host below are untouched, since they aren't env vars). This
+# is what lets the SAME image run unmodified in both places:
+#   docker-compose (local): PORT=80, BACKEND_URL=http://backend:5000 (Dockerfile ENV
+#     defaults), DNS_RESOLVER=127.0.0.11 (Docker's embedded DNS).
+#   Cloud Run: PORT=8080 (Cloud Run always injects this), BACKEND_URL=the backend
+#     Cloud Run service's HTTPS URL, DNS_RESOLVER=a public resolver — all set by
+#     scripts/gcloud_deploy_app.sh via `gcloud run deploy --set-env-vars`.
 server {
-    listen 80;
+    listen ${PORT};
     server_name _;
 
     root /usr/share/nginx/html;
@@ -16,19 +27,25 @@ server {
     add_header X-Frame-Options "DENY" always;
     add_header Referrer-Policy "no-referrer" always;
 
-    # API → backend service on the Docker network. Resolve via Docker's embedded DNS
-    # (127.0.0.11) at REQUEST time using a variable, so nginx starts even if the backend
-    # isn't up yet and survives a backend restart / IP change (a literal proxy_pass would
-    # resolve once at boot and hard-fail or cache a stale IP).
+    # API → backend. Resolved at REQUEST time via a variable (not a literal proxy_pass),
+    # so nginx starts even if the backend isn't up yet and survives a backend
+    # restart/IP change / Cloud Run URL change.
     location /api/ {
-        resolver 127.0.0.11 valid=10s;
-        set $backend_upstream http://backend:5000;
+        resolver ${DNS_RESOLVER} valid=10s;
+        set $backend_upstream ${BACKEND_URL};
         proxy_pass $backend_upstream;
-        proxy_set_header Host $host;
+        # $proxy_host (the resolved upstream's own host:port), NOT $host (the
+        # incoming client request's Host — this frontend's own hostname). Forwarding
+        # the client's Host works by accident for docker-compose's `backend:5000`
+        # (nothing there routes on Host), but breaks Cloud Run: its front end routes
+        # *.run.app traffic BY Host header, so sending the frontend's own Host while
+        # connecting to the backend's address fails to reach the backend service.
+        proxy_set_header Host $proxy_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 300s;   # survive a cold guard / VLM call
+        proxy_ssl_server_name on; # correct TLS SNI when BACKEND_URL is https (Cloud Run)
     }
 
     # SPA fallback: unknown paths return index.html for client-side routing.
