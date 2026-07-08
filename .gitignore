@@ -236,3 +236,7 @@ backend/.venv/
 
 # MLflow local file store (experiment tracking runs + artifacts)
 mlruns/
+
+# scripts/runpod_up.py's bookkeeping (pod id, SSH target, tunnel pid) — transient,
+# regenerated per run.
+scripts/.runpod_state.json
