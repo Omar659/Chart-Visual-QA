@@ -35,3 +35,10 @@ export async function getHealth() {
   if (!res.ok) throw new Error('Health check failed.')
   return res.json() // { status, mock }
 }
+
+// Fire-and-forget nudge for the remote VLM (RunPod dev pod / Cloud Run instance) so it
+// has a head start before the user's first real question. Never throws — a failed warm
+// ping just means the first /api/ask absorbs the full cold-start latency instead.
+export function warmVlm() {
+  fetch('/api/vlm/warm').catch(() => {})
+}

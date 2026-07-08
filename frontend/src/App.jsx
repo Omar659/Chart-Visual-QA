@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { askQuestion, getHealth } from './api'
+import { askQuestion, getHealth, warmVlm } from './api'
 import './App.css'
 
 const MAX_BYTES = 10 * 1024 * 1024 // keep in sync with backend MAX_CONTENT_LENGTH
@@ -22,10 +22,15 @@ function App() {
   const fileInputRef = useRef(null)
   const abortRef = useRef(null)
 
-  // Probe the backend once so we can show a "mock mode" status pill.
+  // Probe the backend once so we can show a "mock mode" status pill, and nudge the
+  // remote VLM (RunPod dev pod / Cloud Run instance) so it has a head start before
+  // the user's first real question.
   useEffect(() => {
     getHealth()
-      .then((h) => setMockBanner(Boolean(h.mock)))
+      .then((h) => {
+        setMockBanner(Boolean(h.mock))
+        if (!h.mock) warmVlm()
+      })
       .catch(() => {}) // health failure is non-fatal for the UI
   }, [])
 

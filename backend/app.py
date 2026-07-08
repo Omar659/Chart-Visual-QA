@@ -40,6 +40,7 @@ from flask_cors import CORS
 
 import answer_cache
 import metrics
+import vlm_provider
 from chart_check import looks_like_chart
 from env_config import env_bool, env_float, env_int, env_str
 from guard import guard, warmup
@@ -111,6 +112,16 @@ def metrics_endpoint():
     return Response(body, mimetype=content_type)
 
 
+@app.get("/api/vlm/warm")
+def vlm_warm():
+    """Fire-and-forget nudge for the remote VLM (see vlm_provider.py). The frontend
+    calls this on page load so a cold RunPod dev pod / Cloud Run instance has a head
+    start before the user's first real question. Always returns immediately."""
+    if not is_mock():
+        vlm_provider.warm()
+    return jsonify(status="ok")
+
+
 @app.post("/api/ask")
 def ask():
     question = (request.form.get("question") or "").strip()
@@ -155,6 +166,13 @@ def ask():
     t0 = time.perf_counter()
     is_chart, chart_confidence = looks_like_chart(image_bytes)
     metrics.observe_stage("chart_gate", time.perf_counter() - t0)
+
+    if not is_mock():
+        t0 = time.perf_counter()
+        if not vlm_provider.ensure_running(env_float("VLM_TIMEOUT")):
+            metrics.observe_stage("vlm_start", time.perf_counter() - t0)
+            return jsonify(error="The model service is starting up — try again shortly."), 503
+        metrics.observe_stage("vlm_start", time.perf_counter() - t0)
 
     start = time.perf_counter()
     answer = run_inference(image_bytes, question)

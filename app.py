@@ -199,12 +199,48 @@ def _popen(cmd: list[str], cwd: Path, env: dict[str, str]) -> subprocess.Popen:
     return subprocess.Popen(cmd, **kwargs)
 
 
-def start_backend(port: int) -> subprocess.Popen:
+def start_backend(port: int, extra_env: dict[str, str] | None = None) -> subprocess.Popen:
     env = os.environ.copy()
     env["PORT"] = str(port)
+    env.update(extra_env or {})
     cmd = [_backend_python(), "app.py"]
     print(f"[orchestrator] starting backend on :{port} -> {cmd}", flush=True)
     return _popen(cmd, BACKEND_DIR, env)
+
+
+def start_runpod_vlm() -> str:
+    """Provision the RunPod dev pod (scripts/runpod_up.py --no-wait) and return VLM_URL.
+
+    Blocking (a few minutes: pod boot + dependency install + model load) — runs before
+    the backend starts so the very first /api/ask already has a live VLM_URL instead of
+    racing vlm_provider's lazy per-request start. Teardown is the orchestrator's own
+    Ctrl-C / child-exit handling below (`scripts/runpod_down.py`), not runpod_up.py's own
+    idle-watchdog (that's for standalone use — see docs/RUNPOD_NOTES.md).
+    """
+    print("[orchestrator] --runpod: provisioning a RunPod dev GPU pod for the VLM "
+          "(this takes a few minutes on first boot)...", flush=True)
+    proc = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "runpod_up.py"), "--no-wait"],
+        cwd=str(ROOT), capture_output=True, text=True,
+    )
+    print(proc.stdout, flush=True)
+    if proc.returncode != 0:
+        print(f"[orchestrator] FAILED to provision the RunPod pod:\n{proc.stderr}", flush=True)
+        raise SystemExit(1)
+    url = next(
+        (line.split("=", 1)[1] for line in proc.stdout.splitlines()
+         if line.startswith("VLM_URL=")),
+        None,
+    )
+    if not url:
+        print("[orchestrator] runpod_up.py did not print a VLM_URL; aborting.", flush=True)
+        raise SystemExit(1)
+    return url
+
+
+def stop_runpod_vlm() -> None:
+    print("[orchestrator] --runpod: tearing down the RunPod dev pod...", flush=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "runpod_down.py")], cwd=str(ROOT))
 
 
 def start_frontend(port: int, backend_port: int) -> subprocess.Popen:
@@ -334,12 +370,18 @@ def main() -> int:
     parser.add_argument("--no-setup", action="store_true", help="skip the dependency check")
     parser.add_argument("--no-guard", action="store_true",
                         help="light setup: skip installing the heavy guard models")
+    parser.add_argument("--runpod", action="store_true",
+                        help="--dev only: provision a RunPod GPU pod for the real VLM "
+                             "(scripts/runpod_up.py) instead of USE_MOCK/in-process, and "
+                             "tear it down on exit (scripts/runpod_down.py).")
     parser.add_argument("--backend-port", type=int, default=5000)
     parser.add_argument("--frontend-port", type=int, default=5173)
     args = parser.parse_args()
 
     if args.backend_only and args.frontend_only:
         parser.error("--backend-only and --frontend-only are mutually exclusive")
+    if args.runpod and not args.dev:
+        parser.error("--runpod requires --dev")
 
     run_backend = not args.frontend_only
     run_frontend = not args.backend_only
@@ -363,10 +405,20 @@ def main() -> int:
         print("[setup] done (--setup-only).", flush=True)
         return 0
 
+    backend_env: dict[str, str] = {}
+    if args.runpod:
+        try:
+            backend_env["VLM_URL"] = start_runpod_vlm()
+            backend_env["VLM_PROVIDER"] = "runpod"
+            backend_env["USE_MOCK"] = "0"
+        except SystemExit:
+            stop_runpod_vlm()
+            return 1
+
     procs: list[tuple[str, subprocess.Popen]] = []
     try:
         if run_backend:
-            procs.append(("backend", start_backend(args.backend_port)))
+            procs.append(("backend", start_backend(args.backend_port, backend_env)))
         if run_frontend:
             procs.append(("frontend", start_frontend(args.frontend_port, args.backend_port)))
 
@@ -400,6 +452,8 @@ def main() -> int:
     finally:
         for _, proc in procs:
             _terminate(proc)
+        if args.runpod:
+            stop_runpod_vlm()
 
 
 if __name__ == "__main__":
