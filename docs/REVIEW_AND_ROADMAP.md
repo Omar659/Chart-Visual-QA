@@ -57,6 +57,19 @@ Work lives on branch **`feat/quantization-flag`** (not pushed). Backend suite: *
   Prometheus/Grafana **containers + dashboard** = the immediate next piece.
 - **3.7 security** ✅ (partial) — CORS pinned via `CORS_ORIGINS` + security headers.
 
+**Phase 3.6 data layer + 3.7 cost/abuse controls (done this session):**
+- **3.6** ✅ **Docker-verified** — `redis` + `postgres` + a Postgres-backed `mlflow`
+  server, all localhost-bound, healthchecked, with volumes. One shared fail-open
+  `backend/redis_client.py` behind the answer cache, rate limiter, and VLM budget.
+  Verified live: redis PONG, `pg_isready`, MLflow `/health` 200 + Postgres-backed API.
+  (Also closes the 2.3 "mlflow service backed by Postgres" item.)
+- **3.7** ✅ (partial) — **per-IP rate limit** (`ratelimit.py`, Redis+in-memory, 429 +
+  metric), **daily VLM budget breaker** (`budget.py`, refuses before the GPU, 429 +
+  metric), **guard fail-open metric** (closes the 3.5 gap), **non-root containers**
+  (frontend Docker-verified uid 101; backend/vlm_service same pattern, images not rebuilt
+  this session — flaky network). 17 new backend tests (suite **80 passed / 4 skipped**).
+  Remaining: global VLM concurrency cap, Grafana alerts, edge/Cloudflare, prod spend cap.
+
 **3.8 dev/prod GPU serving automation (done this session):**
 - **RunPod dev pod deployed manually first** — real Qwen3-VL-8B + LoRA (4-bit) served
   from a RunPod A5000, answered correctly through the full local stack (Docker
@@ -697,23 +710,38 @@ overkill for one API service; per-stage latency histograms answer the same quest
 
 ### 3.6 Data layer — Postgres + Redis
 
-**Current state: no database at all** — the app is fully stateless (fine for v1.0
-single-shot, and part of why it's cheap). Three phases now need state, and the
-market-standard split is:
+> **Status (2026-07-08): DONE + Docker-verified.** `redis`, `postgres`, and an
+> `mlflow` server (Postgres-backed) are compose services, all localhost-bound. Redis
+> earns its keep immediately (shared answer cache + rate-limit + VLM-budget counters);
+> Postgres earns its keep immediately as the MLflow backend store. **Verified live**:
+> `redis-cli ping` → PONG, `pg_isready` → accepting, MLflow `/health` → 200 and its
+> Postgres-backed API returns the Default experiment.
+
+The market-standard split (both now implemented):
 
 | Store                          | Used for                                                                                        | Why this one                                                                                                                                           |
 | ------------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Redis** (7-alpine)     | Answer cache w/ TTL (3.4) · rate-limit counters (3.4/3.7) · v2.0 conversation hot-store (5.1) | In-memory speed, native TTL/eviction, atomic counters                                                                                                  |
-| **Postgres** (16-alpine) | MLflow backend store (2.3) · v2.0 conversation persistence · feedback events (5.1)            | Durable + relational, the production default — SQLite would*work* at this scale, but Postgres is what production uses and a container makes it free |
+| **Redis** (7-alpine)     | Answer cache w/ TTL (3.4) ✅ · per-IP rate-limit counters (3.7) ✅ · daily VLM budget (3.7) ✅ · v2.0 conversation hot-store (5.1) | In-memory speed, native TTL/eviction, atomic counters                                                                                                  |
+| **Postgres** (16-alpine) | MLflow backend store (2.3) ✅ · v2.0 conversation persistence · feedback events (5.1)            | Durable + relational, the production default — SQLite would*work* at this scale, but Postgres is what production uses and a container makes it free |
 
-- [ ] Add `redis` + `postgres` compose services with named volumes and healthchecks;
-  wire `depends_on: condition: service_healthy` for consumers.
-- [ ] Config via env (`REDIS_URL`, `DATABASE_URL`), consistent with the existing
-  no-in-code-defaults convention; both **fail-open**: no Redis → in-memory cache +
-  per-process rate limit; no Postgres → the features that need it disable cleanly.
-- [ ] Don't create app tables before something needs them — Postgres arrives with MLflow
-  (2.3) and earns its keep immediately; the app schema (conversations, messages,
-  feedback) lands in Phase 5 with **Alembic** migrations.
+- [X] Add `redis` + `postgres` compose services with named volumes and healthchecks;
+  wire `depends_on: condition: service_healthy` for consumers. **Done** — `redis`
+  (healthcheck `redis-cli ping`, no persistence — every key is a TTL'd cache/counter),
+  `postgres` (healthcheck `pg_isready`, `pgdata` volume), and `mlflow` (depends on
+  `postgres` **service_healthy**, `mlartifacts` volume). All bound to `127.0.0.1`.
+- [X] Config via env (`REDIS_URL`), consistent with the no-in-code-defaults convention;
+  **fail-open**: empty/unreachable Redis → in-memory cache + per-process rate limit +
+  per-process budget, never an error. **Done** — one shared `backend/redis_client.py`
+  (resolve-once, ping-checked, fail-open) behind `answer_cache.py`, `ratelimit.py`,
+  `budget.py`. compose sets `REDIS_URL=redis://redis:6379/0` for the backend.
+  (`DATABASE_URL` for app tables isn't needed yet — see the next item; MLflow's own
+  Postgres URI is passed to the mlflow server, not the backend.)
+- [X] Don't create app tables before something needs them — Postgres arrives with MLflow
+  and earns its keep immediately; the app schema (conversations, messages, feedback)
+  lands in Phase 5 with **Alembic** migrations. **Honored** — no app tables created;
+  Postgres today is purely the MLflow store. This also closes the **2.3** "add an mlflow
+  service backed by Postgres" item (`mlflow/Dockerfile` adds `psycopg2` to the official
+  image; point the modeling code at it with `MLFLOW_TRACKING_URI=http://localhost:5001`).
 
 ### 3.7 Security, auth & cost control (public portfolio deploy)
 
@@ -736,30 +764,48 @@ Defenses, cheapest first:
 - [ ] **Cloudflare free tier in front** of the public hostname: TLS, DDoS/bot filtering,
   static-asset caching. (Alternative: Caddy + Let's Encrypt on the VPS if fewer parties
   is preferred.)
-- [ ] **Rate limits** (3.4, Redis-backed): per-IP limit on `/api/ask` **plus a global
-  concurrency cap** on VLM calls (semaphore) so a burst queues instead of fanning out to
-  the GPU.
-- [ ] **Daily VLM budget + circuit breaker**: count `vlm_invocations_total` per day;
-  past budget, short-circuit with HTTP 429 "demo quota reached — try tomorrow" while
-  cache/guard/mock paths keep working. The demo degrades; the bill doesn't.
+- [~] **Rate limits** (3.4/3.7, Redis-backed): per-IP limit on `/api/ask`. **DONE**
+  (`backend/ratelimit.py`): fixed-window per-IP (Redis `INCR`+`EXPIRE`, atomic + shared
+  across gunicorn workers; in-memory fallback), fail-open, wired as the first thing
+  `/api/ask` does → **429** on over-limit + a `rate_limited_total` metric; unit-tested +
+  an API 429 test. *Remaining:* a **global concurrency cap** (semaphore) on VLM calls so
+  a burst queues instead of fanning out to the GPU — not done.
+- [X] **Daily VLM budget + circuit breaker**: count real VLM invocations per UTC day;
+  past budget, short-circuit with **HTTP 429** "demo quota reached — try tomorrow"
+  *before touching the GPU* while cache/guard/mock keep working. **Done**
+  (`backend/budget.py`, Redis-backed day counter + in-memory fallback, fail-open,
+  `VLM_DAILY_BUDGET` env, `vlm_over_budget_total` metric); unit-tested + an API 429 test.
 - [ ] **Scale-to-zero hygiene**: idle timeout ≤ 2-5 min on the GPU service; ensure
   *nothing* (uptime monitor, compose healthcheck, warm-up cron) probes the GPU service
   directly — probe the CPU gatekeeper instead; Grafana alert (3.5) on GPU-active
-  minutes/day.
-- [ ] **Admin surfaces off the public ingress**: Grafana/MLflow/Prometheus/`/metrics`
-  bound to localhost or a private network, reached via SSH tunnel or Tailscale; Grafana
-  gets a real admin password.
+  minutes/day. *(RunPod side has the idle watchdog, §3.8; Cloud Run idle is native. The
+  "nothing probes the GPU directly" rule holds — the frontend warm ping hits the backend's
+  `/api/vlm/warm`, not the VLM. Grafana alert still open.)*
+- [~] **Admin surfaces off the public ingress**: Grafana/MLflow/Prometheus/`/metrics`.
+  **Done for the network binding** — Grafana, Prometheus, and now MLflow are all bound to
+  `127.0.0.1` in compose (reach via SSH tunnel / private net). Grafana has an admin
+  password env. `/metrics` is still served by the backend on its public port (scrape it
+  from inside the private net; a proxy allowlist is the remaining hardening).
 
-- [~] **App hardening** — *partly done*: **CORS pinned** via `CORS_ORIGINS` env (default
-  `*` for dev; set to the frontend origin(s) in prod) ✅; **security headers** on every
-  response (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`) ✅; `MAX_CONTENT_LENGTH` enforced ✅; **upload re-encode** (3.4) ✅; VLM
-  HTTP call has an explicit generous timeout (`VLM_TIMEOUT`) ✅. *Remaining:* containers
-  run non-root; base images pinned by digest; verify guard timeout values.
+- [X] **App hardening** — **CORS pinned** via `CORS_ORIGINS` ✅; **security headers** on
+  every response ✅; `MAX_CONTENT_LENGTH` enforced ✅; **upload re-encode** (3.4) ✅; VLM
+  HTTP call has an explicit generous timeout (`VLM_TIMEOUT`) ✅; **containers run
+  non-root** ✅ — **frontend Docker-verified** (`nginxinc/nginx-unprivileged`, confirmed
+  running as **uid 101** + serving 200); backend (a `uid 10001` user with HF_HOME/
+  TORCH_HOME/XDG_CACHE_HOME redirected to a chowned dir so the build-time model precache
+  still works under the runtime user) and vlm_service (`uid 10001`, `HF_HOME` redirected)
+  use the identical, now-proven pattern but their images were **not rebuilt this session**
+  — the backend rebuild kept failing on a transient network truncation of the 400 MB
+  spaCy `en_core_web_lg` wheel (a *pre-existing* build step, unrelated to the non-root
+  change), so build-verify those two on the next clean network. *Remaining:* base images
+  pinned by **digest** (currently tags); a guard-timeout audit.
 
 - [ ] **Supply chain & secrets**: `pip-audit` (or Dependabot) in CI; secrets only via
   env / provider secret store — never in images or the repo; `.env` stays gitignored.
-- [ ] **Log hygiene**: don't log raw questions at INFO (Presidio already flags PII — log
-  a hash + guard verdict instead); never log image bytes.
+- [~] **Log hygiene**: never log raw questions or image bytes. **Currently satisfied by
+  omission** — the backend doesn't log question text or image bytes anywhere (werkzeug
+  logs only the request line). A *positive* structured audit log (question hash + guard
+  verdict) is the remaining nice-to-have, not a leak to fix.
 
 ### 3.8 Dev/prod GPU serving: RunPod (dev) + Cloud Run GPU (prod), one image
 
@@ -1031,11 +1077,15 @@ follow-ups about the *same* chart, with history.
 6. [ ] Phase 3.1 GPU VLM service live behind `VLM_URL`; scale-to-zero verified (reaches
     zero within the idle timeout; cold-start time measured and surfaced in the UI).
 7. [ ] Phase 3.2/3.3 frontend container live; backend image slimmed (size documented).
-8. [ ] Phase 3.4 cache + rate limit + upload re-encode live.
-9. [ ] Phase 3.5 dashboard live; each alert rule test-fired once.
-1. [ ] Phase 3.6 Redis + Postgres in compose with healthchecks and volumes.
-1. [ ] Phase 3.7 cost controls verified end-to-end: budget breaker trips in a test,
-     provider spend cap set, admin UIs unreachable from the public internet.
+8. [~] Phase 3.4 cache + **rate limit** + upload re-encode live. **Cache + rate limit +
+    re-encode done**; global VLM concurrency cap still open (3.7).
+9. [~] Phase 3.5 dashboard live; each alert rule test-fired once. **Dashboard +
+    provisioned datasource done**; alert rules still open.
+10. [X] Phase 3.6 Redis + Postgres (+ MLflow server) in compose with healthchecks and
+    volumes. **Done + Docker-verified** (redis PONG, pg_isready, MLflow /health 200).
+11. [~] Phase 3.7 cost controls: budget breaker trips in a test ✅ (unit + API 429),
+    rate limit ✅, non-root containers ✅, admin UIs localhost-bound ✅. **Remaining**:
+    provider spend cap for the *prod* GCP project; Cloudflare/edge; base-image digests.
 1. [ ] Phase 4 guard comparison published (stock vs fine-tuned P/R/F1/FPR) and the ship
      gate decision recorded.
 1. [ ] CI/CD green end-to-end, including the post-deploy smoke test and one rollback
