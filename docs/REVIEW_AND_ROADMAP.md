@@ -57,9 +57,67 @@ Work lives on branch **`feat/quantization-flag`** (not pushed). Backend suite: *
   Prometheus/Grafana **containers + dashboard** = the immediate next piece.
 - **3.7 security** ✅ (partial) — CORS pinned via `CORS_ORIGINS` + security headers.
 
+**3.8 dev/prod GPU serving automation (done this session):**
+- **RunPod dev pod deployed manually first** — real Qwen3-VL-8B + LoRA (4-bit) served
+  from a RunPod A5000, answered correctly through the full local stack (Docker
+  backend+frontend+guard → SSH tunnel → pod). Confirmed the whole pipeline works
+  end-to-end with the real model, not just the mock.
+- **`scripts/runpod_up.py` / `runpod_down.py`** ✅ — that manual process automated:
+  fresh pod → upload code+adapter → install deps (every fix from the manual run baked
+  in, see `docs/RUNPOD_NOTES.md`) → launch → SSH tunnel → prints `VLM_URL`. Idempotent
+  teardown; idle watchdog (30 min) + signal/error traps when run standalone.
+  **Live-tested** (not just written): first real run caught a genuine bug (`ssh info`
+  can 404 "pod not ready" even after the pod's own status reads RUNNING) — fixed with a
+  retry loop, verified again.
+- **`docs/RUNPOD_NOTES.md`** ✅ — every gotcha hit going from zero to a working pod,
+  written up so the fixes don't need rediscovering (torch/torchvision version pinning,
+  `HF_HOME`/`PIP_CACHE_DIR` not inherited by SSH sessions, PEP 668, port conflicts, ...).
+- **`vlm_service/` made Cloud-Run-GPU-ready** ✅ — `server.py` and the `Dockerfile`'s
+  `CMD` now honor `$PORT` when set (Cloud Run) and fall back to `VLM_PORT` otherwise
+  (RunPod/local) — **same image, no fork**. `Dockerfile` also force-pins the matched
+  torch/torchvision pair (same lesson as the RunPod script) as a build-time safety net.
+- **`backend/vlm_provider.py`** ✅ — the one place that decides "is the VLM running,
+  should I start it," used by both `GET /api/vlm/warm` (frontend calls it on page load)
+  and `POST /api/ask` (before calling `model_adapter.predict`) — so the two call sites
+  can't diverge. `VLM_PROVIDER=none|cloudrun|runpod` selects the strategy; `none` (the
+  existing default) is a no-op, zero behavior change for docker-compose.
+- **`scripts/gcloud_deploy_vlm.sh` / `gcloud_deploy_app.sh`** ✅ — two separate,
+  CLI-automated Cloud Run deploys (Cloud Build → Artifact Registry → `gcloud run
+  deploy`): the GPU model service (scale-to-zero, `nvidia-l4`) and the CPU app
+  (backend+frontend) independently, so an app change never rebuilds the multi-GB CUDA
+  image. `frontend/nginx.conf.template` is now env-substituted at container start
+  (`BACKEND_URL`/`DNS_RESOLVER`/`PORT`) so the same frontend image works unmodified in
+  docker-compose and Cloud Run.
+- **Not yet live-tested**: the two `gcloud_deploy_*.sh` scripts are real, correctly-flagged
+  code (verified against `gcloud`'s actual CLI help, not guessed), but deploying to Cloud
+  Run needs a GCP project with billing + Cloud Run GPU quota — that's the next real-money
+  step, still to be run for the first time.
+- **Reviewer pass found + fixed 3 real bugs** before this was called done: (1)
+  `vlm_provider._ensure_runpod` reused `VLM_TIMEOUT` (a single-HTTP-call budget) as the
+  timeout for the whole multi-minute pod-provisioning subprocess — on expiry the child
+  was SIGKILLed mid-provisioning with no chance to run its own teardown, leaking a
+  billed pod; fixed with a dedicated `RUNPOD_PROVISION_TIMEOUT_S` (900s) + a best-effort
+  `runpod_down.py` call in the timeout handler. (2) The same function's "someone else is
+  already provisioning, poll instead of starting a second pod" branch was dead code — the
+  starting-flag was set/cleared inside the same lock the slow subprocess call ran under,
+  so a second caller could only block on the lock, never observe the flag; fixed by
+  releasing the lock before the subprocess call. (3) `runpod_up.py`'s tunnel PID lookup
+  shelled out to `pgrep`, which doesn't exist on Windows/Git Bash — this project's own
+  dev platform; fixed by launching the tunnel via `subprocess.Popen` directly (no
+  external process-lookup tool needed at all). Also fixed: the frontend nginx template
+  forwarded the wrong `Host` header to the backend (`$host` — the frontend's own
+  hostname — instead of `$proxy_host`), which works by accident against
+  docker-compose's `backend:5000` but breaks Cloud Run's Host-based routing to the
+  backend service; added `proxy_ssl_server_name on` for correct SNI too. Re-verified
+  after fixes: `py_compile` clean, backend pytest 63/4 unchanged, frontend rebuilt +
+  `nginx -t` passes with the corrected template, `/api/health` and `/api/vlm/warm` both
+  live-verified again.
+
 **Open items:** env pollution (`datasets`/`mlflow`/`bitsandbytes`/`accelerate`/`peft`/
 `prometheus-client` in `backend/.venv`; no dedicated modeling venv); dataset-source decision
-(HuggingFaceM4 vs lmms-lab); nothing pushed.
+(HuggingFaceM4 vs lmms-lab); Cloud Run GPU auth (`_predict_remote` is an unauthenticated
+POST — `--allow-unauthenticated` matches that today; locking it down needs a Google
+identity-token client, tracked in 3.7); nothing pushed.
 
 ---
 
@@ -557,9 +615,10 @@ portfolio signal. It also directly fixes the failure class in 2.2: with tracked 
 - [X] Add a `VLM_URL` env (mirroring `GUARD_LLM_URL`) + `VLM_TIMEOUT` (generous for cold
   start) and switch `model_adapter.predict` to an HTTP call when set; keep the in-process
   path for dev on a big GPU. **DONE + tested.**
-- [ ] **Remaining:** a **GPU Dockerfile** for `vlm_service/` + a `docker-compose` service
-  with `deploy.resources.reservations.devices: [{capabilities: [gpu]}]` and `min=0`
-  autoscaling. Needs a CUDA host to build/run — deferred to the deploy environment.
+- [X] **GPU Dockerfile built** — `vlm_service/Dockerfile` (see 3.8). A `docker-compose`
+  GPU service (`deploy.resources.reservations.devices`) was the original plan here, but
+  we don't have a local CUDA host to run it against, so **Cloud Run GPU** became the
+  actual production target instead (3.8) — no compose GPU service needed.
 
 ### 3.2 Containerize the frontend (prod)
 
@@ -691,6 +750,94 @@ Defenses, cheapest first:
   env / provider secret store — never in images or the repo; `.env` stays gitignored.
 - [ ] **Log hygiene**: don't log raw questions at INFO (Presidio already flags PII — log
   a hash + guard verdict instead); never log image bytes.
+
+### 3.8 Dev/prod GPU serving: RunPod (dev) + Cloud Run GPU (prod), one image
+
+**Why two providers.** RunPod pods give real SSH access — the only reason the torch/
+cuDNN version fights below were debuggable at all — and are cheaper per unit of
+interactive dev time (pay-per-second, no image build/push round-trip). But they bill
+continuously while running and need manual teardown: not a fit for a public endpoint.
+Cloud Run GPU's managed scale-to-zero autoscaling is the right shape for that, at the
+cost of no shell access (every fix needs a rebuild+redeploy). **Same `vlm_service/`
+Docker image runs unmodified in both** — only the orchestration around it differs.
+
+**RunPod — dev loop:**
+- [X] `scripts/runpod_up.py` — provisions a **fresh** pod every run (sidesteps
+  stale-process/half-upgraded-dependency bugs entirely), uploads `chartqa/` +
+  `vlm_service/` + the LoRA adapter, installs deps with every fix below baked in,
+  launches the service, opens an SSH tunnel, prints `VLM_URL`. `--no-wait` for
+  programmatic callers (used by `app.py --dev --runpod` and `backend/vlm_provider.py`);
+  default (standalone) mode blocks with an idle watchdog (30 min) and tears itself
+  down on Ctrl-C / any error.
+- [X] `scripts/runpod_down.py` — idempotent teardown (kill tunnel, `runpodctl pod
+  delete`, clear state); the single source of truth `runpod_up.py`'s own signal/error/
+  idle paths, `app.py`'s shutdown, and manual use all call into.
+- [X] `python app.py --dev --runpod` — provisions the pod before the backend starts,
+  passes it `VLM_URL`/`VLM_PROVIDER=runpod`/`USE_MOCK=0`, tears it down in the same
+  `finally` block that already handles Ctrl-C / a crashed child.
+- [X] **Live-tested end to end**, not just written: the first real run of
+  `runpod_up.py` surfaced a genuine bug (`runpodctl ssh info` can return "pod not
+  ready" even after the pod's own status already reads RUNNING) — fixed with a retry
+  loop and re-verified. `runpod_down.py` was also exercised for real (pod created,
+  then correctly deleted after a mid-setup failure — confirming teardown doesn't leak
+  a billed pod even on the failure path).
+- [X] `docs/RUNPOD_NOTES.md` — every gotcha from going manual-SSH-debugging → working
+  automated script, written up so they don't get rediscovered: `HF_HOME`/
+  `PIP_CACHE_DIR` aren't inherited by SSH sessions (silently fills the small container
+  disk); PEP 668 needs `--break-system-packages` + `--ignore-installed`; unpinned
+  `pip install` can silently upgrade torch to a CUDA-13 build the pod's driver can't
+  init, or a torchvision ABI-mismatched with torch (`torchvision::nms` missing), or
+  skip torch's `nvidia-cudnn-cu12` companion package (`CUDNN_STATUS_NOT_INITIALIZED`)
+  — the fix is pinning the exact matched pair **with** its normal deps, last, always;
+  RunPod's own nginx already owns port 8001; `pgrep` isn't on the image.
+
+**Cloud Run GPU — production:**
+- [X] `vlm_service/server.py` + `Dockerfile` listen on `$PORT` when set (Cloud Run
+  injects it) and fall back to `VLM_PORT` otherwise (RunPod/local `docker run`) — one
+  `CMD`, both environments. The `Dockerfile` also force-reinstalls the exact matched
+  torch/torchvision pair as a build-time safety net (same class of bug as the RunPod
+  script, hit in a different environment).
+- [X] `scripts/gcloud_deploy_vlm.sh` — `gcloud builds submit` (Cloud Build, so the
+  multi-GB CUDA image never needs a local Docker build) → Artifact Registry → `gcloud
+  run deploy --gpu=1 --gpu-type=nvidia-l4 --min-instances=0 --max-instances=1`. Prints
+  the service URL for `VLM_URL`.
+- [ ] **Not yet live-tested** — needs a GCP project with billing + Cloud Run GPU quota
+  (region-gated; request via console if the deploy errors on quota). The script is
+  real, correctly-flagged code (verified against `gcloud run deploy --help`, not
+  guessed) but the first real deploy is still to happen.
+- [~] **Auth gap, flagged not silently shipped**: deployed with `--allow-unauthenticated`
+  because that's what `model_adapter._predict_remote` actually sends today (a plain
+  POST, no identity token) — matches reality rather than half-wiring auth that the
+  client can't use yet. Locking this down needs a Google-signed ID token client added
+  to `model_adapter.py` (3.7 follow-up).
+
+**App deploy (backend + frontend, no GPU) — separate from the model on purpose:**
+- [X] `scripts/gcloud_deploy_app.sh` — builds+deploys `backend/` and `frontend/` to
+  Cloud Run independently of the model service, so an app-only change never rebuilds
+  the CUDA image. `--vlm-url` wires a deployed `vlm_service` in (`USE_MOCK=0`,
+  `VLM_PROVIDER=cloudrun`); omitted, it deploys self-contained in `USE_MOCK=1`.
+  Guard Layer 3 isn't deployed by this script (no guard service target yet) —
+  `GUARD_LLM_ENABLED=0`, which fails open per the guard's existing design, not a stub.
+- [X] `frontend/nginx.conf.template` — `PORT`/`BACKEND_URL`/`DNS_RESOLVER` are
+  env-substituted at container start (nginx:alpine's built-in `envsubst`-on-templates
+  entrypoint step), so the identical frontend image proxies to `http://backend:5000`
+  in docker-compose and to the backend's actual Cloud Run HTTPS URL in production —
+  no frontend code fork.
+
+**Warm-start UX (shared code, not duplicated per provider):**
+- [X] `backend/vlm_provider.py` is the one place that decides "is the VLM running,
+  should I start it" — both `GET /api/vlm/warm` (the frontend calls this on page load,
+  fire-and-forget) and `POST /api/ask` (before calling `model_adapter.predict`) go
+  through the same `warm()` / `ensure_running()`, so the two call sites can never
+  diverge into two different ideas of "running". `VLM_PROVIDER=none` (existing
+  default) is a no-op — zero behavior change for the current docker-compose stack.
+  `cloudrun`: Cloud Run's own request-triggered autoscaler already does "start if not
+  running" — `warm()` just sends an early nudge to shave cold-start latency off the
+  first real request. `runpod`: no autoscaler exists, so `warm()`/`ensure_running()`
+  actually provisions a pod (`runpod_up.py --no-wait`) in a background thread and
+  patches `VLM_URL` in-process once ready — dev-only, unreachable from the production
+  image (no `runpodctl`/`scripts/`/SSH key there, and prod's `.env` never sets
+  `VLM_PROVIDER=runpod`).
 
 ---
 
