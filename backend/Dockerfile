@@ -21,6 +21,17 @@ COPY requirements.txt requirements-guard.txt ./
 RUN pip install --no-cache-dir -r requirements-guard.txt \
     && python -m spacy download en_core_web_lg
 
+# Run as a non-root user (security hardening, §3.7). Create it BEFORE the model-precache
+# steps and point every ML cache at a dir it owns, then switch to it — so the weights are
+# cached (and found at runtime) under the runtime user, not root's unreadable ~/.cache.
+# HF_HOME covers transformers/CLIP/deberta; TORCH_HOME covers detoxify's torch.hub download.
+ENV HF_HOME=/opt/ml-cache/hf \
+    TORCH_HOME=/opt/ml-cache/torch \
+    XDG_CACHE_HOME=/opt/ml-cache/xdg
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /opt/ml-cache && chown -R appuser:appuser /opt/ml-cache /app
+USER appuser
+
 # Pre-cache CLIP weights at build so the first request isn't a ~600 MB download.
 RUN python -c "from transformers import CLIPModel, CLIPProcessor; \
     CLIPModel.from_pretrained('openai/clip-vit-base-patch32'); \
@@ -36,7 +47,7 @@ RUN python -c "from detoxify import Detoxify; Detoxify('original')" \
        pipeline('text-classification', \
                 model='protectai/deberta-v3-base-prompt-injection-v2', truncation=True)"
 
-COPY . .
+COPY --chown=appuser:appuser . .
 
 EXPOSE 5000
 CMD ["python", "app.py"]

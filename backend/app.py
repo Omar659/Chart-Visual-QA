@@ -39,7 +39,9 @@ from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 
 import answer_cache
+import budget
 import metrics
+import ratelimit
 import vlm_provider
 from chart_check import looks_like_chart
 from env_config import env_bool, env_float, env_int, env_str
@@ -100,6 +102,21 @@ def _question_too_weak(question: str) -> bool:
     return meaningful < MIN_QUESTION_ALNUM
 
 
+def _client_ip() -> str:
+    """Best-effort client IP for rate limiting. Behind nginx / Cloud Run the real client
+    is the left-most entry of X-Forwarded-For; fall back to the socket peer.
+
+    NOTE: the left-most XFF entry is client-controlled, so the per-IP rate limit is
+    **best-effort** — a determined bot can rotate a forged X-Forwarded-For to dodge it.
+    That's acceptable here because the hard GPU-cost backstop is the IP-independent daily
+    **budget breaker** (budget.py): a spoofer still hits the VLM_DAILY_BUDGET 429 wall.
+    The limiter is defense-in-depth against casual/accidental floods, not the cost cap."""
+    xff = request.headers.get("X-Forwarded-For", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.remote_addr or "unknown"
+
+
 @app.get("/api/health")
 def health():
     return jsonify(status="ok", mock=is_mock())
@@ -124,6 +141,11 @@ def vlm_warm():
 
 @app.post("/api/ask")
 def ask():
+    # --- Rate limit (Phase 3.7): cheapest possible reject, before reading the body ---
+    if not ratelimit.allow(_client_ip()):
+        metrics.count_rate_limited()
+        return jsonify(error="Too many requests — please slow down and try again shortly."), 429
+
     question = (request.form.get("question") or "").strip()
     image = request.files.get("image")
 
@@ -168,6 +190,12 @@ def ask():
     metrics.observe_stage("chart_gate", time.perf_counter() - t0)
 
     if not is_mock():
+        # Daily VLM budget breaker (Phase 3.7): refuse *before* touching the GPU once the
+        # day's budget is spent — the cache/guard above still work, the bill doesn't grow.
+        if budget.over_budget():
+            metrics.count_over_budget()
+            return jsonify(error="The demo's daily model quota has been reached — "
+                                 "please try again tomorrow."), 429
         t0 = time.perf_counter()
         if not vlm_provider.ensure_running(env_float("VLM_TIMEOUT")):
             metrics.observe_stage("vlm_start", time.perf_counter() - t0)
@@ -181,6 +209,7 @@ def ask():
     if not is_mock():
         metrics.observe_stage("vlm", inference_s)
         metrics.count_vlm()
+        budget.record()  # count this real invocation against today's budget
 
     # Rule 3: in mock mode return a disclaimer, never a fake answer — unless the
     # MOCK_REVEAL demo toggle is on, in which case show the canned answer.

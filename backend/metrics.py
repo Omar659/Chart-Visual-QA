@@ -22,6 +22,14 @@ if _OK:
     _CACHE_HITS = Counter("answer_cache_hits_total", "Answer-cache hits")
     _CACHE_MISSES = Counter("answer_cache_misses_total", "Answer-cache misses")
     _VLM = Counter("vlm_invocations_total", "Real VLM inference calls (the cost proxy)")
+    # A guard layer silently failing open in prod is a silent security downgrade — it must
+    # be visible (alertable), not just a log line (see docs/REVIEW_AND_ROADMAP.md §3.5/3.7).
+    _GUARD_FAIL_OPEN = Counter("guard_fail_open_total", "Guard layer failed open (allowed "
+                              "without screening)", ["layer"])
+    # Cost/abuse controls firing (§3.7): a per-IP rate-limit rejection, or the daily VLM
+    # budget breaker tripping before the GPU is touched.
+    _RATE_LIMITED = Counter("rate_limited_total", "Requests rejected by the per-IP rate limit")
+    _OVER_BUDGET = Counter("vlm_over_budget_total", "Requests refused by the daily VLM budget breaker")
 
 
 def count_request(route: str, status: int) -> None:
@@ -48,6 +56,22 @@ def count_cache(hit: bool) -> None:
 def count_vlm() -> None:
     if _OK:
         _VLM.inc()
+
+
+def count_guard_fail_open(layer: str) -> None:
+    """A guard layer allowed a request without screening (dependency/service missing)."""
+    if _OK:
+        _GUARD_FAIL_OPEN.labels(layer or "unknown").inc()
+
+
+def count_rate_limited() -> None:
+    if _OK:
+        _RATE_LIMITED.inc()
+
+
+def count_over_budget() -> None:
+    if _OK:
+        _OVER_BUDGET.inc()
 
 
 def render() -> tuple[bytes, str]:

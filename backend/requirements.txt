@@ -23,5 +23,9 @@ pytesseract>=0.3.10
 # Observability: Prometheus metrics at /metrics (metrics.py). Fail-open — the backend
 # runs fine without it (metrics just no-op), so it's a light optional dependency.
 prometheus-client>=0.20,<1
+# Data layer (Phase 3.6): shared answer cache + rate-limit + VLM-budget counters across
+# workers/restarts. Fail-open — with REDIS_URL empty or Redis unreachable the backend
+# uses in-memory fallbacks, so this is a light optional dependency too.
+redis>=5.0,<6
 # Tests (test_chart_check.py) — run with: python -m pytest
 pytest>=8.0

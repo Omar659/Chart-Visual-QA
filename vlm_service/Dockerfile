@@ -37,6 +37,14 @@ COPY modeling/checkpoints/qwen3vl-lora-final2 /app/modeling/checkpoints/qwen3vl-
 
 COPY vlm_service /app/vlm_service
 
+# Run as a non-root user (security hardening, §3.7). The base model downloads at boot
+# into HF_HOME, so point it at a dir the user owns. gunicorn binds 8001/$PORT (>1024),
+# so no privileged port is needed.
+ENV HF_HOME=/opt/hf
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /opt/hf && chown -R appuser:appuser /opt/hf /app
+USER appuser
+
 EXPOSE 8001
 
 # Model-serving config has NO in-code defaults (fail fast at boot) — pass at

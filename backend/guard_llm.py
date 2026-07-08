@@ -60,6 +60,12 @@ def _warn_fallback(reason: str) -> None:
         "without it intentionally.",
         reason, GUARD_LLM_MODEL,
     )
+    # Make the silent-downgrade visible/alertable, not just a log line (§3.5/3.7).
+    try:
+        import metrics
+        metrics.count_guard_fail_open("layer3")
+    except Exception:  # noqa: BLE001 — metrics are themselves fail-open
+        pass
 
 
 def _chat(content: str, timeout: float):
