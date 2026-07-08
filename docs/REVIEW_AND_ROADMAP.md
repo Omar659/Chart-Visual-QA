@@ -648,10 +648,12 @@ Defenses, cheapest first:
 - [ ] **Admin surfaces off the public ingress**: Grafana/MLflow/Prometheus/`/metrics`
   bound to localhost or a private network, reached via SSH tunnel or Tailscale; Grafana
   gets a real admin password.
-- [ ] **App hardening**: CORS pinned to the frontend origin; `MAX_CONTENT_LENGTH`
-  enforced server-side; security headers at the proxy; upload re-encode (3.4); explicit
-  timeouts on guard/VLM HTTP calls (exist — verify values); containers run non-root;
-  base images pinned by digest.
+- [~] **App hardening** — *partly done*: **CORS pinned** via `CORS_ORIGINS` env (default
+  `*` for dev; set to the frontend origin(s) in prod) ✅; **security headers** on every
+  response (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy:
+  no-referrer`) ✅; `MAX_CONTENT_LENGTH` enforced ✅; **upload re-encode** (3.4) ✅; VLM
+  HTTP call has an explicit generous timeout (`VLM_TIMEOUT`) ✅. *Remaining:* containers
+  run non-root; base images pinned by digest; verify guard timeout values.
 - [ ] **Supply chain & secrets**: `pip-audit` (or Dependabot) in CI; secrets only via
   env / provider secret store — never in images or the repo; `.env` stays gitignored.
 - [ ] **Log hygiene**: don't log raw questions at INFO (Presidio already flags PII — log

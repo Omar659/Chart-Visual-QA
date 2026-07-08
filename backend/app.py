@@ -61,10 +61,19 @@ MOCK_DISCLAIMER = (
     "This is a placeholder response for building and testing the app."
 )
 
-# Allow the Vite dev server (and others) to call the API directly. In dev the
-# Vite proxy means same-origin requests, but enabling CORS keeps the API usable
-# when called straight from the browser/tools.
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# CORS: pin to the frontend origin(s) in prod via CORS_ORIGINS (comma-separated); '*'
+# is allowed for dev/local tools. In dev the Vite proxy makes requests same-origin anyway.
+_CORS_ORIGINS = [o.strip() for o in env_str("CORS_ORIGINS").split(",") if o.strip()] or ["*"]
+CORS(app, resources={r"/api/*": {"origins": _CORS_ORIGINS}})
+
+
+@app.after_request
+def _security_headers(resp):
+    """Baseline response hardening (defense-in-depth; the prod proxy may add more)."""
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("Referrer-Policy", "no-referrer")
+    return resp
 
 # Cap uploads (MB) so a huge file can't exhaust memory. Keep in sync with the
 # frontend's MAX_BYTES.

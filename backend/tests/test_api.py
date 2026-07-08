@@ -58,6 +58,13 @@ def test_health_ok(client):
     assert isinstance(body["mock"], bool)
 
 
+def test_security_headers_present(client):
+    res = client.get("/api/health")
+    assert res.headers["X-Content-Type-Options"] == "nosniff"
+    assert res.headers["X-Frame-Options"] == "DENY"
+    assert res.headers["Referrer-Policy"] == "no-referrer"
+
+
 def test_ask_happy_path(client):
     # Mock mode (Rule 3): no fake answer — a disclaimer is returned instead.
     res = _ask(client)
