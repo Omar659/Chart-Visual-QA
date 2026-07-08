@@ -7,6 +7,7 @@ real model must keep satisfying. Run with: pytest (from the backend/ dir).
 import io
 
 import pytest
+from PIL import Image
 
 from app import app as flask_app
 
@@ -31,8 +32,13 @@ def client(monkeypatch):
     return flask_app.test_client()
 
 
-def _png_bytes(content=b"fake-png-bytes"):
-    return io.BytesIO(b"\x89PNG\r\n\x1a\n" + content)
+def _png_bytes():
+    # A real (tiny) PNG: the endpoint now re-encodes uploads and rejects non-images
+    # (upload sanitization), so the contract tests must send a decodable image.
+    buf = io.BytesIO()
+    Image.new("RGB", (8, 8), (200, 100, 50)).save(buf, "PNG")
+    buf.seek(0)
+    return buf
 
 
 def _ask(client, question="What was revenue in 2024?", image=True):

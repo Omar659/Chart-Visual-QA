@@ -38,10 +38,12 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
+import answer_cache
 from chart_check import looks_like_chart
 from env_config import env_bool, env_float, env_int, env_str
 from guard import guard, warmup
 from inference import is_mock, run_inference
+from uploads import InvalidImage, sanitize_image
 
 logging.basicConfig(level=logging.INFO)
 
@@ -107,6 +109,20 @@ def ask():
     if not image_bytes:
         return jsonify(error="Uploaded image is empty."), 400
 
+    # Re-encode the upload from its decoded pixels: rejects non-images and strips any
+    # embedded/trailing payload, and yields canonical bytes for the cache key.
+    try:
+        image_bytes = sanitize_image(image_bytes)
+    except InvalidImage:
+        return jsonify(error="Uploaded file is not a valid image."), 400
+
+    # Answer cache (real mode only): a repeat (image, question) short-circuits the guard,
+    # chart gate and VLM entirely. Never caches the mock disclaimer.
+    if not is_mock():
+        cached = answer_cache.get(image_bytes, question)
+        if cached is not None:
+            return jsonify(mock=False, cached=True, latency_ms=0.0, **cached)
+
     # --- Layer-2/3 guard: toxicity / prompt-injection / PII + Llama Guard (see guard.py) ---
     verdict = guard(question)
     if not verdict.allowed:
@@ -130,13 +146,10 @@ def ask():
             latency_ms=latency_ms,
         )
 
-    return jsonify(
-        answer=answer,
-        mock=is_mock(),
-        is_chart=is_chart,
-        chart_confidence=chart_confidence,
-        latency_ms=latency_ms,
-    )
+    result = {"answer": answer, "is_chart": is_chart, "chart_confidence": chart_confidence}
+    if not is_mock():
+        answer_cache.put(image_bytes, question, result)
+    return jsonify(mock=is_mock(), latency_ms=latency_ms, **result)
 
 
 if __name__ == "__main__":

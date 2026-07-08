@@ -553,13 +553,19 @@ portfolio signal. It also directly fixes the failure class in 2.2: with tracked 
 
 ### 3.4 Request hardening
 
-- [ ] **Answer cache** keyed by `(sha256(image_bytes), normalized_question)` — short-circuits
-  repeats before the guard/VLM. Backed by **Redis with a TTL** (3.6); in-memory dict
-  fallback for `--dev` (fail-open, per convention).
+- [x] **Answer cache** keyed by `(sha256(image_bytes), normalized_question)` — short-circuits
+  repeats before the guard/VLM. **DONE** (`backend/answer_cache.py`): in-memory LRU + TTL,
+  fail-open (any error → miss, never breaks a request), env-config (`ANSWER_CACHE_*`), real
+  answers only (never the mock disclaimer), wired into `/api/ask` before the guard, cached
+  value = `{answer, is_chart, chart_confidence}`. Unit-tested. **Redis backend = the seam's
+  prod swap (3.6).**
 - [ ] **Rate limiting** (per-IP token bucket) via Flask-Limiter with **Redis storage**
   (3.6) so limits survive restarts and hold across gunicorn workers.
-- [ ] **Upload safety**: `PIL.Image.verify()` + re-encode to strip payloads; enforce
-  `MAX_UPLOAD_MB` server-side (already partially there).
+- [x] **Upload safety** — **DONE** (`backend/uploads.py` `sanitize_image`): decode with PIL
+  and re-encode from pixels to strip embedded/trailing payloads (polyglots), reject
+  non-images with a 400. Wired at the top of `/api/ask` (also yields the canonical bytes
+  the cache keys on). `MAX_UPLOAD_MB` was already enforced via `MAX_CONTENT_LENGTH`.
+  Unit-tested (valid re-encode, trailing-payload strip, JPEG→PNG, non-image reject).
 - [ ] **Evasion hardening**: NFKC normalize / de-homoglyph / de-leet, and decode-and-rescreen
   base64/hex before the guard (already designed in `ROBUSTNESS.md`).
 
