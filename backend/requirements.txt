@@ -20,5 +20,8 @@ accelerate>=0.30
 #   Windows: winget install UB-Mannheim.TesseractOCR  (or set TESSERACT_CMD=<path>)
 # Falls back to no-veto (CLIP-only) if the engine isn't found.
 pytesseract>=0.3.10
+# Observability: Prometheus metrics at /metrics (metrics.py). Fail-open — the backend
+# runs fine without it (metrics just no-op), so it's a light optional dependency.
+prometheus-client>=0.20,<1
 # Tests (test_chart_check.py) — run with: python -m pytest
 pytest>=8.0

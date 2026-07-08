@@ -35,10 +35,11 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 
 import answer_cache
+import metrics
 from chart_check import looks_like_chart
 from env_config import env_bool, env_float, env_int, env_str
 from guard import guard, warmup
@@ -73,6 +74,8 @@ def _security_headers(resp):
     resp.headers.setdefault("X-Content-Type-Options", "nosniff")
     resp.headers.setdefault("X-Frame-Options", "DENY")
     resp.headers.setdefault("Referrer-Policy", "no-referrer")
+    if request.path.startswith("/api/"):
+        metrics.count_request(request.path, resp.status_code)
     return resp
 
 # Cap uploads (MB) so a huge file can't exhaust memory. Keep in sync with the
@@ -99,6 +102,13 @@ def _question_too_weak(question: str) -> bool:
 @app.get("/api/health")
 def health():
     return jsonify(status="ok", mock=is_mock())
+
+
+@app.get("/metrics")
+def metrics_endpoint():
+    """Prometheus scrape target (fail-open: a short notice if prometheus_client is absent)."""
+    body, content_type = metrics.render()
+    return Response(body, mimetype=content_type)
 
 
 @app.post("/api/ask")
@@ -129,20 +139,30 @@ def ask():
     # chart gate and VLM entirely. Never caches the mock disclaimer.
     if not is_mock():
         cached = answer_cache.get(image_bytes, question)
+        metrics.count_cache(cached is not None)
         if cached is not None:
             return jsonify(mock=False, cached=True, latency_ms=0.0, **cached)
 
     # --- Layer-2/3 guard: toxicity / prompt-injection / PII + Llama Guard (see guard.py) ---
+    t0 = time.perf_counter()
     verdict = guard(question)
+    metrics.observe_stage("guard", time.perf_counter() - t0)
     if not verdict.allowed:
+        metrics.count_blocked(verdict.category)
         return jsonify(blocked=True, category=verdict.category, reason=verdict.reason)
 
     # Rule 4: chart gate (CLIP zero-shot, heuristic fallback; see chart_check).
+    t0 = time.perf_counter()
     is_chart, chart_confidence = looks_like_chart(image_bytes)
+    metrics.observe_stage("chart_gate", time.perf_counter() - t0)
 
     start = time.perf_counter()
     answer = run_inference(image_bytes, question)
-    latency_ms = round((time.perf_counter() - start) * 1000, 1)
+    inference_s = time.perf_counter() - start
+    latency_ms = round(inference_s * 1000, 1)
+    if not is_mock():
+        metrics.observe_stage("vlm", inference_s)
+        metrics.count_vlm()
 
     # Rule 3: in mock mode return a disclaimer, never a fake answer — unless the
     # MOCK_REVEAL demo toggle is on, in which case show the canned answer.

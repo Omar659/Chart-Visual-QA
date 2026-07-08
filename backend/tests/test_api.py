@@ -65,6 +65,12 @@ def test_security_headers_present(client):
     assert res.headers["Referrer-Policy"] == "no-referrer"
 
 
+def test_metrics_endpoint(client):
+    res = client.get("/metrics")
+    assert res.status_code == 200
+    assert res.data  # prometheus exposition text (or the fail-open notice)
+
+
 def test_ask_happy_path(client):
     # Mock mode (Rule 3): no fake answer — a disclaimer is returned instead.
     res = _ask(client)

@@ -584,12 +584,19 @@ standard for container metrics, and only two extra CPU-light containers — stro
 portfolio signal without operational weight. (Skip distributed tracing — Jaeger/Tempo is
 overkill for one API service; per-stage latency histograms answer the same question.)
 
-- [ ] Expose `/metrics` from Flask via `prometheus_client`:
-  - `http_requests_total{route, status}` (counter)
+- [x] **DONE** — `/metrics` exposed from Flask via `prometheus_client` (`backend/metrics.py`,
+  **fail-open**: the backend runs fine without the dep, metrics just no-op). Implemented:
+  `http_requests_total{route,status}` (via `after_request`), `stage_latency_seconds{stage=
+  guard|chart_gate|vlm}` (timed in `/api/ask`), `blocked_total{reason}`,
+  `answer_cache_hits_total`/`answer_cache_misses_total`, `vlm_invocations_total` (the cost
+  proxy). Unit-tested + endpoint test. *Remaining below:* finer guard sub-stage split
+  (l2/l3), `vlm_tokens_generated_total`, an explicit guard-fail-open counter.
+- [ ] (remaining metric detail) Expose from Flask via `prometheus_client`:
+  - `http_requests_total{route, status}` (counter) — done
   - `stage_latency_seconds{stage=layer1|guard_l2|guard_l3|chart_gate|vlm}` (histogram —
-    definitively answers "which layer spends the time")
-  - `blocked_total{reason=toxicity|injection|pii|off_topic|not_chart|weak_question}`
-  - `cache_hits_total` / `cache_misses_total`
+    definitively answers "which layer spends the time"; l2/l3 split still TODO)
+  - `blocked_total{reason=toxicity|injection|pii|off_topic|not_chart|weak_question}` — done
+  - `cache_hits_total` / `cache_misses_total` — done
   - `vlm_invocations_total`, `vlm_tokens_generated_total` — **the cost proxies** that
     drive the budget alerts in 3.7
   - guard **fail-open events** (a dependency silently missing in prod is a silent
