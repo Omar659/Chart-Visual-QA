@@ -43,6 +43,31 @@ services:
     ports:
       - "11434:11434"
 
+  # Observability: Prometheus scrapes the backend /metrics; Grafana visualizes it with a
+  # provisioned datasource + dashboard (observability/). Bound to localhost only — keep
+  # these OFF the public ingress in prod (reach via SSH tunnel / private net; see 3.7).
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}  # set a real one in prod
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
+
   # --- GPU alternative (later, needs a CUDA>=13 driver + NVIDIA Container Toolkit) ---
   # Replace the `guard` service above with vLLM serving the gated weights, and set the
   # backend env to GUARD_LLM_URL=http://guard:8000, GUARD_LLM_MODEL=meta-llama/Llama-Guard-3-1B.

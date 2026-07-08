@@ -11,33 +11,55 @@
 
 ---
 
-## Execution progress (updated 2026-07-07)
+## Execution progress (updated 2026-07-08)
 
-Work so far lives on branch **`feat/quantization-flag`** as 5 logical commits (not pushed):
+Work lives on branch **`feat/quantization-flag`** (not pushed). Backend suite: **63 passed /
+4 skipped**.
 
-- **Phase 1.3 — quantization flag** ✅ (reviewer-approved): `--quantization {none,8bit,4bit}`
-  in `evaluate.py`, `QWEN_QUANTIZATION` env in the backend, NF4+double-quant+bf16 for 4-bit,
-  LoRA stays attached (no merge) when quantized, fail-loud without bitsandbytes.
-- **Phase 1.2 — analysis pipeline validated** ✅: 8/8 result JSONs reproduce byte-identical
-  from the committed error dumps (no GPU/model).
-- **§1.2b — Windows segfault FIXED** ✅: `datasets` now imports before `torch` in
-  `chartqa_dataset.py` (pyarrow DLL crash, exit 139 → 0); eval + analysis run on Windows.
-- **Phase 2.1 — de-dup** ✅ (reviewer-approved): root `model/` + `data/` deleted, `modeling/`
-  is an installable package, `backend/qwen_vl_chat.py` is a CI-drift-checked vendored copy.
-- **Phase 2.2 — reproducibility** ✅: per-model LoRA r/α (qwen 16/32, blip2 32/64), qwen
-  target_modules cut to the committed 7 LM-only, `max_steps` recovered (qwen **200** from
-  `training_args.bin`, blip2 **884** from `trainer_state.json`), MODELCARDs with HF-Trainer-
-  vs-custom-loop provenance caveats.
-- **Phase 2.3 — MLflow local tracking** ✅ (eval path): fail-open `chartqa/tracking.py`,
-  `evaluate.py` logs params + accuracy + latency/VRAM/load/size to a local `./mlruns`,
-  `test_tracking.py` green. **Deferred:** `finetune_lora.py` instrumentation (untested
-  without a GPU run) and the Docker/Postgres MLflow **server + registry** (→ Phase 3.6).
+**v1.0 modeling & reproducibility (done):**
+- **1.3 quantization flag** ✅ — `--quantization {none,8bit,4bit}` / `QWEN_QUANTIZATION`,
+  NF4+double-quant+bf16, LoRA stays attached (no merge) when quantized, fail-loud w/o bnb.
+- **1.2 analysis pipeline validated** ✅ — 8/8 result JSONs byte-identical from committed dumps.
+- **§1.2b Windows segfault FIXED** ✅ — `datasets` before `torch` in `chartqa_dataset.py`
+  (pyarrow DLL crash, exit 139 → 0); eval + analysis run on Windows.
+- **2.1 de-dup** ✅ — root `model/`+`data/` deleted, `modeling/` installable, `backend/`
+  copy CI-drift-checked.
+- **2.2 reproducibility** ✅ — per-model LoRA r/α (qwen 16/32, blip2 32/64), qwen modules
+  cut to the committed 7 LM-only, `max_steps` recovered (qwen **200** from `training_args.bin`,
+  blip2 **884** from `trainer_state.json`), MODELCARDs w/ HF-Trainer-vs-custom-loop caveats.
+- **2.3 MLflow local tracking** ✅ (eval path) — fail-open `chartqa/tracking.py`; `evaluate.py`
+  logs params + accuracy + latency/VRAM/load/size. Deferred: `finetune_lora.py` instrumentation,
+  MLflow **server + registry** (→ 3.6).
 
-Backend suite: **48 passed / 2 skipped** throughout. **Next up: Phase 1.5** (run the
-quantization experiments) — local BLIP-2 4-bit smoke, then Qwen 4-bit on a free T4.
-Open items: `bitsandbytes` not yet installed; `datasets`/`mlflow` were installed into
-`backend/.venv` (no dedicated modeling venv yet); dataset-source decision (HuggingFaceM4
-vs lmms-lab) still open.
+**Phase 1.5 quantization study (in progress):**
+- **Stage A** ✅ — BLIP-2 4-bit smoke ran locally end-to-end (real model, real 4-bit, tracked).
+- **Stage B2** ✅ (verdict) — **Qwen-8B 4-bit does NOT fit the 6 GB 4050**; CPU/disk offload
+  hits a bnb-4bit+accelerate meta-tensor bug (the `QWEN_CPU_OFFLOAD` attempt was reverted).
+  **8B is cloud-only `min=0`.**
+- **Stage B1** ⏳ (user, on Kaggle T4) — Qwen 4-bit zero-shot + fine-tuned accuracy, 2500
+  samples, via `modeling/notebooks/kaggle_quant_eval.ipynb` (+ `KAGGLE_GUIDE.md`). → fills the
+  comparison table (Δ vs bf16 84.60/86.08).
+
+**Phase 3 deploy hardening (done this session):**
+- **3.1 serving seam** ✅ — `model_adapter.predict` routes to a remote VLM over HTTP when
+  `VLM_URL` set (else in-process); new **`vlm_service/`** (Flask wrapper around the
+  single-source `QwenVLChat`, `/predict` + `/health`). Tested vs stub. Remaining: GPU
+  Dockerfile + compose (needs CUDA host).
+- **3.2 frontend container** ✅ **Docker-verified** — `frontend/Dockerfile` (node build →
+  nginx), `nginx.conf` (SPA + `/api` proxy via lazy Docker DNS), `frontend` compose service
+  (8080:80). Image builds, `nginx -t` ok, serves the SPA (GET / → 200).
+- **3.3 backend image** ✅ — `.dockerignore` excludes `.venv/`/`.env*`/tests. Multi-stage optional.
+- **3.4 request hardening** ✅ (cache + upload) — `answer_cache.py` (fail-open LRU+TTL,
+  short-circuits guard+chart+VLM) + `uploads.py` `sanitize_image` (re-encode strips payloads).
+  Rate-limit + evasion still TODO.
+- **3.5 observability** ✅ — `metrics.py` (fail-open Prometheus) + `/metrics`; per-stage
+  latency (guard/chart_gate/vlm) + counters (requests, blocked, cache, `vlm_invocations`).
+  Prometheus/Grafana **containers + dashboard** = the immediate next piece.
+- **3.7 security** ✅ (partial) — CORS pinned via `CORS_ORIGINS` + security headers.
+
+**Open items:** env pollution (`datasets`/`mlflow`/`bitsandbytes`/`accelerate`/`peft`/
+`prometheus-client` in `backend/.venv`; no dedicated modeling venv); dataset-source decision
+(HuggingFaceM4 vs lmms-lab); nothing pushed.
 
 ---
 
@@ -230,15 +252,14 @@ quantization** (full-precision base). Built/tested on a **24 GB RTX 4090**.
 
 ### 1.2b Known issues found during execution (2026-07-04)
 
-- [x] **[Med · Windows-only] Analysis pipeline segfaults on the documented `python -m`
+- [X] **[Med · Windows-only] Analysis pipeline segfaults on the documented `python -m`
   invocation. FIXED 2026-07-07 (verified on the real invocations).**
   `modeling/chartqa/data/chartqa_dataset.py` imported `torch.utils.data` **before**
   `datasets`. On Windows with torch 2.6.0+cu124 loaded before pyarrow 24.0.0,
   `import pyarrow.dataset` crashes the process (access violation, **exit 139**). Both real
   entrypoints route through this module and it is the **first** in each chain to touch
   either library: the analysis entrypoint `results_from_errors.py:6` and the eval
-  entrypoint `evaluate.py:19` both do `from chartqa.data.chartqa_dataset import
-  ChartQADataset` — and in `evaluate.py` that line (19) runs **before** the torch-importing
+  entrypoint `evaluate.py:19` both do `from chartqa.data.chartqa_dataset import ChartQADataset` — and in `evaluate.py` that line (19) runs **before** the torch-importing
   `chartqa.models.qwen_vl_chat` (line 20); `constants` and `evaluation.metrics` import
   neither torch nor datasets. So ordering the imports *inside* `chartqa_dataset.py` fixes
   both chains.
@@ -252,23 +273,23 @@ quantization** (full-precision base). Built/tested on a **24 GB RTX 4090**.
   - raw `import torch, datasets` → **139** (crash) vs `import datasets, torch` → **0** (mechanism confirmed).
   - `import chartqa.data.chartqa_dataset` → **139 before → 0 after**.
   - `import chartqa.evaluation.evaluate` (the quant-experiment entrypoint) → **139 before → 0 after**.
-  - real `python -m chartqa.analysis.results_from_errors --errors-dir
-    outputs/errors/errors_blip2_zero_shot_relaxed --out <scratchpad>/verify_1_2b.json`
+  - real `python -m chartqa.analysis.results_from_errors --errors-dir outputs/errors/errors_blip2_zero_shot_relaxed --out <scratchpad>/verify_1_2b.json`
     → **exit 0**; regenerated file is **byte-for-byte identical** to the committed
     `outputs/results/results_blip2_zero_shot_relaxed.json` (same sha256, same 342253 bytes)
     — the fix only unblocked the import, behavior unchanged.
   - backend suite still green: **48 passed, 2 skipped**.
-  **Residual risk:** Windows-specific DLL-load ordering; the fix relies on
-  `chartqa_dataset.py` staying the first module to import torch/datasets in each entrypoint
-  chain. If a future edit adds a torch import earlier (e.g. to `constants.py` or
-  `evaluation.metrics`, or reorders `evaluate.py` to import the models module before the
-  dataset), a package-level `import datasets` guard in `chartqa/__init__.py` would be the
-  more durable fix. Linux/WSL unaffected.
-- [x] **[Low · resolved] Dataset name discrepancy.** Docs said `lmms-lab/ChartQA`; code
+    **Residual risk:** Windows-specific DLL-load ordering; the fix relies on
+    `chartqa_dataset.py` staying the first module to import torch/datasets in each entrypoint
+    chain. If a future edit adds a torch import earlier (e.g. to `constants.py` or
+    `evaluation.metrics`, or reorders `evaluate.py` to import the models module before the
+    dataset), a package-level `import datasets` guard in `chartqa/__init__.py` would be the
+    more durable fix. Linux/WSL unaffected.
+- [X] **[Low · resolved] Dataset name discrepancy.** Docs said `lmms-lab/ChartQA`; code
   uses `HuggingFaceM4/ChartQA` (`constants.py` `DATASET_NAME` — the mirror that produced
   the committed results). Clarifying notes added to `CLAUDE.md` and `docs/PLAN.md`;
   `project.md` (assignment brief) left as-is. Open question for Victor: keep the
   HuggingFaceM4 mirror, or switch the code to the assignment's `lmms-lab` source.
+
 - **Env hygiene note:** the analysis validation installed `datasets==5.0.0` + ~16
   transitive packages into `backend/.venv` (not in `backend/requirements.txt`). Formalize
   or clean this when the modeling env is set up (Phase 2.1 packaging).
@@ -348,16 +369,14 @@ error dumps) where it's cheapest — debug setup on a handful of samples, not on
 - [ ] **B1 — Accuracy (free cloud).** Full **2500-sample** eval at **4-bit NF4** on a T4.
   Because accuracy is hardware-independent, this number **equals** what the 4050 would
   produce. Record relaxed + exact; diff vs the bf16 reference.
-- [x] **B2 — VRAM + latency (local 4050). DONE (2026-07-08): does NOT run usably on 6 GB.**
+- [X] **B2 — VRAM + latency (local 4050). DONE (2026-07-08): does NOT run usably on 6 GB.**
   Qwen3-VL-8B at 4-bit NF4 does **not fit** the 6 GB 4050: `device_map="auto"` refuses
   (bnb 4-bit blocks CPU/disk offload) unless `llm_int8_enable_fp32_cpu_offload=True`. With
   offload enabled the weights *load* (7 min) but dispatch spills layers to **disk**, which
-  hits a **bitsandbytes-4bit + accelerate meta-tensor bug** (`Tensor.item() cannot be
-  called on meta tensors`) at `attach_execution_device_hook`. `PYTORCH_CUDA_ALLOC_CONF=
-  expandable_segments` is unsupported on Windows. The `QWEN_CPU_OFFLOAD`/`--cpu-offload`
+  hits a **bitsandbytes-4bit + accelerate meta-tensor bug** (`Tensor.item() cannot be called on meta tensors`) at `attach_execution_device_hook`. `PYTORCH_CUDA_ALLOC_CONF= expandable_segments` is unsupported on Windows. The `QWEN_CPU_OFFLOAD`/`--cpu-offload`
   experiment was implemented, hit this wall, and was **reverted** (kept the plain
   `--quantization` flag). BLIP-2 4-bit *does* run locally (proves the harness end-to-end).
-- [x] **B-gate (decision): 8B is CLOUD-ONLY `min=0`.** Per the rule below (OOM on 4050),
+- [X] **B-gate (decision): 8B is CLOUD-ONLY `min=0`.** Per the rule below (OOM on 4050),
   Qwen3-VL-8B does not get a local-deployable config; its accuracy study (B1) and the VLM
   service (Phase 3.1) run on cloud GPUs. The `max_memory` (GPU+CPU, no disk) lever is
   untried and could dodge the meta-tensor bug, but even a successful load would likely OOM
@@ -398,11 +417,11 @@ error dumps) where it's cheapest — debug setup on a handful of samples, not on
 
 ### Comparison table (fill as runs complete)
 
-| Config     | Where run         | Relaxed | Exact   | Δrelaxed vs bf16 | p50 / p95 latency | Peak VRAM | Fits 6 GB? |
-| ---------- | ----------------- | ------- | ------- | ----------------- | ----------------- | --------- | ---------- |
-| bf16 (ref) | committed         | 86.08%  | 77.00%  | —                | —                | ~16 GB    | ❌         |
-| 8-bit      | T4 (free)         | _tbd_ | _tbd_ | _tbd_           | _tbd_           | _tbd_   | ❌         |
-| 4-bit NF4  | 4050 (attempted)  | _tbd_ (T4) | _tbd_ (T4) | _tbd_       | — | did not load | ❌ **no** — offload→disk hits bnb meta-tensor bug (B2) |
+| Config     | Where run        | Relaxed      | Exact        | Δrelaxed vs bf16 | p50 / p95 latency | Peak VRAM    | Fits 6 GB?                                                    |
+| ---------- | ---------------- | ------------ | ------------ | ----------------- | ----------------- | ------------ | ------------------------------------------------------------- |
+| bf16 (ref) | committed        | 86.08%       | 77.00%       | —                | —                | ~16 GB       | ❌                                                            |
+| 8-bit      | T4 (free)        | _tbd_      | _tbd_      | _tbd_           | _tbd_           | _tbd_      | ❌                                                            |
+| 4-bit NF4  | 4050 (attempted) | _tbd_ (T4) | _tbd_ (T4) | _tbd_           | —                | did not load | ❌**no** — offload→disk hits bnb meta-tensor bug (B2) |
 
 > **Outcome feeds Phase 3.1:** the winning precision + whether it's *local-4050* or
 > *cloud-`min=0`* determines how the VLM service is built and sized.
@@ -421,11 +440,11 @@ exactly one of two ways — as a **versioned dependency** (installable package) 
 
 Target layout — one owner per artifact:
 
-| Artifact                          | Owner (source of truth)               | How others consume it                                  |
-| --------------------------------- | ------------------------------------- | ------------------------------------------------------ |
-| Training/eval/analysis code       | `modeling/chartqa/` (installable pkg) | `pip install -e ./modeling` in dev/CI                  |
-| Serving wrapper `qwen_vl_chat.py` | `modeling/chartqa/models/`            | `backend/` keeps a **vendored copy + CI drift check**  |
-| Dataset code `chartqa_dataset.py` | `modeling/chartqa/data/`              | nobody else — the root copy is deleted                 |
+| Artifact                           | Owner (source of truth)                 | How others consume it                                         |
+| ---------------------------------- | --------------------------------------- | ------------------------------------------------------------- |
+| Training/eval/analysis code        | `modeling/chartqa/` (installable pkg) | `pip install -e ./modeling` in dev/CI                       |
+| Serving wrapper`qwen_vl_chat.py` | `modeling/chartqa/models/`            | `backend/` keeps a **vendored copy + CI drift check** |
+| Dataset code`chartqa_dataset.py` | `modeling/chartqa/data/`              | nobody else — the root copy is deleted                       |
 
 - [ ] Make `modeling/` an installable package (`pyproject.toml`, `pip install -e`) so
   training/eval imports stop depending on path tricks — the standard shape for a
@@ -465,7 +484,8 @@ Target layout — one owner per artifact:
   > free-tier T4. The rest of 2.2 (constants reconciled to the committed adapters,
   > per-model r/α, 7 LM-only qwen modules, `max_steps` parametrized, MODELCARDs) is done
   > and needs no GPU.
-- [x] Commit a short `MODELCARD`/run-log per adapter (steps, lr, eff. batch, final eval_loss,
+  >
+- [X] Commit a short `MODELCARD`/run-log per adapter (steps, lr, eff. batch, final eval_loss,
   hardware) next to each checkpoint. **Done:** `checkpoints/qwen3vl-lora-final2/MODELCARD.md`
   and `checkpoints/blip2-lora-final/MODELCARD.md` — verifiable facts only; BLIP-2 records
   the recovered 884-step schedule + losses, Qwen records that its schedule is not
@@ -499,7 +519,7 @@ portfolio signal. It also directly fixes the failure class in 2.2: with tracked 
   multi-hour GPU training run, so it wasn't shipped untested; the `tracking.py` helper is
   ready to drop in. (Training isn't run at the local checkpoint; eval tracking is the path
   the quant study exercises.)
-- [x] **Instrument `evaluate.py`**: one run per `(model, adapter, quantization, metric)` —
+- [X] **Instrument `evaluate.py`**: one run per `(model, adapter, quantization, metric)` —
   relaxed/exact accuracy, p50/p95 latency, peak VRAM, load time, on-disk size, hardware
   tag (cpu / 4050 / T4). Guarded for CPU (VRAM/latency skip cleanly). **The Phase 1.5
   comparison table then fills itself.** DONE + tested.
@@ -528,13 +548,13 @@ portfolio signal. It also directly fixes the failure class in 2.2: with tracked 
 > real HTTP round-trip; no GPU needed). This also enables the "local app + remote cloud GPU"
 > demo path (README shows the Kaggle/Colab + tunnel recipe).
 
-- [x] Stand up Qwen3-VL-8B as a **separate HTTP service** (not in-process), so the backend
+- [X] Stand up Qwen3-VL-8B as a **separate HTTP service** (not in-process), so the backend
   calls it like it calls the guard. Built as a small **Flask wrapper** (`vlm_service/`)
   reusing the tested `QwenVLChat` — the **vLLM** OpenAI-compatible route (serves LoRA
   directly, higher throughput) stays a documented swap-in for later if throughput demands.
-- [x] Pre-merge alternative noted; the wrapper keeps the adapter attached (works with a
+- [X] Pre-merge alternative noted; the wrapper keeps the adapter attached (works with a
   quantized base). **GPU service, `min=0`**, behind the CPU gatekeeper — by design.
-- [x] Add a `VLM_URL` env (mirroring `GUARD_LLM_URL`) + `VLM_TIMEOUT` (generous for cold
+- [X] Add a `VLM_URL` env (mirroring `GUARD_LLM_URL`) + `VLM_TIMEOUT` (generous for cold
   start) and switch `model_adapter.predict` to an HTTP call when set; keep the in-process
   path for dev on a big GPU. **DONE + tested.**
 - [ ] **Remaining:** a **GPU Dockerfile** for `vlm_service/` + a `docker-compose` service
@@ -543,7 +563,7 @@ portfolio signal. It also directly fixes the failure class in 2.2: with tracked 
 
 ### 3.2 Containerize the frontend (prod)
 
-- [x] **DONE** — `frontend/Dockerfile` (multi-stage: `node:20-alpine` builds the Vite app →
+- [X] **DONE** — `frontend/Dockerfile` (multi-stage: `node:20-alpine` builds the Vite app →
   `nginx:1.27-alpine` serves the static `dist/`), `frontend/nginx.conf` (static + SPA
   fallback + `/api` proxy to `backend:5000` + `client_max_body_size 10m` + security
   headers), `frontend/.dockerignore`, and a `frontend` service in `docker-compose.yml`
@@ -561,7 +581,7 @@ portfolio signal. It also directly fixes the failure class in 2.2: with tracked 
 
 ### 3.4 Request hardening
 
-- [x] **Answer cache** keyed by `(sha256(image_bytes), normalized_question)` — short-circuits
+- [X] **Answer cache** keyed by `(sha256(image_bytes), normalized_question)` — short-circuits
   repeats before the guard/VLM. **DONE** (`backend/answer_cache.py`): in-memory LRU + TTL,
   fail-open (any error → miss, never breaks a request), env-config (`ANSWER_CACHE_*`), real
   answers only (never the mock disclaimer), wired into `/api/ask` before the guard, cached
@@ -569,7 +589,7 @@ portfolio signal. It also directly fixes the failure class in 2.2: with tracked 
   prod swap (3.6).**
 - [ ] **Rate limiting** (per-IP token bucket) via Flask-Limiter with **Redis storage**
   (3.6) so limits survive restarts and hold across gunicorn workers.
-- [x] **Upload safety** — **DONE** (`backend/uploads.py` `sanitize_image`): decode with PIL
+- [X] **Upload safety** — **DONE** (`backend/uploads.py` `sanitize_image`): decode with PIL
   and re-encode from pixels to strip embedded/trailing payloads (polyglots), reject
   non-images with a 400. Wired at the top of `/api/ask` (also yields the canonical bytes
   the cache keys on). `MAX_UPLOAD_MB` was already enforced via `MAX_CONTENT_LENGTH`.
@@ -584,31 +604,28 @@ standard for container metrics, and only two extra CPU-light containers — stro
 portfolio signal without operational weight. (Skip distributed tracing — Jaeger/Tempo is
 overkill for one API service; per-stage latency histograms answer the same question.)
 
-- [x] **DONE** — `/metrics` exposed from Flask via `prometheus_client` (`backend/metrics.py`,
-  **fail-open**: the backend runs fine without the dep, metrics just no-op). Implemented:
-  `http_requests_total{route,status}` (via `after_request`), `stage_latency_seconds{stage=
-  guard|chart_gate|vlm}` (timed in `/api/ask`), `blocked_total{reason}`,
-  `answer_cache_hits_total`/`answer_cache_misses_total`, `vlm_invocations_total` (the cost
-  proxy). Unit-tested + endpoint test. *Remaining below:* finer guard sub-stage split
-  (l2/l3), `vlm_tokens_generated_total`, an explicit guard-fail-open counter.
-- [ ] (remaining metric detail) Expose from Flask via `prometheus_client`:
-  - `http_requests_total{route, status}` (counter) — done
+- [ ] Expose `/metrics` from Flask via `prometheus_client`:
+  - `http_requests_total{route, status}` (counter)
   - `stage_latency_seconds{stage=layer1|guard_l2|guard_l3|chart_gate|vlm}` (histogram —
-    definitively answers "which layer spends the time"; l2/l3 split still TODO)
-  - `blocked_total{reason=toxicity|injection|pii|off_topic|not_chart|weak_question}` — done
-  - `cache_hits_total` / `cache_misses_total` — done
+    definitively answers "which layer spends the time")
+  - `blocked_total{reason=toxicity|injection|pii|off_topic|not_chart|weak_question}`
+  - `cache_hits_total` / `cache_misses_total`
   - `vlm_invocations_total`, `vlm_tokens_generated_total` — **the cost proxies** that
     drive the budget alerts in 3.7
   - guard **fail-open events** (a dependency silently missing in prod is a silent
     security downgrade — it must page, not hide)
-- [ ] Add `prometheus` + `grafana` compose services scraping the backend; **provision**
-  the datasource + one dashboard as JSON under `observability/`, checked into the repo —
-  the dashboard *is* portfolio material (screenshot it in the README).
+- [x] **DONE** — `prometheus` + `grafana` compose services scrape the backend; the datasource
+  and a dashboard (request rate, per-stage p95 latency, VLM invocations = cost, cache hit
+  ratio) are **provisioned** as JSON/YAML under `observability/`, checked into the repo.
+  `docker compose config` + the YAML/JSON validate; run `docker compose up prometheus grafana`
+  on a Docker host to view (Grafana `localhost:3000`, Prometheus `localhost:9090`). Screenshot
+  for the README. *(Runtime render not smoke-tested — Docker engine was down at write time.)*
 - [ ] Grafana alert rules: VLM invocations/hour over budget, GPU-active minutes/day over
   budget, p95 end-to-end latency, 5xx rate, any guard fail-open event.
-- [ ] Keep per-stage `*_ms` in the API response (dev UX) + structured JSON logs.
-- [ ] `/metrics`, Grafana, Prometheus, and the MLflow UI stay **off the public ingress**
-  (see 3.7).
+- [~] Per-stage `*_ms` — `latency_ms` (inference) is in the API response; structured JSON
+  logs still TODO.
+- [x] `/metrics`, Grafana, Prometheus bound to **localhost** in compose (off the public
+  ingress; reach via SSH tunnel / private net — see 3.7). MLflow UI same when added (3.6).
 
 ### 3.6 Data layer — Postgres + Redis
 
@@ -616,10 +633,10 @@ overkill for one API service; per-stage latency histograms answer the same quest
 single-shot, and part of why it's cheap). Three phases now need state, and the
 market-standard split is:
 
-| Store                    | Used for                                                                                          | Why this one                                                                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **Redis** (7-alpine)     | Answer cache w/ TTL (3.4) · rate-limit counters (3.4/3.7) · v2.0 conversation hot-store (5.1)      | In-memory speed, native TTL/eviction, atomic counters                                                                                 |
-| **Postgres** (16-alpine) | MLflow backend store (2.3) · v2.0 conversation persistence · feedback events (5.1)                 | Durable + relational, the production default — SQLite would *work* at this scale, but Postgres is what production uses and a container makes it free |
+| Store                          | Used for                                                                                        | Why this one                                                                                                                                           |
+| ------------------------------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Redis** (7-alpine)     | Answer cache w/ TTL (3.4) · rate-limit counters (3.4/3.7) · v2.0 conversation hot-store (5.1) | In-memory speed, native TTL/eviction, atomic counters                                                                                                  |
+| **Postgres** (16-alpine) | MLflow backend store (2.3) · v2.0 conversation persistence · feedback events (5.1)            | Durable + relational, the production default — SQLite would*work* at this scale, but Postgres is what production uses and a container makes it free |
 
 - [ ] Add `redis` + `postgres` compose services with named volumes and healthchecks;
   wire `depends_on: condition: service_healthy` for consumers.
@@ -663,12 +680,13 @@ Defenses, cheapest first:
 - [ ] **Admin surfaces off the public ingress**: Grafana/MLflow/Prometheus/`/metrics`
   bound to localhost or a private network, reached via SSH tunnel or Tailscale; Grafana
   gets a real admin password.
+
 - [~] **App hardening** — *partly done*: **CORS pinned** via `CORS_ORIGINS` env (default
   `*` for dev; set to the frontend origin(s) in prod) ✅; **security headers** on every
-  response (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy:
-  no-referrer`) ✅; `MAX_CONTENT_LENGTH` enforced ✅; **upload re-encode** (3.4) ✅; VLM
+  response (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`) ✅; `MAX_CONTENT_LENGTH` enforced ✅; **upload re-encode** (3.4) ✅; VLM
   HTTP call has an explicit generous timeout (`VLM_TIMEOUT`) ✅. *Remaining:* containers
   run non-root; base images pinned by digest; verify guard timeout values.
+
 - [ ] **Supply chain & secrets**: `pip-audit` (or Dependabot) in CI; secrets only via
   env / provider secret store — never in images or the repo; `.env` stays gitignored.
 - [ ] **Log hygiene**: don't log raw questions at INFO (Presidio already flags PII — log
@@ -703,8 +721,8 @@ you can train on the RTX 4050** (bf16 ≈ 2 GB; LoRA/QLoRA trivially fits 6 GB).
 
   | Guard config                     | Precision | Recall  | F1      | FPR on legit chart Qs |
   | -------------------------------- | --------- | ------- | ------- | --------------------- |
-  | Stock (zero-shot + S99 prompt)   | _tbd_     | _tbd_   | _tbd_   | _tbd_                 |
-  | LoRA fine-tuned (taxonomy baked) | _tbd_     | _tbd_   | _tbd_   | _tbd_                 |
+  | Stock (zero-shot + S99 prompt)   | _tbd_   | _tbd_ | _tbd_ | _tbd_               |
+  | LoRA fine-tuned (taxonomy baked) | _tbd_   | _tbd_ | _tbd_ | _tbd_               |
 
   **Ship gate:** fine-tuned recall ≥ stock **and** FPR strictly lower — otherwise keep
   stock in prod (the fine-tune is portfolio-valuable either way; shipping it is not
@@ -776,22 +794,22 @@ follow-ups about the *same* chart, with history.
 
 ## Stack (final)
 
-| Layer                          | Choice                                                                                     | Phase   |
-| ------------------------------ | ------------------------------------------------------------------------------------------ | ------- |
-| Frontend                       | React 19 + Vite → static build served by an **nginx** container                            | 3.2     |
-| API                            | Flask behind **gunicorn** (multi-worker) in the backend container                          | 3.3     |
-| Guard L1                       | in-process rules (~0 ms)                                                                   | done    |
-| Guard L2                       | detoxify + DeBERTa injection + Presidio (in-process, warm at boot)                         | done    |
-| Guard L3                       | Llama Guard 3 **1B** on Ollama (CPU container, model baked at build)                       | done → fine-tuned in Phase 4 |
-| Chart gate                     | CLIP zero-shot + OCR + pixel fallback (in-process)                                         | done    |
-| VLM serving                    | Qwen3-VL-8B + LoRA on **vLLM**, separate GPU service, **scale-to-zero (`min=0`)**          | 3.1     |
-| Cache / rate-limit / hot-store | **Redis 7**                                                                                | 3.4/3.6 |
-| Durable DB                     | **Postgres 16** (MLflow store · v2.0 transcripts · feedback)                               | 2.3/3.6 |
-| Experiment tracking            | **MLflow** server + Model Registry (Postgres-backed)                                       | 2.3     |
-| Metrics / dashboards / alerts  | **Prometheus + Grafana** (dashboard JSON provisioned in-repo)                              | 3.5     |
-| Ingress / TLS / bot filter     | **Cloudflare free tier** (or Caddy + Let's Encrypt)                                        | 3.7     |
-| CI/CD                          | **GitHub Actions** → images to **GHCR** → `docker compose pull` on the host               | below   |
-| Hosts                          | CPU stack on a small **VPS** (Hetzner-class); GPU on **RunPod/Modal serverless, prepaid** | 3.1/3.7 |
+| Layer                          | Choice                                                                                               | Phase                         |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------- | ----------------------------- |
+| Frontend                       | React 19 + Vite → static build served by an**nginx** container                                | 3.2                           |
+| API                            | Flask behind**gunicorn** (multi-worker) in the backend container                               | 3.3                           |
+| Guard L1                       | in-process rules (~0 ms)                                                                             | done                          |
+| Guard L2                       | detoxify + DeBERTa injection + Presidio (in-process, warm at boot)                                   | done                          |
+| Guard L3                       | Llama Guard 3**1B** on Ollama (CPU container, model baked at build)                            | done → fine-tuned in Phase 4 |
+| Chart gate                     | CLIP zero-shot + OCR + pixel fallback (in-process)                                                   | done                          |
+| VLM serving                    | Qwen3-VL-8B + LoRA on**vLLM**, separate GPU service, **scale-to-zero (`min=0`)**       | 3.1                           |
+| Cache / rate-limit / hot-store | **Redis 7**                                                                                    | 3.4/3.6                       |
+| Durable DB                     | **Postgres 16** (MLflow store · v2.0 transcripts · feedback)                                 | 2.3/3.6                       |
+| Experiment tracking            | **MLflow** server + Model Registry (Postgres-backed)                                           | 2.3                           |
+| Metrics / dashboards / alerts  | **Prometheus + Grafana** (dashboard JSON provisioned in-repo)                                  | 3.5                           |
+| Ingress / TLS / bot filter     | **Cloudflare free tier** (or Caddy + Let's Encrypt)                                            | 3.7                           |
+| CI/CD                          | **GitHub Actions** → images to **GHCR** → `docker compose pull` on the host          | below                         |
+| Hosts                          | CPU stack on a small**VPS** (Hetzner-class); GPU on **RunPod/Modal serverless, prepaid** | 3.1/3.7                       |
 
 ## Deploy workflow (CI/CD)
 
@@ -799,8 +817,7 @@ follow-ups about the *same* chart, with history.
   check) + `npm run build` — branch protection already forces the PR flow.
 - [ ] **Build on merge to `main`**: GitHub Actions builds `backend`, `guard`, `frontend`
   images; tags `sha-<short>` + `latest`; pushes to **GHCR**.
-- [ ] **Deploy job (manual approval)**: SSH to the VPS → `docker compose pull &&
-  docker compose up -d` (compose references GHCR tags, not local builds).
+- [ ] **Deploy job (manual approval)**: SSH to the VPS → `docker compose pull && docker compose up -d` (compose references GHCR tags, not local builds).
 - [ ] **Post-deploy smoke test in the pipeline**: `GET /api/health`, one mock
   `POST /api/ask`, one guard-block probe — fail loudly if any breaks.
 - [ ] **Rollback** = redeploy the previous image tag (one command; document it in the
@@ -838,25 +855,25 @@ follow-ups about the *same* chart, with history.
 
 1. [ ] Phase 1 smoke tests green locally (mock mode, guard blocks, analysis pipeline).
 2. [ ] Phase 1.5 verdict recorded: 4-bit accuracy Δ vs bf16 + fits-4050 yes/no → serving
-   plan chosen (local vs cloud `min=0`).
+    plan chosen (local vs cloud `min=0`).
 3. [ ] Phase 2.1 dedupe merged: root `model/` + `data/` deleted, drift check in CI.
 4. [ ] Phase 2.2 reproducibility: committed adapter re-evaled to 86.08%, constants
-   reconciled, MODELCARDs committed.
+    reconciled, MODELCARDs committed.
 5. [ ] Phase 2.3 MLflow up; both committed adapters backfilled into the registry.
 6. [ ] Phase 3.1 GPU VLM service live behind `VLM_URL`; scale-to-zero verified (reaches
-   zero within the idle timeout; cold-start time measured and surfaced in the UI).
+    zero within the idle timeout; cold-start time measured and surfaced in the UI).
 7. [ ] Phase 3.2/3.3 frontend container live; backend image slimmed (size documented).
 8. [ ] Phase 3.4 cache + rate limit + upload re-encode live.
 9. [ ] Phase 3.5 dashboard live; each alert rule test-fired once.
-10. [ ] Phase 3.6 Redis + Postgres in compose with healthchecks and volumes.
-11. [ ] Phase 3.7 cost controls verified end-to-end: budget breaker trips in a test,
-    provider spend cap set, admin UIs unreachable from the public internet.
-12. [ ] Phase 4 guard comparison published (stock vs fine-tuned P/R/F1/FPR) and the ship
-    gate decision recorded.
-13. [ ] CI/CD green end-to-end, including the post-deploy smoke test and one rollback
-    drill.
-14. [ ] README updated: architecture diagram, results tables, Grafana screenshot, live
-    demo link — **the actual portfolio deliverable**.
+1. [ ] Phase 3.6 Redis + Postgres in compose with healthchecks and volumes.
+1. [ ] Phase 3.7 cost controls verified end-to-end: budget breaker trips in a test,
+     provider spend cap set, admin UIs unreachable from the public internet.
+1. [ ] Phase 4 guard comparison published (stock vs fine-tuned P/R/F1/FPR) and the ship
+     gate decision recorded.
+1. [ ] CI/CD green end-to-end, including the post-deploy smoke test and one rollback
+     drill.
+1. [ ] README updated: architecture diagram, results tables, Grafana screenshot, live
+     demo link — **the actual portfolio deliverable**.
 
 ---
 

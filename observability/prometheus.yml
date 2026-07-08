@@ -1,0 +1,10 @@
+# Prometheus scrape config for the Chart-Visual-QA backend (/metrics, see backend/metrics.py).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: chartqa-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["backend:5000"]
