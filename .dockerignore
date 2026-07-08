@@ -1,0 +1,38 @@
+# Root .dockerignore — used by builds whose context is the repo root (currently only
+# vlm_service/Dockerfile, which needs `modeling/` alongside its own folder). backend/
+# and frontend/ build with their own directory as context and have their own
+# .dockerignore; this one keeps the root context from ballooning with unrelated stuff.
+
+.git/
+.claude/
+
+# Node / frontend — not needed by the vlm_service image.
+frontend/node_modules/
+frontend/dist/
+
+# Python envs / caches — never needed inside a built image.
+**/__pycache__/
+**/*.pyc
+.venv/
+backend/.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Backend/guard images build from their own dir; excluding here just avoids sending
+# their contents when the build context is the repo root.
+backend/.venv/
+guard/
+
+# Modeling: only chartqa/, pyproject.toml, requirements.txt and the Qwen checkpoint
+# are COPYed explicitly by vlm_service/Dockerfile. Exclude the rest of the (large)
+# modeling tree from the build context.
+modeling/outputs/
+modeling/notebooks/
+modeling/checkpoints/blip2-lora-final/
+modeling/dataset/
+mlruns/
+
+# Docs / misc — irrelevant to any image build.
+docs/
+*.md
+!vlm_service/README.md

@@ -82,5 +82,8 @@ def predict():
 if __name__ == "__main__":
     # Dev entrypoint. In prod use gunicorn (see README) — the model warms at import, so a
     # single worker keeps one copy in VRAM: `gunicorn -w 1 -t 300 -b :8001 server:app`.
-    app.run(host=os.environ.get("VLM_HOST", "0.0.0.0"),
-            port=int(os.environ.get("VLM_PORT", "8001")))
+    # Cloud Run (and Cloud Run GPU) inject $PORT and require the container to listen on
+    # exactly that port — checked first so the same image runs unmodified there; RunPod/
+    # local dev has no $PORT, so VLM_PORT (or 8001) applies instead.
+    port = int(os.environ.get("PORT", os.environ.get("VLM_PORT", "8001")))
+    app.run(host=os.environ.get("VLM_HOST", "0.0.0.0"), port=port)
