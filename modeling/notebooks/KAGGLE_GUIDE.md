@@ -15,10 +15,10 @@ Kaggle setup around it.
 
 A comparison table (auto-built by the last cell + logged to MLflow):
 
-| Config              | Relaxed | Exact | Peak VRAM | p50/p95 latency |
-| ------------------- | ------- | ----- | --------- | --------------- |
-| 4-bit zero-shot     | ?       | ?     | ?         | ?               |
-| 4-bit fine-tuned    | ?       | ?     | ?         | ?               |
+| Config           | Relaxed | Exact | Peak VRAM | p50/p95 latency |
+| ---------------- | ------- | ----- | --------- | --------------- |
+| 4-bit zero-shot  | ?       | ?     | ?         | ?               |
+| 4-bit fine-tuned | ?       | ?     | ?         | ?               |
 
 Bring those numbers back and we diff them vs the committed **bf16 reference** (zero-shot
 84.60% / fine-tuned 86.08% relaxed) to fill the roadmap table.
@@ -91,14 +91,14 @@ fill the roadmap comparison table + Δ-vs-bf16.
 
 ## Troubleshooting
 
-| Symptom | Fix |
-| ------- | --- |
-| `chartqa/ not found under <CODE_DIR>` | Wrong path — check the Input panel; `CODE_DIR` must contain `chartqa/` (Step 3). |
-| `torch.cuda.is_available() == False` | Accelerator isn't GPU — set **GPU T4 x1** and restart the session. |
-| Download fails / very slow | **Internet = On**; add the `HF_TOKEN` secret (Step 4). |
-| `Qwen3VLForConditionalGeneration` import/attr error | transformers too old — cell 1 does `-U`; if it persists, pin e.g. `pip install -U "transformers==5.12.1"`. |
-| Disk full during download | HF cache is already on `/tmp` (cell 3); don't move it to `/kaggle/working` (20 GB output quota). |
-| Fine-tuned run skipped | Adapter not in the dataset — include `checkpoints/qwen3vl-lora-final2` (Step 1). |
+| Symptom                                               | Fix                                                                                                            |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `chartqa/ not found under <CODE_DIR>`               | Wrong path — check the Input panel;`CODE_DIR` must contain `chartqa/` (Step 3).                           |
+| `torch.cuda.is_available() == False`                | Accelerator isn't GPU — set**GPU T4 x1** and restart the session.                                       |
+| Download fails / very slow                            | **Internet = On**; add the `HF_TOKEN` secret (Step 4).                                                 |
+| `Qwen3VLForConditionalGeneration` import/attr error | transformers too old — cell 1 does`-U`; if it persists, pin e.g. `pip install -U "transformers==5.12.1"`. |
+| Disk full during download                             | HF cache is already on`/tmp` (cell 3); don't move it to `/kaggle/working` (20 GB output quota).            |
+| Fine-tuned run skipped                                | Adapter not in the dataset — include`checkpoints/qwen3vl-lora-final2` (Step 1).                             |
 
 ## Cost / hygiene
 
