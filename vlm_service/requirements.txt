@@ -1,0 +1,10 @@
+# GPU VLM inference service (Qwen3-VL-8B + optional LoRA).
+#
+# The Qwen wrapper + its heavy deps come from the modeling package — install it first:
+#   pip install -e ../modeling            # torch, transformers, peft, accelerate, ...
+#   pip install -e "../modeling[quant]"   # + bitsandbytes for 4-/8-bit serving
+# (that is the single source of truth for the wrapper; this service does not vendor it.)
+#
+# This file pins only the serving layer:
+flask>=3.0,<4.0
+gunicorn>=21,<24        # production WSGI server (Linux/cloud GPU box)

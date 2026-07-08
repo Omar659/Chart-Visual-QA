@@ -520,15 +520,26 @@ portfolio signal. It also directly fixes the failure class in 2.2: with tracked 
 
 ### 3.1 Build the GPU VLM inference service (the missing piece)
 
-- [ ] Stand up Qwen3-VL-8B as a **separate HTTP service** (not in-process), so the backend
-  calls it like it calls the guard. Recommended: **vLLM** with the LoRA adapter
-  (vLLM serves LoRA directly — no merge needed) exposing an OpenAI-compatible endpoint.
-- [ ] Alternative if vLLM+VLM is fiddly: pre-merge LoRA once, save fp16 weights, serve with
-  a small FastAPI wrapper. Either way: **GPU service, `min=0`**, behind the CPU gatekeeper.
-- [ ] Add a `VLM_URL` env (mirroring `GUARD_LLM_URL`) and switch `model_adapter.predict` to
-  an HTTP call when set; keep the in-process path for `--dev` on a big GPU.
-- [ ] Add GPU reservation to `docker-compose.yml`
-  (`deploy.resources.reservations.devices: [{capabilities: [gpu]}]`).
+> **Status (2026-07-08): the serving seam is built + tested; only the GPU container/infra
+> remains.** `vlm_service/` is a real Flask service wrapping the (single-source-of-truth)
+> `QwenVLChat`, warm-loaded at boot, exposing `POST /predict {image, question} → {answer}`
+> and `GET /health`. `backend/model_adapter.predict` now routes to it when `VLM_URL` is set
+> (else in-process), tested end-to-end against a stub server (`test_model_adapter_remote.py`,
+> real HTTP round-trip; no GPU needed). This also enables the "local app + remote cloud GPU"
+> demo path (README shows the Kaggle/Colab + tunnel recipe).
+
+- [x] Stand up Qwen3-VL-8B as a **separate HTTP service** (not in-process), so the backend
+  calls it like it calls the guard. Built as a small **Flask wrapper** (`vlm_service/`)
+  reusing the tested `QwenVLChat` — the **vLLM** OpenAI-compatible route (serves LoRA
+  directly, higher throughput) stays a documented swap-in for later if throughput demands.
+- [x] Pre-merge alternative noted; the wrapper keeps the adapter attached (works with a
+  quantized base). **GPU service, `min=0`**, behind the CPU gatekeeper — by design.
+- [x] Add a `VLM_URL` env (mirroring `GUARD_LLM_URL`) + `VLM_TIMEOUT` (generous for cold
+  start) and switch `model_adapter.predict` to an HTTP call when set; keep the in-process
+  path for dev on a big GPU. **DONE + tested.**
+- [ ] **Remaining:** a **GPU Dockerfile** for `vlm_service/` + a `docker-compose` service
+  with `deploy.resources.reservations.devices: [{capabilities: [gpu]}]` and `min=0`
+  autoscaling. Needs a CUDA host to build/run — deferred to the deploy environment.
 
 ### 3.2 Containerize the frontend (prod)
 
