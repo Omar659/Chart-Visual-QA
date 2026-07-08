@@ -233,3 +233,6 @@ yarn-error.log*
 
 # Backend virtualenv (explicit)
 backend/.venv/
+
+# MLflow local file store (experiment tracking runs + artifacts)
+mlruns/

@@ -348,15 +348,24 @@ error dumps) where it's cheapest — debug setup on a handful of samples, not on
 - [ ] **B1 — Accuracy (free cloud).** Full **2500-sample** eval at **4-bit NF4** on a T4.
   Because accuracy is hardware-independent, this number **equals** what the 4050 would
   produce. Record relaxed + exact; diff vs the bf16 reference.
-- [ ] **B2 — VRAM + latency (local 4050).** Run the *same* 4-bit config on the 4050 on a
-  small sample to measure **peak VRAM** and **per-sample latency**, and — critically —
-  **whether it OOMs**. Try with reduced image resolution / capped vision tokens if it
-  spikes during prefill.
-- [ ] **B-gate (decision):**
+- [x] **B2 — VRAM + latency (local 4050). DONE (2026-07-08): does NOT run usably on 6 GB.**
+  Qwen3-VL-8B at 4-bit NF4 does **not fit** the 6 GB 4050: `device_map="auto"` refuses
+  (bnb 4-bit blocks CPU/disk offload) unless `llm_int8_enable_fp32_cpu_offload=True`. With
+  offload enabled the weights *load* (7 min) but dispatch spills layers to **disk**, which
+  hits a **bitsandbytes-4bit + accelerate meta-tensor bug** (`Tensor.item() cannot be
+  called on meta tensors`) at `attach_execution_device_hook`. `PYTORCH_CUDA_ALLOC_CONF=
+  expandable_segments` is unsupported on Windows. The `QWEN_CPU_OFFLOAD`/`--cpu-offload`
+  experiment was implemented, hit this wall, and was **reverted** (kept the plain
+  `--quantization` flag). BLIP-2 4-bit *does* run locally (proves the harness end-to-end).
+- [x] **B-gate (decision): 8B is CLOUD-ONLY `min=0`.** Per the rule below (OOM on 4050),
+  Qwen3-VL-8B does not get a local-deployable config; its accuracy study (B1) and the VLM
+  service (Phase 3.1) run on cloud GPUs. The `max_memory` (GPU+CPU, no disk) lever is
+  untried and could dodge the meta-tensor bug, but even a successful load would likely OOM
+  on the vision prefill — not worth the fight for a 6 GB card.
   - **Fits 6 GB with margin (<~5.5 GB peak) AND Δrelaxed ≤ ~1-2 pp** → ✅ local-deployable
-    config found.
+    config found. *(Not achieved — see B2.)*
   - **OOM on 4050** → 8B stays **cloud-only `min=0`** (Phase 3.1); record the verdict and the
-    cloud latency/VRAM instead.
+    cloud latency/VRAM instead. *(This is the outcome.)*
 
 ### Stage C — Larger configs, only after the harness is proven
 
@@ -393,7 +402,7 @@ error dumps) where it's cheapest — debug setup on a handful of samples, not on
 | ---------- | ----------------- | ------- | ------- | ----------------- | ----------------- | --------- | ---------- |
 | bf16 (ref) | committed         | 86.08%  | 77.00%  | —                | —                | ~16 GB    | ❌         |
 | 8-bit      | T4 (free)         | _tbd_ | _tbd_ | _tbd_           | _tbd_           | _tbd_   | ❌         |
-| 4-bit NF4  | T4 acc / 4050 lat | _tbd_ | _tbd_ | _tbd_           | _tbd_           | _tbd_   | _tbd_    |
+| 4-bit NF4  | 4050 (attempted)  | _tbd_ (T4) | _tbd_ (T4) | _tbd_       | — | did not load | ❌ **no** — offload→disk hits bnb meta-tensor bug (B2) |
 
 > **Outcome feeds Phase 3.1:** the winning precision + whether it's *local-4050* or
 > *cloud-`min=0`* determines how the VLM service is built and sized.
