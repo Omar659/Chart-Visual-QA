@@ -757,10 +757,20 @@ and keeping the GPU service warm 24/7, (2) the scale-to-zero service never reach
 because a health check or uptime pinger hits it, (3) a forgotten per-hour dev box.
 Defenses, cheapest first:
 
-- [~] **Provider-level hard cap — the real safety net.** *Partly done for dev*: the
-  RunPod account used for Phase 3.8 already has a `spendLimit` configured
-  (`runpodctl user` reports it). **Still open for prod**: no GCP billing budget/alert
-  configured yet for the Cloud Run project — do this before the first real deploy.
+- [X] **Provider-level hard cap — the real safety net.** *Dev*: the RunPod account used
+  for Phase 3.8 has a `spendLimit` configured (`runpodctl user` reports it). *Prod*
+  (2026-07-09): a **GCP Billing Budget** on `chartv-qa` — R$50/month, alerts at
+  50/90/100% (`gcloud billing budgets create ...`, see `.claude/skills/gcloud-deploy/
+  SKILL.md`). This is a **notification**, not an automatic spend-stop — no Pub/Sub
+  action wired (that's a separate, higher-risk task, not built unprompted). Also fixed a
+  real naming confusion: `VLM_DAILY_BUDGET` is a **count** of VLM invocations/day, NOT a
+  dollar amount — it was misread as "$200/day" during setup; default lowered to 20 and
+  every comment/docstring now says so explicitly (`budget.py`, `.env.example`,
+  `gcloud_deploy_app.sh`). Also new: both `gcloud_deploy_*.sh` scripts now call
+  `cleanup_old_images` (`scripts/_gcloud_common.sh`) after each deploy, deleting the
+  OLD untagged image digest left behind by re-pushing under the same `:latest` tag —
+  matters most for `vlm-service`, whose baked-model image is ~30GB and would otherwise
+  accumulate pure storage cost with zero usage.
 - [ ] **Cloudflare free tier in front** of the public hostname: TLS, DDoS/bot filtering,
   static-asset caching. (Alternative: Caddy + Let's Encrypt on the VPS if fewer parties
   is preferred.)
@@ -1112,4 +1122,6 @@ follow-ups about the *same* chart, with history.
 - Config: `.env.example`
 - Modeling: `modeling/chartqa/{training,evaluation,analysis,models,data}/`, `modeling/chartqa/constants.py`
 - Results: `modeling/outputs/results/*.json`
+- Cloud Run deploy: `scripts/gcloud_deploy_{vlm,app}.sh`, `scripts/_gcloud_common.sh`,
+  `.claude/skills/gcloud-deploy/SKILL.md` (the `/gcloud-deploy` operational playbook)
 - Frontend: `frontend/src/{App.jsx,api.js}`, `frontend/vite.config.js`
