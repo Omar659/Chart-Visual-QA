@@ -14,7 +14,11 @@ so a burst of guard-blocked or cached requests never eats the budget. Backed by 
 (allow) — a broken breaker must not take the demo down; the provider-level spend cap
 (§3.7) is the hard backstop. ``VLM_DAILY_BUDGET=0`` disables the breaker (unlimited).
 
-Config (.env): ``VLM_DAILY_BUDGET`` (0 = unlimited).
+Config (.env): ``VLM_DAILY_BUDGET`` — a COUNT of real VLM answers/day, NOT a dollar
+amount (0 = unlimited). This module has no idea what a GPU-second costs; it's an
+app-level soft cap on request volume. For an actual $ ceiling, set a GCP Billing
+Budget + alert on the project (see docs/REVIEW_AND_ROADMAP.md §3.7) — that's the only
+thing here that looks at money.
 """
 from __future__ import annotations
 

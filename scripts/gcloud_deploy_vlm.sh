@@ -21,6 +21,7 @@
 # this FIRST, then run gcloud_deploy_app.sh --vlm-url <this service's URL>/predict.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+source "$(dirname "$0")/_gcloud_common.sh"
 
 PROJECT="${GCP_PROJECT:-$(gcloud config get-value project 2>/dev/null)}"
 REGION="${GCP_REGION:-us-central1}"
@@ -81,6 +82,13 @@ gcloud run deploy "$SERVICE" \
 URL=$(gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" \
   --format='value(status.url)')
 echo "[deploy-vlm] deployed (private): ${URL}"
+
+# This image bakes the ~17.5GB base model (~30GB total) — a leftover old digest from a
+# previous deploy is real, ongoing storage cost regardless of usage. Clean up now that
+# the new revision is confirmed live (see _gcloud_common.sh for why this runs AFTER, not
+# right after the push).
+cleanup_old_images "${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/vlm-service"
+
 echo "[deploy-vlm] next: ./scripts/gcloud_deploy_app.sh --project ${PROJECT} --region ${REGION} \\"
 echo "                     --vlm-url ${URL}/predict"
 echo "[deploy-vlm]   (that script creates the backend service account and grants it"

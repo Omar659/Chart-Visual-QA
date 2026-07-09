@@ -28,6 +28,7 @@
 # injection/PII encoders, baked into the backend image) still run.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+source "$(dirname "$0")/_gcloud_common.sh"
 
 PROJECT="${GCP_PROJECT:-$(gcloud config get-value project 2>/dev/null)}"
 REGION="${GCP_REGION:-us-central1}"
@@ -108,9 +109,12 @@ BACKEND_ENV+=",QWEN_MAX_NEW_TOKENS=64,QWEN_ANSWER_SUFFIX= Please answer directly
 BACKEND_ENV+=",HOST=0.0.0.0,FLASK_DEBUG=0,CORS_ORIGINS=*,MAX_UPLOAD_MB=10,MIN_QUESTION_ALNUM=3"
 BACKEND_ENV+=",ANSWER_CACHE_ENABLED=1,ANSWER_CACHE_MAX=512,ANSWER_CACHE_TTL_S=3600"
 # Data layer + cost controls (3.6/3.7). REDIS_URL empty = in-memory fallbacks (Cloud Run
-# has no Redis wired here yet — a Memorystore URL would go here). The daily VLM budget is
-# the real GPU-cost backstop for a public demo; tune before going live.
-BACKEND_ENV+=",REDIS_URL=,RATELIMIT_ENABLED=1,RATELIMIT_PER_MINUTE=30,VLM_DAILY_BUDGET=200"
+# has no Redis wired here yet — a Memorystore URL would go here).
+# VLM_DAILY_BUDGET is a COUNT of real VLM answers per day, NOT a dollar amount — it's an
+# app-level soft cap, not a spend cap. The actual $ backstop for this project is a GCP
+# Billing Budget + alert (set one up for your project; see docs/REVIEW_AND_ROADMAP.md
+# §3.7). 20/day is plenty for a portfolio demo; raise it if you expect real traffic.
+BACKEND_ENV+=",REDIS_URL=,RATELIMIT_ENABLED=1,RATELIMIT_PER_MINUTE=30,VLM_DAILY_BUDGET=20"
 BACKEND_ENV+=",GUARD_ENABLED=1,GUARD_TOXICITY_THRESHOLD=0.7,GUARD_INJECTION_THRESHOLD=0.8,GUARD_PII_THRESHOLD=0.6"
 BACKEND_ENV+=",GUARD_TOXICITY_MODEL=original,GUARD_INJECTION_MODEL=protectai/deberta-v3-base-prompt-injection-v2"
 BACKEND_ENV+=",GUARD_LLM_ENABLED=0,GUARD_LLM_URL=http://localhost:11434,GUARD_LLM_MODEL=llama-guard3:1b,GUARD_LLM_TIMEOUT=20"
@@ -131,6 +135,7 @@ gcloud run deploy "$BACKEND_SERVICE" \
 BACKEND_URL=$(gcloud run services describe "$BACKEND_SERVICE" --project "$PROJECT" \
   --region "$REGION" --format='value(status.url)')
 echo "[deploy-app] backend deployed: $BACKEND_URL"
+cleanup_old_images "${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/backend"
 
 echo "[deploy-app] building + pushing frontend image..."
 gcloud builds submit frontend --project "$PROJECT" --tag "$FRONTEND_IMAGE"
@@ -147,4 +152,6 @@ gcloud run deploy "$FRONTEND_SERVICE" \
 FRONTEND_URL=$(gcloud run services describe "$FRONTEND_SERVICE" --project "$PROJECT" \
   --region "$REGION" --format='value(status.url)')
 echo "[deploy-app] frontend deployed: $FRONTEND_URL"
+cleanup_old_images "${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/frontend"
+
 echo "[deploy-app] done. Open $FRONTEND_URL"
