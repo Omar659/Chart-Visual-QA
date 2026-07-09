@@ -11,6 +11,7 @@ matching ``env_config``:
     USE_MOCK=0
     VLM_URL=                                            # empty = in-process; URL = remote service
     VLM_TIMEOUT=120                                     # remote call timeout (survives cold start)
+    VLM_AUTH=none                                       # none | gcp_id_token (private Cloud Run GPU)
     QWEN_MODEL_ID=Qwen/Qwen3-VL-8B-Instruct            # base VLM (downloaded from HF)
     QWEN_ADAPTER_PATH=checkpoints/qwen3vl-lora-final2   # LoRA dir; '' = base model
     QWEN_QUANTIZATION=none                              # none|8bit|4bit (bitsandbytes)
@@ -32,6 +33,7 @@ import base64
 import io
 from functools import lru_cache
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import requests
 from PIL import Image
@@ -95,6 +97,36 @@ def _predict_local(image_bytes: bytes, question: str) -> str:
     return answer.split("Answer:")[-1].strip()
 
 
+def _vlm_auth_header(url: str) -> dict[str, str]:
+    """Authorization header for the VLM call, per ``VLM_AUTH``.
+
+    ``none`` (default): no header — the VLM is reachable without auth (RunPod tunnel,
+    docker-compose, a big-GPU dev box).
+    ``gcp_id_token``: fetch a Google-signed **ID token** from the Cloud Run metadata
+    server for the VLM's own URL as audience, and send it as a Bearer token. This is how
+    the CPU backend calls a **private** Cloud Run GPU service (deployed WITHOUT
+    ``--allow-unauthenticated``): Cloud Run's infra verifies the token, so the expensive
+    GPU endpoint can't be hit directly by the public internet — only by this backend
+    (whose service account has ``run.invoker`` on it). No extra dependency: the token
+    comes from the instance metadata server. See scripts/gcloud_deploy_*.sh.
+    """
+    mode = env_str("VLM_AUTH").strip().lower()
+    if mode != "gcp_id_token":
+        return {}
+    # Audience must be the receiving Cloud Run service's URL (scheme://host, no path).
+    parsed = urlsplit(url)
+    audience = f"{parsed.scheme}://{parsed.netloc}"
+    resp = requests.get(
+        "http://metadata.google.internal/computeMetadata/v1/instance/"
+        "service-accounts/default/identity",
+        params={"audience": audience},
+        headers={"Metadata-Flavor": "Google"},
+        timeout=5,
+    )
+    resp.raise_for_status()
+    return {"Authorization": f"Bearer {resp.text}"}
+
+
 def _predict_remote(url: str, image_bytes: bytes, question: str) -> str:
     """Delegate to a remote VLM service: POST ``{image, question}`` -> ``{answer}``.
 
@@ -108,6 +140,8 @@ def _predict_remote(url: str, image_bytes: bytes, question: str) -> str:
         "image": base64.b64encode(image_bytes).decode("ascii"),
         "question": question.strip(),
     }
-    resp = requests.post(url, json=payload, timeout=env_float("VLM_TIMEOUT"))
+    resp = requests.post(
+        url, json=payload, headers=_vlm_auth_header(url), timeout=env_float("VLM_TIMEOUT")
+    )
     resp.raise_for_status()
     return resp.json()["answer"]

@@ -853,6 +853,9 @@ Docker image runs unmodified in both** — only the orchestration around it diff
   `CMD`, both environments. The `Dockerfile` also force-reinstalls the exact matched
   torch/torchvision pair as a build-time safety net (same class of bug as the RunPod
   script, hit in a different environment).
+- [X] **Base model baked into the image** (2026-07-09) so a `min=0` cold start loads from
+  local disk (~1 min) instead of downloading 17.5 GB from HF every time — image ~30 GB,
+  `HF_HUB_OFFLINE=1` at runtime, `cloudbuild.yaml` timeout raised to 3600s + 100 GB disk.
 - [X] `scripts/gcloud_deploy_vlm.sh` — `gcloud builds submit` (Cloud Build, so the
   multi-GB CUDA image never needs a local Docker build) → Artifact Registry → `gcloud
   run deploy --gpu=1 --gpu-type=nvidia-l4 --min-instances=0 --max-instances=1`. Prints
@@ -861,11 +864,15 @@ Docker image runs unmodified in both** — only the orchestration around it diff
   (region-gated; request via console if the deploy errors on quota). The script is
   real, correctly-flagged code (verified against `gcloud run deploy --help`, not
   guessed) but the first real deploy is still to happen.
-- [~] **Auth gap, flagged not silently shipped**: deployed with `--allow-unauthenticated`
-  because that's what `model_adapter._predict_remote` actually sends today (a plain
-  POST, no identity token) — matches reality rather than half-wiring auth that the
-  client can't use yet. Locking this down needs a Google-signed ID token client added
-  to `model_adapter.py` (3.7 follow-up).
+- [X] **Auth: the GPU service is PRIVATE** (2026-07-09). `gcloud_deploy_vlm.sh` deploys
+  it `--no-allow-unauthenticated`; `model_adapter._vlm_auth_header` attaches a
+  Google-signed **ID token** (from the Cloud Run metadata server, no new dependency,
+  audience = the VLM's URL) when `VLM_AUTH=gcp_id_token`; `gcloud_deploy_app.sh` creates
+  a backend service account, grants it `run.invoker` on `chartqa-vlm`, and deploys the
+  backend with `--service-account` + `VLM_AUTH=gcp_id_token`. So the expensive endpoint
+  can't be hit by the public internet — only by this backend (whose own rate-limit +
+  daily budget cap cost on the public path). `VLM_AUTH=none` (default) keeps the RunPod
+  tunnel / docker-compose / dev paths unauthenticated. Not yet live-tested on Cloud Run.
 
 **App deploy (backend + frontend, no GPU) — separate from the model on purpose:**
 - [X] `scripts/gcloud_deploy_app.sh` — builds+deploys `backend/` and `frontend/` to

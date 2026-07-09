@@ -11,6 +11,14 @@
 #                   /predict, e.g. https://chartqa-vlm-xxxx.run.app/predict — see
 #                   gcloud_deploy_vlm.sh's own output). Omit to deploy in USE_MOCK=1
 #                   instead (a self-contained, testable app deploy with no GPU cost).
+#                   When given, this script creates a backend service account, grants it
+#                   run.invoker on the PRIVATE GPU service (chartqa-vlm), and sets
+#                   VLM_AUTH=gcp_id_token so the backend authenticates its GPU calls.
+#                   → Run gcloud_deploy_vlm.sh FIRST so chartqa-vlm exists.
+#
+# The frontend and backend are public (--allow-unauthenticated) — a public demo — but the
+# GPU is NOT (only this backend's SA can invoke it). The backend's own rate-limit + daily
+# VLM budget (3.6/3.7) cap cost on the public path.
 #
 # Prerequisites: gcloud CLI installed and authenticated (`gcloud auth login`).
 #
@@ -26,6 +34,8 @@ REGION="${GCP_REGION:-us-central1}"
 REPO="chartqa"
 BACKEND_SERVICE="chartqa-backend"
 FRONTEND_SERVICE="chartqa-frontend"
+VLM_SERVICE="chartqa-vlm"                 # the private GPU service (gcloud_deploy_vlm.sh)
+SA_NAME="chartqa-backend"                 # backend's own service account (calls the GPU)
 VLM_URL=""
 
 while [[ $# -gt 0 ]]; do
@@ -49,7 +59,7 @@ echo "[deploy-app] project=$PROJECT region=$REGION"
 
 echo "[deploy-app] enabling required APIs..."
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com \
-  cloudbuild.googleapis.com --project "$PROJECT" --quiet
+  cloudbuild.googleapis.com iam.googleapis.com --project "$PROJECT" --quiet
 
 if ! gcloud artifacts repositories describe "$REPO" --location "$REGION" \
     --project "$PROJECT" >/dev/null 2>&1; then
@@ -62,18 +72,37 @@ fi
 echo "[deploy-app] building + pushing backend image..."
 gcloud builds submit backend --project "$PROJECT" --tag "$BACKEND_IMAGE"
 
+SA_ARGS=()   # extra `gcloud run deploy` args for the backend (service account, when real)
 if [[ -n "$VLM_URL" ]]; then
   USE_MOCK=0
   VLM_PROVIDER=cloudrun
-  echo "[deploy-app] real inference: VLM_URL=$VLM_URL"
+  VLM_AUTH=gcp_id_token
+  echo "[deploy-app] real inference: VLM_URL=$VLM_URL (authenticated call to the private GPU)"
+
+  # The backend calls the PRIVATE GPU service with a Google ID token, so it needs its own
+  # service account that is granted run.invoker on that service. Create it (idempotent)
+  # and bind the role. Deploying with --service-account makes the metadata server mint
+  # ID tokens for THIS identity (model_adapter._vlm_auth_header).
+  SA_EMAIL="${SA_NAME}@${PROJECT}.iam.gserviceaccount.com"
+  if ! gcloud iam service-accounts describe "$SA_EMAIL" --project "$PROJECT" >/dev/null 2>&1; then
+    echo "[deploy-app] creating backend service account $SA_EMAIL..."
+    gcloud iam service-accounts create "$SA_NAME" --project "$PROJECT" \
+      --display-name "Chart-Visual-QA backend (invokes the GPU VLM service)"
+  fi
+  echo "[deploy-app] granting $SA_EMAIL run.invoker on $VLM_SERVICE..."
+  gcloud run services add-iam-policy-binding "$VLM_SERVICE" \
+    --project "$PROJECT" --region "$REGION" \
+    --member "serviceAccount:$SA_EMAIL" --role roles/run.invoker --quiet
+  SA_ARGS=(--service-account "$SA_EMAIL")
 else
   USE_MOCK=1
   VLM_PROVIDER=none
+  VLM_AUTH=none
   echo "[deploy-app] no --vlm-url given: deploying in USE_MOCK=1 (mock answers)."
 fi
 
 BACKEND_ENV="USE_MOCK=${USE_MOCK},MOCK_DELAY_S=0,MOCK_REVEAL=0"
-BACKEND_ENV+=",VLM_URL=${VLM_URL},VLM_TIMEOUT=120,VLM_PROVIDER=${VLM_PROVIDER}"
+BACKEND_ENV+=",VLM_URL=${VLM_URL},VLM_TIMEOUT=120,VLM_PROVIDER=${VLM_PROVIDER},VLM_AUTH=${VLM_AUTH}"
 BACKEND_ENV+=",QWEN_MODEL_ID=Qwen/Qwen3-VL-8B-Instruct,QWEN_ADAPTER_PATH=,QWEN_QUANTIZATION=none"
 BACKEND_ENV+=",QWEN_MAX_NEW_TOKENS=64,QWEN_ANSWER_SUFFIX= Please answer directly."
 BACKEND_ENV+=",HOST=0.0.0.0,FLASK_DEBUG=0,CORS_ORIGINS=*,MAX_UPLOAD_MB=10,MIN_QUESTION_ALNUM=3"
@@ -96,6 +125,7 @@ gcloud run deploy "$BACKEND_SERVICE" \
   --min-instances=0 --max-instances=3 \
   --timeout=300 \
   --set-env-vars="$BACKEND_ENV" \
+  ${SA_ARGS[@]+"${SA_ARGS[@]}"} \
   --allow-unauthenticated
 
 BACKEND_URL=$(gcloud run services describe "$BACKEND_SERVICE" --project "$PROJECT" \

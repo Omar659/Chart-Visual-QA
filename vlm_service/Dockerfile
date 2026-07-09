@@ -37,25 +37,39 @@ COPY modeling/checkpoints/qwen3vl-lora-final2 /app/modeling/checkpoints/qwen3vl-
 
 COPY vlm_service /app/vlm_service
 
-# Run as a non-root user (security hardening, §3.7). The base model downloads at boot
-# into HF_HOME, so point it at a dir the user owns. gunicorn binds 8001/$PORT (>1024),
-# so no privileged port is needed.
+# Run as a non-root user (security hardening, §3.7). HF_HOME points at a dir the user
+# owns; gunicorn binds 8001/$PORT (>1024), so no privileged port is needed.
 ENV HF_HOME=/opt/hf
 RUN useradd --create-home --uid 10001 appuser \
     && mkdir -p /opt/hf && chown -R appuser:appuser /opt/hf /app
 USER appuser
+
+# Bake the base model (~17.5 GB) into the image so a scale-to-zero (min=0) cold start
+# does NOT download it from HF every time — the cold start becomes "load from local
+# disk" (seconds) instead of "download 17.5 GB then load" (minutes, and prone to
+# timing out / HF rate limits). Qwen3-VL-8B-Instruct is public (no HF_TOKEN needed).
+# Downloaded as appuser into HF_HOME so it's owned + readable at runtime. This makes the
+# image large (~30 GB) and the build/push slow — that's the trade for reliable cold
+# starts (see cloudbuild.yaml's raised timeout). Keep the repo id in sync with
+# QWEN_MODEL_ID below.
+RUN python -c "from huggingface_hub import snapshot_download; \
+    snapshot_download('Qwen/Qwen3-VL-8B-Instruct')"
 
 EXPOSE 8001
 
 # Model-serving config has NO in-code defaults (fail fast at boot) — pass at
 # `docker run -e` / the host's env panel. QWEN_ADAPTER_PATH points at the baked-in
 # adapter by default; override to '' for a base-model-only image.
+# HF_HUB_OFFLINE=1: the base model is baked (above), so never phone home at boot — this
+# removes the last network dependency from a cold start and makes it deterministic.
 ENV QWEN_MODEL_ID=Qwen/Qwen3-VL-8B-Instruct \
     QWEN_ADAPTER_PATH=/app/modeling/checkpoints/qwen3vl-lora-final2 \
     QWEN_QUANTIZATION=4bit \
     QWEN_MAX_NEW_TOKENS=64 \
     QWEN_ANSWER_SUFFIX=" Please answer directly." \
-    VLM_PORT=8001
+    VLM_PORT=8001 \
+    HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
 
 # One worker = one model copy in VRAM; long timeout for cold generation + first HF download.
 # Shell form (not exec-form JSON array) so ${PORT:-...} expands — Cloud Run injects PORT

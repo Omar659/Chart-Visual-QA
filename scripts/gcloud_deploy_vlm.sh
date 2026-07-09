@@ -13,11 +13,12 @@
 #     GPU-enabled regions include us-central1, europe-west1, asia-southeast1 at time of
 #     writing; check current availability: `gcloud run regions list`).
 #
-# NOTE on auth: deployed with --allow-unauthenticated so it matches the CURRENT
-# unauthenticated `backend/model_adapter._predict_remote` (a plain POST, no ID token).
-# That's a known gap for a "production" deploy — see docs/REVIEW_AND_ROADMAP.md's
-# security checklist. Locking this down needs model_adapter.py to attach a Google-signed
-# identity token, which isn't wired up yet; flagged rather than half-implemented.
+# AUTH: this GPU service is deployed PRIVATE (no --allow-unauthenticated) — the expensive
+# endpoint must not be callable by the public internet, or a bot could run up the GPU bill
+# directly, bypassing the backend's rate-limit/budget. Only the CPU backend calls it, with
+# a Google-signed ID token (backend/model_adapter.py, VLM_AUTH=gcp_id_token); its service
+# account is granted run.invoker on this service by scripts/gcloud_deploy_app.sh. Deploy
+# this FIRST, then run gcloud_deploy_app.sh --vlm-url <this service's URL>/predict.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -63,7 +64,10 @@ gcloud builds submit . \
   --config vlm_service/cloudbuild.yaml \
   --substitutions="_IMAGE=${IMAGE}"
 
-echo "[deploy-vlm] deploying to Cloud Run GPU (min-instances=0, scale-to-zero)..."
+echo "[deploy-vlm] deploying to Cloud Run GPU (min-instances=0, scale-to-zero, PRIVATE)..."
+# --no-allow-unauthenticated: private. The base model is baked into the image
+# (vlm_service/Dockerfile), so no HF download at cold start and --startup-probe has a
+# generous budget just to LOAD the model from local disk into VRAM (~1 min).
 gcloud run deploy "$SERVICE" \
   --project "$PROJECT" --region "$REGION" \
   --image "$IMAGE" \
@@ -72,9 +76,12 @@ gcloud run deploy "$SERVICE" \
   --min-instances=0 --max-instances=1 --concurrency=1 \
   --timeout=300 \
   --set-env-vars="QWEN_MODEL_ID=Qwen/Qwen3-VL-8B-Instruct,QWEN_ADAPTER_PATH=/app/modeling/checkpoints/${ADAPTER_DIR},QWEN_QUANTIZATION=4bit,QWEN_MAX_NEW_TOKENS=64,QWEN_ANSWER_SUFFIX= Please answer directly." \
-  --allow-unauthenticated
+  --no-allow-unauthenticated
 
 URL=$(gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" \
   --format='value(status.url)')
-echo "[deploy-vlm] deployed: ${URL}"
-echo "[deploy-vlm] set in the backend's prod env: VLM_URL=${URL}/predict  VLM_PROVIDER=cloudrun"
+echo "[deploy-vlm] deployed (private): ${URL}"
+echo "[deploy-vlm] next: ./scripts/gcloud_deploy_app.sh --project ${PROJECT} --region ${REGION} \\"
+echo "                     --vlm-url ${URL}/predict"
+echo "[deploy-vlm]   (that script creates the backend service account and grants it"
+echo "                run.invoker on '${SERVICE}', and sets VLM_AUTH=gcp_id_token.)"
