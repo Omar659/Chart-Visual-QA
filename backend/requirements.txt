@@ -27,5 +27,9 @@ prometheus-client>=0.20,<1
 # workers/restarts. Fail-open — with REDIS_URL empty or Redis unreachable the backend
 # uses in-memory fallbacks, so this is a light optional dependency too.
 redis>=5.0,<6
+# Required Google sign-in (Phase 3.7, auth.py) + service-to-service ID tokens for the
+# private GPU/guard Cloud Run services (gcp_auth.py). Not optional/fail-open — when
+# AUTH_ENABLED=1 a broken verifier must reject, not silently allow.
+google-auth>=2.0,<3
 # Tests (test_chart_check.py) — run with: python -m pytest
 pytest>=8.0

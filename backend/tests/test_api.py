@@ -47,13 +47,15 @@ def _png_bytes():
     return buf
 
 
-def _ask(client, question="What was revenue in 2024?", image=True):
+def _ask(client, question="What was revenue in 2024?", image=True, headers=None):
     data = {}
     if question is not None:
         data["question"] = question
     if image:
         data["image"] = (_png_bytes(), "chart.png")
-    return client.post("/api/ask", data=data, content_type="multipart/form-data")
+    return client.post(
+        "/api/ask", data=data, content_type="multipart/form-data", headers=headers
+    )
 
 
 def test_health_ok(client):
@@ -185,3 +187,49 @@ def test_daily_budget_returns_429(client, monkeypatch):
     res = _ask(client)
     assert res.status_code == 429
     assert "error" in res.get_json()
+
+
+def test_auth_disabled_by_default_allows_anonymous(client):
+    # The base `client` fixture doesn't touch auth.AUTH_ENABLED — it's False from
+    # .env.example, so /api/ask must work with no Authorization header at all (today's
+    # existing local/--dev/CI behavior must not regress).
+    res = _ask(client)
+    assert res.status_code == 200
+
+
+def test_auth_required_rejects_missing_token(client, monkeypatch):
+    import auth
+
+    monkeypatch.setattr(auth, "AUTH_ENABLED", True)
+    res = _ask(client)
+    assert res.status_code == 401
+    assert "error" in res.get_json()
+
+
+def test_auth_required_rejects_invalid_token(client, monkeypatch):
+    import auth
+
+    monkeypatch.setattr(auth, "AUTH_ENABLED", True)
+    monkeypatch.setattr(auth, "verify_google_token", lambda token: None)
+    res = _ask(client, headers={"Authorization": "Bearer garbage"})
+    assert res.status_code == 401
+
+
+def test_auth_required_allows_valid_token(client, monkeypatch):
+    import auth
+
+    monkeypatch.setattr(auth, "AUTH_ENABLED", True)
+    monkeypatch.setattr(
+        auth, "verify_google_token",
+        lambda token: {"email": "user@example.com", "sub": "1"} if token == "good" else None,
+    )
+    res = _ask(client, headers={"Authorization": "Bearer good"})
+    assert res.status_code == 200
+
+
+def test_auth_required_gates_vlm_warm(client, monkeypatch):
+    import auth
+
+    monkeypatch.setattr(auth, "AUTH_ENABLED", True)
+    res = client.get("/api/vlm/warm")
+    assert res.status_code == 401

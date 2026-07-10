@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 
+import gcp_auth
 from env_config import env_bool, env_float, env_str
 from guard import GuardResult
 
@@ -36,6 +37,9 @@ GUARD_LLM_MODEL = env_str("GUARD_LLM_MODEL")
 # Set generously in .env to survive a cold model load (~15-18s) so the first request
 # actually runs the guard instead of failing open; warm calls are ~3s.
 _TIMEOUT = env_float("GUARD_LLM_TIMEOUT")
+# none | gcp_id_token — mirrors VLM_AUTH (model_adapter.py); see gcp_auth.py. Set when
+# the guard is a private Cloud Run service, not Ollama on localhost/docker-compose.
+GUARD_LLM_AUTH = env_str("GUARD_LLM_AUTH")
 
 # Llama Guard hazard code -> (our category, user-safe reason). S99 is our custom off-topic
 # category (requires a custom-taxonomy prompt — see docs/TASK_B_LAYER3.md §3/§5).
@@ -74,6 +78,7 @@ def _chat(content: str, timeout: float):
     resp = requests.post(
         f"{GUARD_LLM_URL}/v1/chat/completions",
         timeout=timeout,
+        headers=gcp_auth.auth_header(GUARD_LLM_URL, GUARD_LLM_AUTH),
         json={
             "model": GUARD_LLM_MODEL,
             "messages": [{"role": "user", "content": content}],
@@ -133,6 +138,7 @@ def is_available() -> bool:
     if not GUARD_LLM_ENABLED or requests is None:
         return False
     try:
-        return requests.get(f"{GUARD_LLM_URL}/v1/models", timeout=2).ok
+        headers = gcp_auth.auth_header(GUARD_LLM_URL, GUARD_LLM_AUTH)
+        return requests.get(f"{GUARD_LLM_URL}/v1/models", headers=headers, timeout=2).ok
     except Exception:  # noqa: BLE001
         return False

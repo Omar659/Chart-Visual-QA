@@ -39,6 +39,7 @@ from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 
 import answer_cache
+import auth
 import budget
 import metrics
 import ratelimit
@@ -117,6 +118,30 @@ def _client_ip() -> str:
     return request.remote_addr or "unknown"
 
 
+def _authenticated_user() -> dict | None:
+    """Verify the request's Google ID token (Authorization: Bearer <token>), or None.
+
+    Always returns None when AUTH_ENABLED=0 (local/--dev/tests) — callers that require
+    a signed-in user do so via ``_require_auth()`` below, which is the actual gate;
+    this helper just answers "who, if anyone" for both that gate and the rate limiter.
+    """
+    if not auth.AUTH_ENABLED:
+        return None
+    header = request.headers.get("Authorization", "")
+    token = header[7:] if header.startswith("Bearer ") else ""
+    return auth.verify_google_token(token)
+
+
+def _require_auth():
+    """Return a ready-to-return ``(body, 401)`` if sign-in is required and
+    missing/invalid, else None (caller does ``if (r := _require_auth()): return r``)."""
+    if not auth.AUTH_ENABLED:
+        return None
+    if _authenticated_user() is None:
+        return jsonify(error="Sign in with Google to use this."), 401
+    return None
+
+
 @app.get("/api/health")
 def health():
     return jsonify(status="ok", mock=is_mock())
@@ -132,8 +157,13 @@ def metrics_endpoint():
 @app.get("/api/vlm/warm")
 def vlm_warm():
     """Fire-and-forget nudge for the remote VLM (see vlm_provider.py). The frontend
-    calls this on page load so a cold RunPod dev pod / Cloud Run instance has a head
-    start before the user's first real question. Always returns immediately."""
+    calls this right after sign-in so a cold RunPod dev pod / Cloud Run instance has a
+    head start before the user's first real question. Always returns immediately.
+
+    Gated the same as /api/ask (Phase 3.7: required sign-in) — no reason to warm the
+    billed GPU for a visitor who hasn't authenticated."""
+    if (resp := _require_auth()) is not None:
+        return resp
     if not is_mock():
         vlm_provider.warm()
     return jsonify(status="ok")
@@ -141,8 +171,15 @@ def vlm_warm():
 
 @app.post("/api/ask")
 def ask():
-    # --- Rate limit (Phase 3.7): cheapest possible reject, before reading the body ---
-    if not ratelimit.allow(_client_ip()):
+    # --- Auth (Phase 3.7): required sign-in, before anything else — cheapest reject ---
+    if (resp := _require_auth()) is not None:
+        return resp
+
+    # --- Rate limit: keyed by the signed-in user when auth is on (more precise than an
+    # IP a bot can spoof via X-Forwarded-For), else by client IP (AUTH_ENABLED=0). ---
+    user = _authenticated_user()
+    rate_key = user["sub"] if user else _client_ip()
+    if not ratelimit.allow(rate_key):
         metrics.count_rate_limited()
         return jsonify(error="Too many requests — please slow down and try again shortly."), 429
 
