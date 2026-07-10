@@ -2,7 +2,6 @@
 name: gcloud-deploy
 description: Deploy Chart-Visual-QA to Google Cloud Run (CPU app + GPU model), and the operational commands around it — cost safety (billing budget, image cleanup, daily VLM count cap), auth between the CPU backend and the private GPU service, status/logs checks, and teardown/rollback. Use this whenever the user asks to deploy to Cloud Run, check cloud costs/status, or roll back a Cloud Run deploy.
 ---
-
 # Cloud Run deploy — Chart-Visual-QA
 
 Two independent deploys, two scripts, deployed in this order:
@@ -60,6 +59,7 @@ timeout (3600s) and disk (100GB) raised to match.
 
 1. **GCP Billing Budget + alert (the real $ backstop).** This is the ONLY thing here that
    actually looks at money — everything else caps request *volume*, not spend.
+
    ```bash
    gcloud services enable billingbudgets.googleapis.com --project <PROJECT>
    gcloud billing budgets create \
@@ -69,6 +69,7 @@ timeout (3600s) and disk (100GB) raised to match.
      --filter-projects=projects/<PROJECT_NUMBER> \
      --threshold-rule=percent=0.5 --threshold-rule=percent=0.9 --threshold-rule=percent=1.0
    ```
+
    Get `<PROJECT_NUMBER>` from `gcloud projects describe <PROJECT> --format="value(projectNumber)"`
    and `<BILLING_ACCOUNT_ID>` from `gcloud billing accounts list`. Alerts email the
    billing account's admins/users by default (no Pub/Sub topic needed for a simple
@@ -77,13 +78,11 @@ timeout (3600s) and disk (100GB) raised to match.
    Function that disables the service/billing at a threshold — treat that as a separate,
    explicitly-requested, higher-risk task (it can also kill the whole demo/project);
    don't build it unprompted.
-
 2. **`VLM_DAILY_BUDGET` (app-level, request COUNT — not dollars).** Set via
    `gcloud_deploy_app.sh`'s `BACKEND_ENV`. Once this many real VLM answers happen in a
    UTC day, `/api/ask` returns 429 *before* touching the GPU. Cheap safety net, but it
    caps volume, not spend — don't confuse the number with a currency amount (a past
    session mistake: `VLM_DAILY_BUDGET=200` was misread as "$200/day").
-
 3. **Image storage cleanup (`scripts/_gcloud_common.sh`'s `cleanup_old_images`).** Every
    deploy script always builds under the same `:latest` tag, so a re-deploy doesn't
    remove the OLD digest from Artifact Registry — it becomes untagged/dangling and still
@@ -115,6 +114,7 @@ gcloud run services describe chartqa-vlm --project <PROJECT> --region us-central
 gcloud run services logs read chartqa-vlm --project <PROJECT> --region us-central1 --limit 50
 gcloud billing accounts list   # find the billing account id for cost dashboards
 ```
+
 Cost/usage dashboards live in the console (Billing → Reports) — `gcloud` doesn't have a
 clean CLI for "how much have I spent so far this month."
 
