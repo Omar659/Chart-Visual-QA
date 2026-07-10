@@ -69,11 +69,16 @@ echo "[deploy-vlm] deploying to Cloud Run GPU (min-instances=0, scale-to-zero, P
 # --no-allow-unauthenticated: private. The base model is baked into the image
 # (vlm_service/Dockerfile), so no HF download at cold start and --startup-probe has a
 # generous budget just to LOAD the model from local disk into VRAM (~1 min).
+# --no-gpu-zonal-redundancy: a new project has no quota for GPU zonal redundancy (HA
+# across zones) by default, and it's not needed here anyway (single instance, min=0,
+# scale-to-zero — there's no "other zone" to fail over to). Without this flag, gcloud
+# prompts interactively ("deploy with no zonal redundancy instead? Y/n"), which hangs a
+# non-interactive/scripted run.
 gcloud run deploy "$SERVICE" \
   --project "$PROJECT" --region "$REGION" \
   --image "$IMAGE" \
   --gpu=1 --gpu-type=nvidia-l4 --cpu=4 --memory=16Gi \
-  --no-cpu-throttling \
+  --no-cpu-throttling --no-gpu-zonal-redundancy \
   --min-instances=0 --max-instances=1 --concurrency=1 \
   --timeout=300 \
   --set-env-vars="QWEN_MODEL_ID=Qwen/Qwen3-VL-8B-Instruct,QWEN_ADAPTER_PATH=/app/modeling/checkpoints/${ADAPTER_DIR},QWEN_QUANTIZATION=4bit,QWEN_MAX_NEW_TOKENS=64,QWEN_ANSWER_SUFFIX= Please answer directly." \
