@@ -1,8 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
-import { askQuestion, getHealth } from './api'
+import { askQuestionStream, getHealth, warmVlm } from './api'
 import './App.css'
 
 const MAX_BYTES = 10 * 1024 * 1024 // keep in sync with backend MAX_CONTENT_LENGTH
+
+// Per-stage progress rows, in the order they should appear. Keyed by the backend's
+// SSE `stage` name (app.py's _ask_events) — vlm_start is intentionally omitted (a
+// near-instant no-op for VLM_PROVIDER=cloudrun; showing it would just flicker).
+const STAGE_LABELS = [
+  { stage: 'chart_gate', label: 'Verifying image' },
+  { stage: 'guard', label: 'Verifying question' },
+  { stage: 'vlm', label: 'Processing model' },
+]
+
+// Baked in at BUILD time (Vite's import.meta.env is compile-time, not runtime — see
+// frontend/cloudbuild.yaml / Dockerfile). Empty in local dev by default: no login wall,
+// matches the backend's AUTH_ENABLED=0 default (see docs/REVIEW_AND_ROADMAP.md §3.7).
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+const HAS_AUTH = Boolean(GOOGLE_CLIENT_ID)
+const TOKEN_STORAGE_KEY = 'chartqa_gid_token'
 
 // Mirror of the backend's _question_too_weak guard for instant feedback.
 // Count letters/digits in any language (so CJK questions pass), reject junk.
@@ -18,16 +34,69 @@ function App() {
   const [answer, setAnswer] = useState(null) // { answer, mock, latency_ms, is_chart, chart_confidence }
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Per-stage progress, keyed by SSE stage name: { status: 'start'|'done', elapsed_ms }.
+  // A stage key only appears once its "start" event has arrived, so the UI reveals rows
+  // as the pipeline actually reaches them instead of showing all three upfront.
+  const [stages, setStages] = useState({})
   const [mockBanner, setMockBanner] = useState(false)
+  // Google ID token (Phase 3.7 required sign-in). null when signed out; also null
+  // permanently when HAS_AUTH is false (no login wall configured for this deploy).
+  // sessionStorage (not localStorage): survives a refresh, cleared when the tab closes.
+  const [token, setToken] = useState(() =>
+    HAS_AUTH ? sessionStorage.getItem(TOKEN_STORAGE_KEY) : null
+  )
   const fileInputRef = useRef(null)
   const abortRef = useRef(null)
+  const signinButtonRef = useRef(null)
 
-  // Probe the backend once so we can show a "mock mode" status pill.
+  function handleSignedIn(idToken) {
+    setToken(idToken)
+    sessionStorage.setItem(TOKEN_STORAGE_KEY, idToken)
+    warmVlm(idToken) // nudge the remote VLM right after sign-in, not before
+  }
+
+  function handleSignOut() {
+    setToken(null)
+    sessionStorage.removeItem(TOKEN_STORAGE_KEY)
+    window.google?.accounts?.id?.disableAutoSelect()
+  }
+
+  // Probe the backend once so we can show a "mock mode" status pill. When there's no
+  // login wall (HAS_AUTH false), warm the VLM on load like before; with a login wall,
+  // warming happens on sign-in instead (handleSignedIn) — no reason to wake a billed
+  // GPU for a visitor who hasn't authenticated yet.
   useEffect(() => {
     getHealth()
-      .then((h) => setMockBanner(Boolean(h.mock)))
+      .then((h) => {
+        setMockBanner(Boolean(h.mock))
+        if (!h.mock && !HAS_AUTH) warmVlm()
+      })
       .catch(() => {}) // health failure is non-fatal for the UI
   }, [])
+
+  // Render the Google "Sign in" button once its script has loaded and we're signed out.
+  useEffect(() => {
+    if (!HAS_AUTH || token) return
+    let cancelled = false
+    function tryRender() {
+      if (cancelled) return
+      if (window.google?.accounts?.id && signinButtonRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (response) => handleSignedIn(response.credential),
+        })
+        window.google.accounts.id.renderButton(signinButtonRef.current, {
+          theme: 'outline', size: 'large', text: 'signin_with',
+        })
+      } else {
+        setTimeout(tryRender, 100) // GIS script loads async — poll briefly until ready
+      }
+    }
+    tryRender()
+    return () => {
+      cancelled = true
+    }
+  }, [token])
 
   // Revoke object URLs when they change/unmount to avoid leaks.
   useEffect(() => {
@@ -71,6 +140,7 @@ function App() {
     e.preventDefault()
     setError('')
     setAnswer(null)
+    setStages({})
     const q = question.trim()
     if (!image) return setError('Please upload an image.')
     if (!q) return setError('Please type a question.')
@@ -83,15 +153,31 @@ function App() {
 
     setLoading(true)
     try {
-      const result = await askQuestion(image, q, { signal: controller.signal })
+      const result = await askQuestionStream(image, q, {
+        signal: controller.signal,
+        token,
+        onEvent: (event) => {
+          setStages((prev) => ({
+            ...prev,
+            [event.stage]: { status: event.status, elapsed_ms: event.elapsed_ms },
+          }))
+        },
+      })
       if (result.blocked) {
-        // Guard (Layer 2/3) rejected the question (toxic / injection / PII / unsafe).
+        // Guard (Layer 2/3) or the chart gate rejected the request.
         setError(result.reason || 'That question was blocked.')
         return
       }
       setAnswer(result)
     } catch (err) {
       if (err.name === 'AbortError') return // superseded by a newer request
+      if (err.authExpired) {
+        // Session expired mid-visit (Google ID tokens last ~1h) — drop it and let the
+        // sign-in gate reappear instead of showing a confusing generic error.
+        handleSignOut()
+        setError('Your session expired — please sign in again.')
+        return
+      }
       setError(err.message || 'Something went wrong.')
     } finally {
       if (abortRef.current === controller) {
@@ -114,6 +200,11 @@ function App() {
           <span className="status-dot" aria-hidden="true" />
           {mockBanner ? 'mock backend' : 'live'}
         </span>
+        {HAS_AUTH && token && (
+          <button type="button" className="signout" onClick={handleSignOut}>
+            Sign out
+          </button>
+        )}
       </nav>
 
       <main className="container">
@@ -126,6 +217,12 @@ function App() {
           </p>
         </header>
 
+        {HAS_AUTH && !token ? (
+          <div className="card signin-card">
+            <p className="signin-prompt">Sign in with Google to ask a question.</p>
+            <div ref={signinButtonRef} />
+          </div>
+        ) : (
         <form className="card" onSubmit={onSubmit}>
           {/* Image picker / dropzone */}
           <button
@@ -194,10 +291,25 @@ function App() {
           </button>
 
           {loading && (
-            <p className="processing" role="status" aria-live="polite">
-              <span className="spinner" aria-hidden="true" />
-              Processing model…
-            </p>
+            <ul className="stage-list" role="status" aria-live="polite">
+              {STAGE_LABELS.filter(({ stage }) => stages[stage]).map(({ stage, label }) => {
+                const s = stages[stage]
+                const done = s.status === 'done'
+                return (
+                  <li key={stage} className={`stage-row ${done ? 'stage-done' : ''}`}>
+                    {done ? (
+                      <span className="stage-check" aria-hidden="true">✓</span>
+                    ) : (
+                      <span className="spinner stage-spinner" aria-hidden="true" />
+                    )}
+                    <span className="stage-label">{label}…</span>
+                    {done && (
+                      <span className="stage-time">{Math.round(s.elapsed_ms)} ms</span>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
           )}
 
           {error && (
@@ -244,6 +356,7 @@ function App() {
             </div>
           )}
         </form>
+        )}
       </main>
     </div>
   )

@@ -1,5 +1,8 @@
 Flask>=3.0,<4.0
 flask-cors>=4.0,<6.0
+# Production WSGI server (Dockerfile's CMD + gunicorn.conf.py) — Flask's own dev server
+# (used for local `python app.py`) is single-threaded and explicitly not for production.
+gunicorn>=21,<24
 Pillow>=10,<12
 requests>=2.28,<3        # Layer-3 guard HTTP calls (Ollama / vLLM)
 python-dotenv>=1.0,<2    # load config from a .env file at startup
@@ -10,6 +13,9 @@ transformers>=4.57          # >=4.57 for Qwen3-VL (model_adapter.py); also cover
 # Real VLM path (model_adapter.py, USE_MOCK=0): LoRA adapter loading + auto device map.
 peft>=0.11
 accelerate>=0.30
+# Opt-in 4-/8-bit quantized loading (QWEN_QUANTIZATION=4bit|8bit). Uncomment to
+# enable; the loader fails loudly if quantization is requested without it.
+# bitsandbytes>=0.43
 # OCR "has data values" gate in chart_check.py. pytesseract is only a thin wrapper
 # — it needs the Tesseract ENGINE (a system binary, not a pip package) on PATH:
 #   Debian/Ubuntu (containers): apt-get install -y tesseract-ocr
@@ -17,5 +23,16 @@ accelerate>=0.30
 #   Windows: winget install UB-Mannheim.TesseractOCR  (or set TESSERACT_CMD=<path>)
 # Falls back to no-veto (CLIP-only) if the engine isn't found.
 pytesseract>=0.3.10
+# Observability: Prometheus metrics at /metrics (metrics.py). Fail-open — the backend
+# runs fine without it (metrics just no-op), so it's a light optional dependency.
+prometheus-client>=0.20,<1
+# Data layer (Phase 3.6): shared answer cache + rate-limit + VLM-budget counters across
+# workers/restarts. Fail-open — with REDIS_URL empty or Redis unreachable the backend
+# uses in-memory fallbacks, so this is a light optional dependency too.
+redis>=5.0,<6
+# Required Google sign-in (Phase 3.7, auth.py) + service-to-service ID tokens for the
+# private GPU/guard Cloud Run services (gcp_auth.py). Not optional/fail-open — when
+# AUTH_ENABLED=1 a broken verifier must reject, not silently allow.
+google-auth>=2.0,<3
 # Tests (test_chart_check.py) — run with: python -m pytest
 pytest>=8.0

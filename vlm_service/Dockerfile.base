@@ -1,0 +1,66 @@
+# vlm_service BASE image — the expensive, rarely-changing half of the VLM serving image.
+# See docs/VLM_IMAGE_SPLIT.md for the why (Cloud Build has no persistent layer cache, so
+# a single monolithic image re-downloaded the 17.5 GB base model on EVERY deploy).
+#
+# REBUILD THIS ONLY WHEN one of these changes (all rare):
+#   - the CUDA/torch base image tag,
+#   - a pip dependency (transformers/peft/accelerate/bitsandbytes or the torch pin),
+#   - the base model (QWEN_MODEL_ID).
+# A normal code/adapter/config deploy does NOT need this — it rebuilds vlm_service/Dockerfile
+# (the thin `FROM vlm-base` image) in a couple of minutes. Build with:
+#   scripts/gcloud_build_vlm_base.sh   (context = repo root; needs modeling/)
+FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
+
+WORKDIR /app
+
+# A C compiler is required at RUNTIME, not just build time: bitsandbytes' triton-based
+# kernels (nn/triton_based_modules.py) JIT-compile a small C stub the first time they're
+# imported (triton's CUDA driver init), via `cc`. This "runtime" base image has no
+# compiler at all, so every worker crashed at boot with "Failed to find C compiler" the
+# instant QwenVLChat.__init__ tried to load a 4-bit model — confirmed via real Cloud Run
+# logs (2026-07-10): 100% reproducible, not a timeout/cold-start issue. The RunPod dev
+# path never hit this because that base image (a full dev-oriented template) already had
+# build tools; this "runtime" image never had them tested until the first real deploy.
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install the chartqa package (shared QwenVLChat wrapper) + quantization extra.
+# Copied selectively (not the whole modeling/ tree) to keep the image small — the
+# repo's outputs/, notebooks/, dataset/ and the BLIP-2 checkpoint aren't needed here.
+# The `-e` (editable) install means the thin service image can later re-COPY the chartqa
+# SOURCE over this without a reinstall (Python imports from the files on disk); only a
+# *dependency* change in pyproject.toml requires rebuilding this base.
+COPY modeling/pyproject.toml modeling/requirements.txt /app/modeling/
+COPY modeling/chartqa /app/modeling/chartqa
+RUN pip install --no-cache-dir -e "/app/modeling[quant]"
+
+# This service's own (light) serving deps.
+COPY vlm_service/requirements.txt /app/vlm_service/requirements.txt
+RUN pip install --no-cache-dir -r /app/vlm_service/requirements.txt
+
+# Belt-and-suspenders (see docs/RUNPOD_NOTES.md #4): transformers/peft/bitsandbytes'
+# own dependency resolution can silently pull a newer torch/torchvision than this base
+# image ships, and an unpinned torchvision can be ABI-mismatched with the pinned torch
+# (RuntimeError: operator torchvision::nms does not exist). Re-pin the exact matched
+# pair WITH its normal deps (not --no-deps, which would skip the nvidia-cudnn companion
+# package and break cuDNN init) as the last word on what's installed.
+RUN pip install --no-cache-dir --force-reinstall \
+    torch==2.6.0 torchvision==0.21.0 \
+    --index-url https://download.pytorch.org/whl/cu124
+
+# Run as a non-root user (security hardening, §3.7). HF_HOME points at a dir the user
+# owns; gunicorn binds 8001/$PORT (>1024), so no privileged port is needed.
+ENV HF_HOME=/opt/hf
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /opt/hf && chown -R appuser:appuser /opt/hf /app
+USER appuser
+
+# Bake the base model (~17.5 GB) into the image so a scale-to-zero (min=0) cold start
+# does NOT download it from HF every time — the cold start becomes "load from local
+# disk" (seconds) instead of "download 17.5 GB then load" (minutes, and prone to
+# timing out / HF rate limits). Qwen3-VL-8B-Instruct is public (no HF_TOKEN needed).
+# Downloaded as appuser into HF_HOME so it's owned + readable at runtime. This is the
+# single most expensive layer and the whole reason this base image exists — keep the
+# repo id in sync with QWEN_MODEL_ID in vlm_service/Dockerfile.
+RUN python -c "from huggingface_hub import snapshot_download; \
+    snapshot_download('Qwen/Qwen3-VL-8B-Instruct')"

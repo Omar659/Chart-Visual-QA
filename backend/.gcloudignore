@@ -1,0 +1,15 @@
+# Controls what `gcloud builds submit backend` uploads to Cloud Build. WITHOUT this
+# file, gcloud does NOT automatically pick up backend/.dockerignore's rules — it looks
+# for a .gcloudignore (or, as a fallback, a .gitignore) IN THE SUBMITTED DIRECTORY
+# (backend/), and neither existed here. Result: the entire backend/.venv/ (torch,
+# transformers, ~55k files, ~6GB) got archived and uploaded on every deploy. Mirrors
+# backend/.dockerignore's intent exactly.
+.venv/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+tests/
+*.md
+.env
+.env.*

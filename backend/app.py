@@ -4,12 +4,20 @@ Mock-first: the API contract is stable and returns fake answers via
 ``inference.run_inference`` until the real model lands. See docs/PLAN.md §9.
 
 Endpoints:
-    GET  /api/health  -> {"status": "ok", "mock": <bool>}
-    POST /api/ask     -> {"answer": <str>, "mock": <bool>, "is_chart": <bool>,
-                          "latency_ms": <number>}
-                         or, if the guard blocks the question (HTTP 200):
-                         {"blocked": true, "category": <str>, "reason": <str>}
-                         (multipart/form-data: image=<file>, question=<string>)
+    GET  /api/health     -> {"status": "ok", "mock": <bool>}
+    POST /api/ask        -> {"answer": <str>, "mock": <bool>, "is_chart": <bool>,
+                             "latency_ms": <number>}
+                            or, if the guard blocks the question (HTTP 200):
+                            {"blocked": true, "category": <str>, "reason": <str>}
+                            (multipart/form-data: image=<file>, question=<string>)
+    POST /api/ask/stream -> same body/contract, same pipeline, but as
+                            text/event-stream: one ``data: {...}`` line per pipeline
+                            stage ({"stage": <name>, "status": "start"|"done",
+                            "elapsed_ms": <number|null>}), ending with
+                            {"stage": "result", "body": <the /api/ask JSON above>,
+                            "status_code": <int>}. Powers the frontend's per-stage
+                            progress UI; both endpoints share the same pipeline
+                            generator (_ask_events) so they can never diverge.
 
 ``is_chart`` is a cheap Layer-1 heuristic (see chart_check) — a warning signal, not
 a hard block: when false, the UI can warn that results may be unreliable.
@@ -23,10 +31,12 @@ Or via the root orchestrator:  python app.py
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 # Load <repo-root>/.env BEFORE importing modules that read env at import time
@@ -35,13 +45,20 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-from flask import Flask, jsonify, request
+from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 
+import answer_cache
+import auth
+import budget
+import metrics
+import ratelimit
+import vlm_provider
 from chart_check import looks_like_chart
 from env_config import env_bool, env_float, env_int, env_str
 from guard import guard, warmup
 from inference import is_mock, run_inference
+from uploads import InvalidImage, sanitize_image
 
 logging.basicConfig(level=logging.INFO)
 
@@ -59,10 +76,21 @@ MOCK_DISCLAIMER = (
     "This is a placeholder response for building and testing the app."
 )
 
-# Allow the Vite dev server (and others) to call the API directly. In dev the
-# Vite proxy means same-origin requests, but enabling CORS keeps the API usable
-# when called straight from the browser/tools.
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# CORS: pin to the frontend origin(s) in prod via CORS_ORIGINS (comma-separated); '*'
+# is allowed for dev/local tools. In dev the Vite proxy makes requests same-origin anyway.
+_CORS_ORIGINS = [o.strip() for o in env_str("CORS_ORIGINS").split(",") if o.strip()] or ["*"]
+CORS(app, resources={r"/api/*": {"origins": _CORS_ORIGINS}})
+
+
+@app.after_request
+def _security_headers(resp):
+    """Baseline response hardening (defense-in-depth; the prod proxy may add more)."""
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("Referrer-Policy", "no-referrer")
+    if request.path.startswith("/api/"):
+        metrics.count_request(request.path, resp.status_code)
+    return resp
 
 # Cap uploads (MB) so a huge file can't exhaust memory. Keep in sync with the
 # frontend's MAX_BYTES.
@@ -72,6 +100,10 @@ app.config["MAX_CONTENT_LENGTH"] = int(MAX_UPLOAD_MB * 1024 * 1024)
 
 # Min "meaningful" (alphanumeric) chars a question must have to not be junk.
 MIN_QUESTION_ALNUM = env_int("MIN_QUESTION_ALNUM")
+
+# Below this, the chart gate is confident enough to hard-block the VLM call outright
+# (not just warn) — see chart_check.py / .env.example for why.
+CHART_BLOCK_THRESHOLD = env_float("CHART_BLOCK_THRESHOLD")
 
 
 def _question_too_weak(question: str) -> bool:
@@ -85,58 +117,293 @@ def _question_too_weak(question: str) -> bool:
     return meaningful < MIN_QUESTION_ALNUM
 
 
+def _client_ip() -> str:
+    """Best-effort client IP for rate limiting. Behind nginx / Cloud Run the real client
+    is the left-most entry of X-Forwarded-For; fall back to the socket peer.
+
+    NOTE: the left-most XFF entry is client-controlled, so the per-IP rate limit is
+    **best-effort** — a determined bot can rotate a forged X-Forwarded-For to dodge it.
+    That's acceptable here because the hard GPU-cost backstop is the IP-independent daily
+    **budget breaker** (budget.py): a spoofer still hits the VLM_DAILY_BUDGET 429 wall.
+    The limiter is defense-in-depth against casual/accidental floods, not the cost cap."""
+    xff = request.headers.get("X-Forwarded-For", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.remote_addr or "unknown"
+
+
+def _authenticated_user() -> dict | None:
+    """Verify the request's Google ID token (Authorization: Bearer <token>), or None.
+
+    Always returns None when AUTH_ENABLED=0 (local/--dev/tests) — callers that require
+    a signed-in user do so via ``_require_auth()`` below, which is the actual gate;
+    this helper just answers "who, if anyone" for both that gate and the rate limiter.
+    """
+    if not auth.AUTH_ENABLED:
+        return None
+    header = request.headers.get("Authorization", "")
+    token = header[7:] if header.startswith("Bearer ") else ""
+    return auth.verify_google_token(token)
+
+
+def _require_auth():
+    """Return a ready-to-return ``(body, 401)`` if sign-in is required and
+    missing/invalid, else None (caller does ``if (r := _require_auth()): return r``)."""
+    if not auth.AUTH_ENABLED:
+        return None
+    if _authenticated_user() is None:
+        return jsonify(error="Sign in with Google to use this."), 401
+    return None
+
+
 @app.get("/api/health")
 def health():
     return jsonify(status="ok", mock=is_mock())
 
 
-@app.post("/api/ask")
-def ask():
+@app.get("/metrics")
+def metrics_endpoint():
+    """Prometheus scrape target (fail-open: a short notice if prometheus_client is absent)."""
+    body, content_type = metrics.render()
+    return Response(body, mimetype=content_type)
+
+
+@app.get("/api/vlm/warm")
+def vlm_warm():
+    """Fire-and-forget nudge for the remote VLM (see vlm_provider.py). The frontend
+    calls this right after sign-in so a cold RunPod dev pod / Cloud Run instance has a
+    head start before the user's first real question. Always returns immediately.
+
+    Gated the same as /api/ask (Phase 3.7: required sign-in) — no reason to warm the
+    billed GPU for a visitor who hasn't authenticated."""
+    if (resp := _require_auth()) is not None:
+        return resp
+    if not is_mock():
+        vlm_provider.warm()
+    return jsonify(status="ok")
+
+
+def _prepare_ask():
+    """Auth + Layer-1 validation shared by /api/ask and /api/ask/stream — identical
+    checks, run once, so the two endpoints can never drift apart on what they accept.
+
+    Returns ``(question, image_bytes, rate_key, None)`` on success, or
+    ``(None, None, None, (body, status))`` with a ready-to-return Flask response on
+    the first failure.
+    """
+    if (resp := _require_auth()) is not None:
+        return None, None, None, resp
+
+    # Rate limit key: the signed-in user when auth is on (more precise than an IP a
+    # bot can spoof via X-Forwarded-For), else client IP (AUTH_ENABLED=0).
+    user = _authenticated_user()
+    rate_key = user["sub"] if user else _client_ip()
+
     question = (request.form.get("question") or "").strip()
     image = request.files.get("image")
 
     # --- Layer-1 guard: cheap rules, no ML (see docs/PLAN.md §6) ---
     if image is None or image.filename == "":
-        return jsonify(error="Please upload an image."), 400
+        return None, None, None, (jsonify(error="Please upload an image."), 400)
     if not question:
-        return jsonify(error="Please type a question."), 400
+        return None, None, None, (jsonify(error="Please type a question."), 400)
     if _question_too_weak(question):
-        return jsonify(error="Please ask a more specific question."), 400
+        return None, None, None, (jsonify(error="Please ask a more specific question."), 400)
 
     image_bytes = image.read()
     if not image_bytes:
-        return jsonify(error="Uploaded image is empty."), 400
+        return None, None, None, (jsonify(error="Uploaded image is empty."), 400)
 
-    # --- Layer-2/3 guard: toxicity / prompt-injection / PII + Llama Guard (see guard.py) ---
-    verdict = guard(question)
+    return question, image_bytes, rate_key, None
+
+
+def _timed(fn, *args):
+    """Run fn(*args), return (result, elapsed_seconds) — the caller's OWN wall-clock
+    duration, independent of when/in-what-order the caller gets around to reading it.
+    Needed because concurrent.futures' `future.result()` blocks the calling thread, so
+    naively timing "before submit" to "after .result()" on a SECOND future would
+    include however long the FIRST future's .result() call blocked for too."""
+    t0 = time.perf_counter()
+    result = fn(*args)
+    return result, time.perf_counter() - t0
+
+
+def _ask_events(question: str, image_bytes: bytes, rate_key: str):
+    """The whole /api/ask pipeline, as a generator of progress events.
+
+    Yields ``{"stage": <name>, "status": "start"|"done", "elapsed_ms": <float|None>}``
+    for each stage, ending with exactly one
+    ``{"stage": "result", "body": <dict>, "status_code": <int>}``. Shared by /api/ask
+    (drains this, returns only the final event's body) and /api/ask/stream (emits
+    every event as SSE) so the two can never diverge in behavior.
+
+    Guard (question) and the chart gate (image) are independent — they run
+    CONCURRENTLY via a thread pool. On this backend's single-vCPU Cloud Run
+    allocation this doesn't buy true CPU parallelism, but it does overlap each
+    stage's I/O waits (the Layer-3 guard's HTTP round-trip, the chart gate's
+    Tesseract OCR subprocess) instead of paying for them back-to-back.
+    """
+    if not ratelimit.allow(rate_key):
+        metrics.count_rate_limited()
+        yield {"stage": "result",
+               "body": {"error": "Too many requests — please slow down and try again shortly."},
+               "status_code": 429}
+        return
+
+    # Re-encode the upload from its decoded pixels: rejects non-images and strips any
+    # embedded/trailing payload, and yields canonical bytes for the cache key.
+    try:
+        image_bytes = sanitize_image(image_bytes)
+    except InvalidImage:
+        yield {"stage": "result", "body": {"error": "Uploaded file is not a valid image."},
+               "status_code": 400}
+        return
+
+    # Answer cache (real mode only): a repeat (image, question) short-circuits the guard,
+    # chart gate and VLM entirely. Never caches the mock disclaimer.
+    if not is_mock():
+        cached = answer_cache.get(image_bytes, question)
+        metrics.count_cache(cached is not None)
+        if cached is not None:
+            yield {"stage": "result",
+                   "body": {"mock": False, "cached": True, "latency_ms": 0.0, **cached},
+                   "status_code": 200}
+            return
+
+    # --- Layer-2/3 guard (question) + Rule 4 chart gate (image) — run concurrently ---
+    # as_completed() (not future.result() in submission order) so each stage's "done"
+    # event fires the moment IT finishes, not after whichever we happen to check first
+    # — a naive `guard_future.result()` then `chart_future.result()` would make the
+    # SECOND-checked stage's measured elapsed_ms include the first stage's wait time
+    # too, even if the second stage actually finished first (caught via /metrics
+    # showing guard and chart_gate with near-identical, both-inflated sums, 2026-07-10).
+    yield {"stage": "guard", "status": "start", "elapsed_ms": None}
+    yield {"stage": "chart_gate", "status": "start", "elapsed_ms": None}
+    stage_results = {}
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = {
+            pool.submit(_timed, guard, question): "guard",
+            pool.submit(_timed, looks_like_chart, image_bytes): "chart_gate",
+        }
+        for future in as_completed(futures):
+            stage = futures[future]
+            value, elapsed = future.result()
+            stage_results[stage] = value
+            metrics.observe_stage(stage, elapsed)
+            yield {"stage": stage, "status": "done", "elapsed_ms": round(elapsed * 1000, 1)}
+    verdict = stage_results["guard"]
+    is_chart, chart_confidence = stage_results["chart_gate"]
+
     if not verdict.allowed:
-        return jsonify(blocked=True, category=verdict.category, reason=verdict.reason)
+        metrics.count_blocked(verdict.category)
+        yield {"stage": "result",
+               "body": {"blocked": True, "category": verdict.category, "reason": verdict.reason},
+               "status_code": 200}
+        return
 
-    # Rule 4: chart gate (CLIP zero-shot, heuristic fallback; see chart_check).
-    is_chart, chart_confidence = looks_like_chart(image_bytes)
+    # Hard block when the gate is confident this ISN'T a chart — cheaper than the guard
+    # LLM and MUCH cheaper than the VLM, and the only content check on the IMAGE itself
+    # (guard() above only screens the question text, so an off-topic image with an
+    # innocuous question would otherwise reach the model — confirmed 2026-07-10: an
+    # unrelated photo got a bizarre off-topic answer instead of "not a chart"). A
+    # borderline image (below CHART_CLIP_THRESHOLD but above this) still proceeds with
+    # just the "may be unreliable" warning, so ambiguous-but-real charts aren't blocked.
+    if chart_confidence < CHART_BLOCK_THRESHOLD:
+        metrics.count_blocked("not_a_chart")
+        yield {"stage": "result",
+               "body": {"blocked": True, "category": "not_a_chart",
+                        "reason": "This doesn't look like a chart — please upload a "
+                                  "chart image."},
+               "status_code": 200}
+        return
 
+    if not is_mock():
+        # Daily VLM budget breaker (Phase 3.7): refuse *before* touching the GPU once the
+        # day's budget is spent — the cache/guard above still work, the bill doesn't grow.
+        if budget.over_budget():
+            metrics.count_over_budget()
+            yield {"stage": "result",
+                   "body": {"error": "The demo's daily model quota has been reached — "
+                                     "please try again tomorrow."},
+                   "status_code": 429}
+            return
+        yield {"stage": "vlm_start", "status": "start", "elapsed_ms": None}
+        t0 = time.perf_counter()
+        ready = vlm_provider.ensure_running(env_float("VLM_TIMEOUT"))
+        vlm_start_elapsed = time.perf_counter() - t0
+        metrics.observe_stage("vlm_start", vlm_start_elapsed)
+        yield {"stage": "vlm_start", "status": "done",
+               "elapsed_ms": round(vlm_start_elapsed * 1000, 1)}
+        if not ready:
+            yield {"stage": "result",
+                   "body": {"error": "The model service is starting up — try again shortly."},
+                   "status_code": 503}
+            return
+
+    yield {"stage": "vlm", "status": "start", "elapsed_ms": None}
     start = time.perf_counter()
     answer = run_inference(image_bytes, question)
-    latency_ms = round((time.perf_counter() - start) * 1000, 1)
+    inference_s = time.perf_counter() - start
+    latency_ms = round(inference_s * 1000, 1)
+    if not is_mock():
+        metrics.observe_stage("vlm", inference_s)
+        metrics.count_vlm()
+        budget.record()  # count this real invocation against today's budget
+    yield {"stage": "vlm", "status": "done", "elapsed_ms": latency_ms}
 
     # Rule 3: in mock mode return a disclaimer, never a fake answer — unless the
     # MOCK_REVEAL demo toggle is on, in which case show the canned answer.
     if is_mock() and not MOCK_REVEAL:
-        return jsonify(
-            disclaimer=MOCK_DISCLAIMER,
-            mock=True,
-            is_chart=is_chart,
-            chart_confidence=chart_confidence,
-            latency_ms=latency_ms,
+        yield {"stage": "result",
+               "body": {"disclaimer": MOCK_DISCLAIMER, "mock": True, "is_chart": is_chart,
+                        "chart_confidence": chart_confidence, "latency_ms": latency_ms},
+               "status_code": 200}
+        return
+
+    result = {"answer": answer, "is_chart": is_chart, "chart_confidence": chart_confidence}
+    if not is_mock():
+        answer_cache.put(image_bytes, question, result)
+    yield {"stage": "result",
+           "body": {"mock": is_mock(), "latency_ms": latency_ms, **result},
+           "status_code": 200}
+
+
+@app.post("/api/ask")
+def ask():
+    question, image_bytes, rate_key, err = _prepare_ask()
+    if err is not None:
+        return err
+    for event in _ask_events(question, image_bytes, rate_key):
+        if event["stage"] == "result":
+            return jsonify(**event["body"]), event["status_code"]
+    return jsonify(error="Internal error."), 500  # pragma: no cover — _ask_events always yields a result
+
+
+@app.post("/api/ask/stream")
+def ask_stream():
+    """Same pipeline and contract as /api/ask, streamed as Server-Sent Events so the
+    frontend can show real per-stage progress (see docs/PLAN.md and _ask_events above).
+    POST (not GET) because the body carries the image — browsers' native EventSource
+    only supports GET, so the frontend consumes this with fetch() + a stream reader
+    instead (see frontend/src/api.js askQuestionStream)."""
+    question, image_bytes, rate_key, err = _prepare_ask()
+    if err is not None:
+        body, status = err
+        # Mirror the same failure as a single SSE result event, so the frontend's
+        # stream consumer has one code path regardless of where the pipeline stops.
+        return Response(
+            f"data: {json.dumps({'stage': 'result', 'body': body.get_json(), 'status_code': status})}\n\n",
+            mimetype="text/event-stream",
         )
 
-    return jsonify(
-        answer=answer,
-        mock=is_mock(),
-        is_chart=is_chart,
-        chart_confidence=chart_confidence,
-        latency_ms=latency_ms,
-    )
+    def _sse():
+        for event in _ask_events(question, image_bytes, rate_key):
+            yield f"data: {json.dumps(event)}\n\n"
+
+    return Response(_sse(), mimetype="text/event-stream", headers={
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",  # nginx: don't buffer SSE chunks
+    })
 
 
 if __name__ == "__main__":

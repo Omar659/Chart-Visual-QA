@@ -56,6 +56,22 @@
   background-color: var(--mute);
 }
 
+.signout {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--mute);
+  background: none;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  padding: var(--s-xs) var(--s-md);
+  cursor: pointer;
+}
+
+.signout:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
 /* ── Layout ──────────────────────────────────────────────────────── */
 .container {
   max-width: 720px;
@@ -112,6 +128,19 @@
   background-color: var(--canvas);
   border: 1px solid var(--hairline);
   border-radius: var(--r-md);
+}
+
+/* ── Sign-in gate (Phase 3.7 required Google login) ─────────────────*/
+.signin-card {
+  align-items: center;
+  padding: var(--s-4xl) var(--s-2xl);
+  text-align: center;
+}
+
+.signin-prompt {
+  margin: 0;
+  font-size: 16px;
+  color: var(--body);
 }
 
 /* ── Image picker / dropzone ─────────────────────────────────────── */
@@ -282,17 +311,55 @@
   gap: var(--s-sm);
 }
 
-.processing {
+/* Per-stage progress (Phase: streamed /api/ask/stream) — each row appears as its
+   stage starts, gets a checkmark + elapsed time when done. Replaces the old single
+   "Processing model…" line with real per-stage traceability. */
+.stage-list {
   display: flex;
-  align-items: center;
-  gap: var(--s-sm);
+  flex-direction: column;
+  gap: var(--s-xs);
   margin: 0;
   padding: var(--s-md) var(--s-lg);
-  font-size: 14px;
-  color: var(--body);
+  list-style: none;
   background-color: var(--canvas-soft);
   border: 1px solid var(--hairline);
   border-radius: var(--r-sm);
+}
+
+.stage-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-sm);
+  font-size: 14px;
+  color: var(--mute);
+}
+
+.stage-row.stage-done {
+  color: var(--body);
+}
+
+.stage-check {
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+  color: #6ee7a8;
+  font-weight: 700;
+}
+
+.stage-spinner {
+  width: 14px;
+  height: 14px;
+}
+
+.stage-label {
+  flex: 1 1 auto;
+}
+
+.stage-time {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--mute);
 }
 
 .spinner {

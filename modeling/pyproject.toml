@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chartqa"
+version = "0.1.0"
+description = "ChartQA modeling package: LoRA fine-tuning, evaluation, and the shared VLM serving wrapper."
+requires-python = ">=3.10"
+# Runtime dependencies are the single source of truth in requirements.txt so the
+# dev/CI install (`pip install -e ./modeling`) and any manual `pip install -r`
+# can never drift apart. bitsandbytes stays opt-in (commented there / extra below).
+dynamic = ["dependencies"]
+
+[project.optional-dependencies]
+# Opt-in 4-/8-bit quantized loading (evaluate.py --quantization 4bit|8bit).
+quant = ["bitsandbytes>=0.43"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools.packages.find]
+# Only the importable package; checkpoints/, outputs/, scripts/ are data, not code.
+include = ["chartqa*"]

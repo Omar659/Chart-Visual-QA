@@ -18,10 +18,22 @@ services:
       GUARD_LLM_URL: http://guard:11434   # reach the containerized Ollama guard
       GUARD_LLM_MODEL: llama-guard3:1b    # Ollama model tag (not gated)
       TESSERACT_CMD: ""                   # use the apt binary on PATH
+      REDIS_URL: redis://redis:6379/0     # shared answer cache + rate-limit + budget (3.6)
     ports:
       - "5000:5000"
     depends_on:
       - guard
+      - redis
+
+  # Frontend (prod): nginx serves the built React app and proxies /api to the backend,
+  # so the browser talks to ONE origin (no CORS needed in prod). Dev still uses Vite
+  # (`python app.py --dev`). Open the app at http://localhost:8080.
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:8080"          # nginx-unprivileged listens on 8080 (non-root, §3.7)
+    depends_on:
+      - backend
 
   # CPU-only guard: Ollama serving Llama Guard over the OpenAI API
   # (/v1/chat/completions — the same endpoint guard_llm.py calls). The model is
@@ -32,6 +44,88 @@ services:
     build: ./guard
     ports:
       - "11434:11434"
+
+  # --- Data layer (Phase 3.6) ---
+
+  # Redis: shared answer cache (3.4) + per-IP rate-limit counters + daily VLM budget
+  # (3.7), so those hold across gunicorn workers and survive a restart. The backend
+  # fail-opens to in-memory if this is down, so it's never a hard dependency. No
+  # persistence (`--save ""`): every key is a cache/counter with its own TTL, nothing
+  # here is durable state. Bound to localhost.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Postgres: the durable store. Today it backs the MLflow tracking server below; the
+  # app's own tables (conversations / feedback) arrive in Phase 5 via Alembic. Bound to
+  # localhost; data persisted in a named volume.
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mlflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mlflow}   # set a real one in prod (.env)
+      POSTGRES_DB: mlflow
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlflow"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # MLflow tracking server (Phase 2.3): Postgres-backed store + a volume for artifacts,
+  # so experiment runs are queryable and survive restarts (the local ./mlruns file store
+  # is the --dev fallback). Point the modeling code at it with
+  # MLFLOW_TRACKING_URI=http://localhost:5001. Host port is 5001 (not 5000) on purpose —
+  # the backend already owns host :5000, and :5000 is often taken on Windows/macOS anyway.
+  # Bound to localhost — keep it OFF the public ingress (SSH tunnel / private net; see 3.7).
+  mlflow:
+    build: ./mlflow
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri postgresql://mlflow:${POSTGRES_PASSWORD:-mlflow}@postgres:5432/mlflow
+      --artifacts-destination /mlartifacts
+    volumes:
+      - mlartifacts:/mlartifacts
+    ports:
+      - "127.0.0.1:5001:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Observability: Prometheus scrapes the backend /metrics; Grafana visualizes it with a
+  # provisioned datasource + dashboard (observability/). Bound to localhost only — keep
+  # these OFF the public ingress in prod (reach via SSH tunnel / private net; see 3.7).
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}  # set a real one in prod
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
 
   # --- GPU alternative (later, needs a CUDA>=13 driver + NVIDIA Container Toolkit) ---
   # Replace the `guard` service above with vLLM serving the gated weights, and set the
@@ -53,7 +147,10 @@ services:
   #             count: 1
   #             capabilities: [gpu]
 
-# No named volumes: the guard model is baked into its image, CLIP into the
-# backend image. (Uncomment hf-cache for the vLLM/GPU guard variant above.)
-# volumes:
+# Named volumes for the durable data layer (Phase 3.6): Postgres data + MLflow
+# artifacts. (The guard/CLIP model weights are baked into their images, not volumes;
+# uncomment hf-cache for the vLLM/GPU guard variant above.)
+volumes:
+  pgdata:
+  mlartifacts:
 #   hf-cache:

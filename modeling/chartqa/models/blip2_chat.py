@@ -1,5 +1,7 @@
 from transformers import Blip2ForConditionalGeneration, Blip2Processor
 
+from chartqa.models.qwen_vl_chat import build_quantization_config
+
 
 class Blip2Chat:
     """Wrapper around BLIP-2 for single-image visual question answering.
@@ -21,19 +23,30 @@ class Blip2Chat:
         dtype: str = "auto",
         device_map: str = "auto",
         adapter_path: str | None = None,
+        quantization: str | None = None,
     ):
+        # Opt-in 4-bit/8-bit loading; None/"none" keeps full precision.
+        quantization_config = build_quantization_config(quantization)
+        quant_kwargs = (
+            {"quantization_config": quantization_config} if quantization_config else {}
+        )
         self.model = Blip2ForConditionalGeneration.from_pretrained(
             model_name,
             dtype=dtype,
             device_map=device_map,
+            **quant_kwargs,
         )
         # Optionally load a LoRA adapter checkpoint on top of the base model.
         if adapter_path:
             from peft import PeftModel
 
             self.model = PeftModel.from_pretrained(self.model, adapter_path)
-            # Fold the LoRA weights into the base model for faster inference.
-            self.model = self.model.merge_and_unload()
+            if quantization_config is None:
+                # Fold the LoRA weights into the base model for faster inference.
+                self.model = self.model.merge_and_unload()
+            # With a quantized base the adapter must stay attached: merge_and_unload()
+            # cannot fold LoRA deltas into 4-/8-bit weights, so inference runs
+            # through the PeftModel wrapper (slightly slower, memory-cheap).
         # Prefer the checkpoint's processor (in case it added tokens) and fall
         # back to the base model's when running without an adapter.
         self.processor = Blip2Processor.from_pretrained(adapter_path or model_name)

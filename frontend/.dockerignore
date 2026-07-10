@@ -1,0 +1,8 @@
+# Keep the build context small and reproducible: deps are installed from the lockfile
+# inside the image, and dist/ is rebuilt there.
+node_modules
+dist
+dist-ssr
+.git
+*.log
+.env*
