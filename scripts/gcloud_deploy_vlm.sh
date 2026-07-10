@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # Deploys vlm_service/ (Qwen3-VL-8B + LoRA) to Cloud Run GPU — the production serving
-# path. SAME Docker image RunPod dev pods run (vlm_service/Dockerfile); this script only
-# handles the Cloud Run side: build via Cloud Build, push, deploy with GPU + scale-to-zero.
+# path. Builds the THIN service image (vlm_service/Dockerfile, FROM the prebuilt vlm-base)
+# via Cloud Build, then deploys with GPU + scale-to-zero. Fast (~2-3 min) because the
+# expensive half (deps + baked base model) lives in vlm-base — see docs/VLM_IMAGE_SPLIT.md.
 #
 # Usage:
 #   ./scripts/gcloud_deploy_vlm.sh [--project PROJECT] [--region REGION]
 #
 # Prerequisites:
 #   - gcloud CLI installed and authenticated (`gcloud auth login`).
+#   - The vlm-base image must already exist in Artifact Registry — build it once with
+#     scripts/gcloud_build_vlm_base.sh (and rebuild only on a dep/base-model change). This
+#     script fails fast with instructions if it's missing.
 #   - A GCP project with billing enabled AND Cloud Run GPU quota for the target region
 #     (request via console if `gcloud run deploy` errors with a quota message —
 #     GPU-enabled regions include us-central1, europe-west1, asia-southeast1 at time of
@@ -44,6 +48,7 @@ if [[ -z "$PROJECT" ]]; then
 fi
 
 IMAGE="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/vlm-service:latest"
+BASE_IMAGE="${REGION}-docker.pkg.dev/${PROJECT}/${REPO}/vlm-base:latest"
 echo "[deploy-vlm] project=$PROJECT region=$REGION image=$IMAGE"
 
 echo "[deploy-vlm] enabling required APIs..."
@@ -58,17 +63,27 @@ if ! gcloud artifacts repositories describe "$REPO" --location "$REGION" \
     --description "Chart-Visual-QA images"
 fi
 
-echo "[deploy-vlm] building + pushing image via Cloud Build (repo root context; the base"
-echo "  CUDA/torch image is large, this can take 10-20 minutes)..."
+# The thin service image is FROM vlm-base — that must exist first. Fail fast with a clear
+# pointer instead of letting Cloud Build error deep in a `docker pull` on a missing image.
+if ! gcloud artifacts docker images describe "$BASE_IMAGE" --project "$PROJECT" >/dev/null 2>&1; then
+  echo "[deploy-vlm] ERROR: base image not found: $BASE_IMAGE" >&2
+  echo "[deploy-vlm]   Build it once first (rare, ~20-30 min):" >&2
+  echo "[deploy-vlm]     ./scripts/gcloud_build_vlm_base.sh --project ${PROJECT} --region ${REGION}" >&2
+  echo "[deploy-vlm]   See docs/VLM_IMAGE_SPLIT.md." >&2
+  exit 1
+fi
+
+echo "[deploy-vlm] building thin service image via Cloud Build (FROM vlm-base — no model"
+echo "  download, so this is ~2-3 min, not 20+)..."
 gcloud builds submit . \
   --project "$PROJECT" \
   --config vlm_service/cloudbuild.yaml \
-  --substitutions="_IMAGE=${IMAGE}"
+  --substitutions="_IMAGE=${IMAGE},_BASE_IMAGE=${BASE_IMAGE}"
 
 echo "[deploy-vlm] deploying to Cloud Run GPU (min-instances=0, scale-to-zero, PRIVATE)..."
-# --no-allow-unauthenticated: private. The base model is baked into the image
-# (vlm_service/Dockerfile), so no HF download at cold start and --startup-probe has a
-# generous budget just to LOAD the model from local disk into VRAM (~1 min).
+# --no-allow-unauthenticated: private. The base model is baked into vlm-base (inherited by
+# this service image), so no HF download at cold start and --startup-probe has a generous
+# budget just to LOAD the model from local disk into VRAM (~1 min).
 # --no-gpu-zonal-redundancy: a new project has no quota for GPU zonal redundancy (HA
 # across zones) by default, and it's not needed here anyway (single instance, min=0,
 # scale-to-zero — there's no "other zone" to fail over to). Without this flag, gcloud

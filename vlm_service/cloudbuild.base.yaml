@@ -1,0 +1,16 @@
+# Builds vlm_service/Dockerfile.base (the vlm-base image) with the REPO ROOT as context
+# (it needs `modeling/` alongside vlm_service/). Invoked by scripts/gcloud_build_vlm_base.sh
+# via `gcloud builds submit --config vlm_service/cloudbuild.base.yaml .`. Run RARELY — only
+# on a dep bump or base-model swap (see Dockerfile.base's header).
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-f", "vlm_service/Dockerfile.base", "-t", "${_IMAGE}", "."]
+images: ["${_IMAGE}"]
+# The image bakes the ~17.5 GB base model, so the build downloads that + pushes a ~30 GB
+# image — well past Cloud Build's 10-minute default. Give it an hour.
+timeout: "3600s"
+options:
+  # The base image + CUDA/torch layers are large; a bigger machine builds faster, gives
+  # more disk for the baked model, and avoids timing out on the pip + model-download steps.
+  machineType: "E2_HIGHCPU_8"
+  diskSizeGb: 100
