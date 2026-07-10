@@ -12,4 +12,10 @@ RUN ollama serve & \
     until ollama list >/dev/null 2>&1; do sleep 1; done; \
     ollama pull llama-guard3:1b
 
-# Base image already does ENTRYPOINT ["/bin/ollama"] CMD ["serve"] -> serves :11434.
+# Override the base image's ENTRYPOINT/CMD (["/bin/ollama"] ["serve"], hardcoded to
+# :11434) with a shell wrapper honoring $PORT — same reasoning as vlm_service/Dockerfile:
+# Cloud Run injects PORT (usually 8080) and requires the container to listen on exactly
+# that value; RunPod/local docker-compose has no $PORT, so this falls back to Ollama's
+# normal 11434 (matches GUARD_LLM_URL=http://guard:11434 everywhere else unchanged).
+ENTRYPOINT []
+CMD ["/bin/sh", "-c", "OLLAMA_HOST=0.0.0.0:${PORT:-11434} exec ollama serve"]
