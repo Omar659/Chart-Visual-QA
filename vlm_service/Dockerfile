@@ -10,6 +10,17 @@ FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
 
 WORKDIR /app
 
+# A C compiler is required at RUNTIME, not just build time: bitsandbytes' triton-based
+# kernels (nn/triton_based_modules.py) JIT-compile a small C stub the first time they're
+# imported (triton's CUDA driver init), via `cc`. This "runtime" base image has no
+# compiler at all, so every worker crashed at boot with "Failed to find C compiler" the
+# instant QwenVLChat.__init__ tried to load a 4-bit model — confirmed via real Cloud Run
+# logs (2026-07-10): 100% reproducible, not a timeout/cold-start issue. The RunPod dev
+# path never hit this because that base image (a full dev-oriented template) already had
+# build tools; this "runtime" image never had them tested until the first real deploy.
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install the chartqa package (shared QwenVLChat wrapper) + quantization extra.
 # Copied selectively (not the whole modeling/ tree) to keep the image small — the
 # repo's outputs/, notebooks/, dataset/ and the BLIP-2 checkpoint aren't needed here.
