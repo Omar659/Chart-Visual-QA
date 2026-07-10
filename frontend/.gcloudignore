@@ -1,0 +1,10 @@
+# Controls what `gcloud builds submit frontend` uploads to Cloud Build. Same reasoning
+# as backend/.gcloudignore — without this, gcloud looks for a .gcloudignore/.gitignore
+# INSIDE frontend/ (neither existed), so node_modules/ would get archived and uploaded
+# in full on every deploy. Mirrors frontend/.dockerignore's intent exactly.
+node_modules
+dist
+dist-ssr
+.git
+*.log
+.env*
