@@ -46,6 +46,11 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 300s;   # survive a cold guard / VLM call
         proxy_ssl_server_name on; # correct TLS SNI when BACKEND_URL is https (Cloud Run)
+        # /api/ask/stream (Server-Sent Events): the backend already sends
+        # X-Accel-Buffering: no, which nginx honors per-response — this directive is
+        # belt-and-suspenders so streamed chunks reach the browser as they're written
+        # instead of waiting for nginx's response buffer to fill/close.
+        proxy_buffering off;
     }
 
     # SPA fallback: unknown paths return index.html for client-side routing.

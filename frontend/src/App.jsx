@@ -1,8 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import { askQuestion, getHealth, warmVlm } from './api'
+import { askQuestionStream, getHealth, warmVlm } from './api'
 import './App.css'
 
 const MAX_BYTES = 10 * 1024 * 1024 // keep in sync with backend MAX_CONTENT_LENGTH
+
+// Per-stage progress rows, in the order they should appear. Keyed by the backend's
+// SSE `stage` name (app.py's _ask_events) — vlm_start is intentionally omitted (a
+// near-instant no-op for VLM_PROVIDER=cloudrun; showing it would just flicker).
+const STAGE_LABELS = [
+  { stage: 'chart_gate', label: 'Verifying image' },
+  { stage: 'guard', label: 'Verifying question' },
+  { stage: 'vlm', label: 'Processing model' },
+]
 
 // Baked in at BUILD time (Vite's import.meta.env is compile-time, not runtime — see
 // frontend/cloudbuild.yaml / Dockerfile). Empty in local dev by default: no login wall,
@@ -25,6 +34,10 @@ function App() {
   const [answer, setAnswer] = useState(null) // { answer, mock, latency_ms, is_chart, chart_confidence }
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Per-stage progress, keyed by SSE stage name: { status: 'start'|'done', elapsed_ms }.
+  // A stage key only appears once its "start" event has arrived, so the UI reveals rows
+  // as the pipeline actually reaches them instead of showing all three upfront.
+  const [stages, setStages] = useState({})
   const [mockBanner, setMockBanner] = useState(false)
   // Google ID token (Phase 3.7 required sign-in). null when signed out; also null
   // permanently when HAS_AUTH is false (no login wall configured for this deploy).
@@ -127,6 +140,7 @@ function App() {
     e.preventDefault()
     setError('')
     setAnswer(null)
+    setStages({})
     const q = question.trim()
     if (!image) return setError('Please upload an image.')
     if (!q) return setError('Please type a question.')
@@ -139,9 +153,18 @@ function App() {
 
     setLoading(true)
     try {
-      const result = await askQuestion(image, q, { signal: controller.signal, token })
+      const result = await askQuestionStream(image, q, {
+        signal: controller.signal,
+        token,
+        onEvent: (event) => {
+          setStages((prev) => ({
+            ...prev,
+            [event.stage]: { status: event.status, elapsed_ms: event.elapsed_ms },
+          }))
+        },
+      })
       if (result.blocked) {
-        // Guard (Layer 2/3) rejected the question (toxic / injection / PII / unsafe).
+        // Guard (Layer 2/3) or the chart gate rejected the request.
         setError(result.reason || 'That question was blocked.')
         return
       }
@@ -268,10 +291,25 @@ function App() {
           </button>
 
           {loading && (
-            <p className="processing" role="status" aria-live="polite">
-              <span className="spinner" aria-hidden="true" />
-              Processing model…
-            </p>
+            <ul className="stage-list" role="status" aria-live="polite">
+              {STAGE_LABELS.filter(({ stage }) => stages[stage]).map(({ stage, label }) => {
+                const s = stages[stage]
+                const done = s.status === 'done'
+                return (
+                  <li key={stage} className={`stage-row ${done ? 'stage-done' : ''}`}>
+                    {done ? (
+                      <span className="stage-check" aria-hidden="true">✓</span>
+                    ) : (
+                      <span className="spinner stage-spinner" aria-hidden="true" />
+                    )}
+                    <span className="stage-label">{label}…</span>
+                    {done && (
+                      <span className="stage-time">{Math.round(s.elapsed_ms)} ms</span>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
           )}
 
           {error && (

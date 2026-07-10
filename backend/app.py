@@ -4,12 +4,20 @@ Mock-first: the API contract is stable and returns fake answers via
 ``inference.run_inference`` until the real model lands. See docs/PLAN.md §9.
 
 Endpoints:
-    GET  /api/health  -> {"status": "ok", "mock": <bool>}
-    POST /api/ask     -> {"answer": <str>, "mock": <bool>, "is_chart": <bool>,
-                          "latency_ms": <number>}
-                         or, if the guard blocks the question (HTTP 200):
-                         {"blocked": true, "category": <str>, "reason": <str>}
-                         (multipart/form-data: image=<file>, question=<string>)
+    GET  /api/health     -> {"status": "ok", "mock": <bool>}
+    POST /api/ask        -> {"answer": <str>, "mock": <bool>, "is_chart": <bool>,
+                             "latency_ms": <number>}
+                            or, if the guard blocks the question (HTTP 200):
+                            {"blocked": true, "category": <str>, "reason": <str>}
+                            (multipart/form-data: image=<file>, question=<string>)
+    POST /api/ask/stream -> same body/contract, same pipeline, but as
+                            text/event-stream: one ``data: {...}`` line per pipeline
+                            stage ({"stage": <name>, "status": "start"|"done",
+                            "elapsed_ms": <number|null>}), ending with
+                            {"stage": "result", "body": <the /api/ask JSON above>,
+                            "status_code": <int>}. Powers the frontend's per-stage
+                            progress UI; both endpoints share the same pipeline
+                            generator (_ask_events) so they can never diverge.
 
 ``is_chart`` is a cheap Layer-1 heuristic (see chart_check) — a warning signal, not
 a hard block: when false, the UI can warn that results may be unreliable.
@@ -23,10 +31,12 @@ Or via the root orchestrator:  python app.py
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 # Load <repo-root>/.env BEFORE importing modules that read env at import time
@@ -173,41 +183,70 @@ def vlm_warm():
     return jsonify(status="ok")
 
 
-@app.post("/api/ask")
-def ask():
-    # --- Auth (Phase 3.7): required sign-in, before anything else — cheapest reject ---
-    if (resp := _require_auth()) is not None:
-        return resp
+def _prepare_ask():
+    """Auth + Layer-1 validation shared by /api/ask and /api/ask/stream — identical
+    checks, run once, so the two endpoints can never drift apart on what they accept.
 
-    # --- Rate limit: keyed by the signed-in user when auth is on (more precise than an
-    # IP a bot can spoof via X-Forwarded-For), else by client IP (AUTH_ENABLED=0). ---
+    Returns ``(question, image_bytes, rate_key, None)`` on success, or
+    ``(None, None, None, (body, status))`` with a ready-to-return Flask response on
+    the first failure.
+    """
+    if (resp := _require_auth()) is not None:
+        return None, None, None, resp
+
+    # Rate limit key: the signed-in user when auth is on (more precise than an IP a
+    # bot can spoof via X-Forwarded-For), else client IP (AUTH_ENABLED=0).
     user = _authenticated_user()
     rate_key = user["sub"] if user else _client_ip()
-    if not ratelimit.allow(rate_key):
-        metrics.count_rate_limited()
-        return jsonify(error="Too many requests — please slow down and try again shortly."), 429
 
     question = (request.form.get("question") or "").strip()
     image = request.files.get("image")
 
     # --- Layer-1 guard: cheap rules, no ML (see docs/PLAN.md §6) ---
     if image is None or image.filename == "":
-        return jsonify(error="Please upload an image."), 400
+        return None, None, None, (jsonify(error="Please upload an image."), 400)
     if not question:
-        return jsonify(error="Please type a question."), 400
+        return None, None, None, (jsonify(error="Please type a question."), 400)
     if _question_too_weak(question):
-        return jsonify(error="Please ask a more specific question."), 400
+        return None, None, None, (jsonify(error="Please ask a more specific question."), 400)
 
     image_bytes = image.read()
     if not image_bytes:
-        return jsonify(error="Uploaded image is empty."), 400
+        return None, None, None, (jsonify(error="Uploaded image is empty."), 400)
+
+    return question, image_bytes, rate_key, None
+
+
+def _ask_events(question: str, image_bytes: bytes, rate_key: str):
+    """The whole /api/ask pipeline, as a generator of progress events.
+
+    Yields ``{"stage": <name>, "status": "start"|"done", "elapsed_ms": <float|None>}``
+    for each stage, ending with exactly one
+    ``{"stage": "result", "body": <dict>, "status_code": <int>}``. Shared by /api/ask
+    (drains this, returns only the final event's body) and /api/ask/stream (emits
+    every event as SSE) so the two can never diverge in behavior.
+
+    Guard (question) and the chart gate (image) are independent — they run
+    CONCURRENTLY via a thread pool. On this backend's single-vCPU Cloud Run
+    allocation this doesn't buy true CPU parallelism, but it does overlap each
+    stage's I/O waits (the Layer-3 guard's HTTP round-trip, the chart gate's
+    Tesseract OCR subprocess) instead of paying for them back-to-back.
+    """
+    if not ratelimit.allow(rate_key):
+        metrics.count_rate_limited()
+        yield {"stage": "result",
+               "body": {"error": "Too many requests — please slow down and try again shortly."},
+               "status_code": 429}
+        return
 
     # Re-encode the upload from its decoded pixels: rejects non-images and strips any
     # embedded/trailing payload, and yields canonical bytes for the cache key.
     try:
         image_bytes = sanitize_image(image_bytes)
     except InvalidImage:
-        return jsonify(error="Uploaded file is not a valid image."), 400
+        yield {"stage": "result", "body": {"error": "Uploaded file is not a valid image."},
+               "status_code": 400}
+        return
 
     # Answer cache (real mode only): a repeat (image, question) short-circuits the guard,
     # chart gate and VLM entirely. Never caches the mock disclaimer.
@@ -215,20 +254,34 @@ def ask():
         cached = answer_cache.get(image_bytes, question)
         metrics.count_cache(cached is not None)
         if cached is not None:
-            return jsonify(mock=False, cached=True, latency_ms=0.0, **cached)
+            yield {"stage": "result",
+                   "body": {"mock": False, "cached": True, "latency_ms": 0.0, **cached},
+                   "status_code": 200}
+            return
 
-    # --- Layer-2/3 guard: toxicity / prompt-injection / PII + Llama Guard (see guard.py) ---
-    t0 = time.perf_counter()
-    verdict = guard(question)
-    metrics.observe_stage("guard", time.perf_counter() - t0)
+    # --- Layer-2/3 guard (question) + Rule 4 chart gate (image) — run concurrently ---
+    yield {"stage": "guard", "status": "start", "elapsed_ms": None}
+    yield {"stage": "chart_gate", "status": "start", "elapsed_ms": None}
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        t_guard = time.perf_counter()
+        t_chart = time.perf_counter()
+        guard_future = pool.submit(guard, question)
+        chart_future = pool.submit(looks_like_chart, image_bytes)
+        verdict = guard_future.result()
+        guard_elapsed = time.perf_counter() - t_guard
+        is_chart, chart_confidence = chart_future.result()
+        chart_elapsed = time.perf_counter() - t_chart
+    metrics.observe_stage("guard", guard_elapsed)
+    metrics.observe_stage("chart_gate", chart_elapsed)
+    yield {"stage": "guard", "status": "done", "elapsed_ms": round(guard_elapsed * 1000, 1)}
+    yield {"stage": "chart_gate", "status": "done", "elapsed_ms": round(chart_elapsed * 1000, 1)}
+
     if not verdict.allowed:
         metrics.count_blocked(verdict.category)
-        return jsonify(blocked=True, category=verdict.category, reason=verdict.reason)
-
-    # Rule 4: chart gate (CLIP zero-shot, heuristic fallback; see chart_check).
-    t0 = time.perf_counter()
-    is_chart, chart_confidence = looks_like_chart(image_bytes)
-    metrics.observe_stage("chart_gate", time.perf_counter() - t0)
+        yield {"stage": "result",
+               "body": {"blocked": True, "category": verdict.category, "reason": verdict.reason},
+               "status_code": 200}
+        return
 
     # Hard block when the gate is confident this ISN'T a chart — cheaper than the guard
     # LLM and MUCH cheaper than the VLM, and the only content check on the IMAGE itself
@@ -239,23 +292,37 @@ def ask():
     # just the "may be unreliable" warning, so ambiguous-but-real charts aren't blocked.
     if chart_confidence < CHART_BLOCK_THRESHOLD:
         metrics.count_blocked("not_a_chart")
-        return jsonify(blocked=True, category="not_a_chart",
-                       reason="This doesn't look like a chart — please upload a chart "
-                              "image.")
+        yield {"stage": "result",
+               "body": {"blocked": True, "category": "not_a_chart",
+                        "reason": "This doesn't look like a chart — please upload a "
+                                  "chart image."},
+               "status_code": 200}
+        return
 
     if not is_mock():
         # Daily VLM budget breaker (Phase 3.7): refuse *before* touching the GPU once the
         # day's budget is spent — the cache/guard above still work, the bill doesn't grow.
         if budget.over_budget():
             metrics.count_over_budget()
-            return jsonify(error="The demo's daily model quota has been reached — "
-                                 "please try again tomorrow."), 429
+            yield {"stage": "result",
+                   "body": {"error": "The demo's daily model quota has been reached — "
+                                     "please try again tomorrow."},
+                   "status_code": 429}
+            return
+        yield {"stage": "vlm_start", "status": "start", "elapsed_ms": None}
         t0 = time.perf_counter()
-        if not vlm_provider.ensure_running(env_float("VLM_TIMEOUT")):
-            metrics.observe_stage("vlm_start", time.perf_counter() - t0)
-            return jsonify(error="The model service is starting up — try again shortly."), 503
-        metrics.observe_stage("vlm_start", time.perf_counter() - t0)
+        ready = vlm_provider.ensure_running(env_float("VLM_TIMEOUT"))
+        vlm_start_elapsed = time.perf_counter() - t0
+        metrics.observe_stage("vlm_start", vlm_start_elapsed)
+        yield {"stage": "vlm_start", "status": "done",
+               "elapsed_ms": round(vlm_start_elapsed * 1000, 1)}
+        if not ready:
+            yield {"stage": "result",
+                   "body": {"error": "The model service is starting up — try again shortly."},
+                   "status_code": 503}
+            return
 
+    yield {"stage": "vlm", "status": "start", "elapsed_ms": None}
     start = time.perf_counter()
     answer = run_inference(image_bytes, question)
     inference_s = time.perf_counter() - start
@@ -264,22 +331,61 @@ def ask():
         metrics.observe_stage("vlm", inference_s)
         metrics.count_vlm()
         budget.record()  # count this real invocation against today's budget
+    yield {"stage": "vlm", "status": "done", "elapsed_ms": latency_ms}
 
     # Rule 3: in mock mode return a disclaimer, never a fake answer — unless the
     # MOCK_REVEAL demo toggle is on, in which case show the canned answer.
     if is_mock() and not MOCK_REVEAL:
-        return jsonify(
-            disclaimer=MOCK_DISCLAIMER,
-            mock=True,
-            is_chart=is_chart,
-            chart_confidence=chart_confidence,
-            latency_ms=latency_ms,
-        )
+        yield {"stage": "result",
+               "body": {"disclaimer": MOCK_DISCLAIMER, "mock": True, "is_chart": is_chart,
+                        "chart_confidence": chart_confidence, "latency_ms": latency_ms},
+               "status_code": 200}
+        return
 
     result = {"answer": answer, "is_chart": is_chart, "chart_confidence": chart_confidence}
     if not is_mock():
         answer_cache.put(image_bytes, question, result)
-    return jsonify(mock=is_mock(), latency_ms=latency_ms, **result)
+    yield {"stage": "result",
+           "body": {"mock": is_mock(), "latency_ms": latency_ms, **result},
+           "status_code": 200}
+
+
+@app.post("/api/ask")
+def ask():
+    question, image_bytes, rate_key, err = _prepare_ask()
+    if err is not None:
+        return err
+    for event in _ask_events(question, image_bytes, rate_key):
+        if event["stage"] == "result":
+            return jsonify(**event["body"]), event["status_code"]
+    return jsonify(error="Internal error."), 500  # pragma: no cover — _ask_events always yields a result
+
+
+@app.post("/api/ask/stream")
+def ask_stream():
+    """Same pipeline and contract as /api/ask, streamed as Server-Sent Events so the
+    frontend can show real per-stage progress (see docs/PLAN.md and _ask_events above).
+    POST (not GET) because the body carries the image — browsers' native EventSource
+    only supports GET, so the frontend consumes this with fetch() + a stream reader
+    instead (see frontend/src/api.js askQuestionStream)."""
+    question, image_bytes, rate_key, err = _prepare_ask()
+    if err is not None:
+        body, status = err
+        # Mirror the same failure as a single SSE result event, so the frontend's
+        # stream consumer has one code path regardless of where the pipeline stops.
+        return Response(
+            f"data: {json.dumps({'stage': 'result', 'body': body.get_json(), 'status_code': status})}\n\n",
+            mimetype="text/event-stream",
+        )
+
+    def _sse():
+        for event in _ask_events(question, image_bytes, rate_key):
+            yield f"data: {json.dumps(event)}\n\n"
+
+    return Response(_sse(), mimetype="text/event-stream", headers={
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",  # nginx: don't buffer SSE chunks
+    })
 
 
 if __name__ == "__main__":
