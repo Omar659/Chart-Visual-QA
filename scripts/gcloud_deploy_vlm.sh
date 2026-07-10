@@ -96,7 +96,7 @@ gcloud run deploy "$SERVICE" \
   --no-cpu-throttling --no-gpu-zonal-redundancy \
   --min-instances=0 --max-instances=1 --concurrency=1 \
   --timeout=300 \
-  --set-env-vars="QWEN_MODEL_ID=Qwen/Qwen3-VL-8B-Instruct,QWEN_ADAPTER_PATH=/app/modeling/checkpoints/${ADAPTER_DIR},QWEN_QUANTIZATION=4bit,QWEN_MAX_NEW_TOKENS=64,QWEN_ANSWER_SUFFIX= Please answer directly." \
+  --set-env-vars="QWEN_MODEL_ID=Qwen/Qwen3-VL-8B-Instruct,QWEN_ADAPTER_PATH=/app/modeling/checkpoints/${ADAPTER_DIR},QWEN_QUANTIZATION=none,QWEN_MAX_NEW_TOKENS=64,QWEN_ANSWER_SUFFIX= Please answer directly." \
   --no-allow-unauthenticated
 
 URL=$(gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" \
