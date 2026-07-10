@@ -9,9 +9,17 @@
 # became "C:/Program Files/Git/app/modeling/checkpoints/..." on the deployed Cloud Run
 # service (confirmed 2026-07-10: the container crashed in PeftModel.from_pretrained
 # because the path was mangled — real bug, not hypothetical, and it was silently masked
-# by an unrelated earlier boot crash in the previous deploy). No-op outside Git Bash, so
-# always safe to export.
-export MSYS_NO_PATHCONV=1
+# by an unrelated earlier boot crash in the previous deploy).
+#
+# Fix scope matters: MSYS_NO_PATHCONV=1 (disable ALL conversion) seems like the obvious
+# fix but it's too broad — gcloud's own Windows wrapper (gcloud.cmd) relies on MSYS path
+# conversion internally to locate its bundled Python, so disabling it globally breaks
+# `gcloud` itself ("python.exe: can't open file 'D:\c\Users\...\gcloud.py'", confirmed by
+# testing). MSYS2_ARG_CONV_EXCL scoped to just the --set-env-vars flag avoids that: it
+# only suppresses conversion for arguments starting with that literal prefix, leaving
+# gcloud's own internal invocation untouched. No-op outside Git Bash, so always safe to
+# export.
+export MSYS2_ARG_CONV_EXCL="--set-env-vars"
 
 # Every deploy script here always builds+pushes under the SAME tag (:latest). Pushing a
 # new build doesn't remove the OLD digest that used to hold that tag — it becomes
