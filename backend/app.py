@@ -36,7 +36,7 @@ import logging
 import os
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 # Load <repo-root>/.env BEFORE importing modules that read env at import time
@@ -217,6 +217,17 @@ def _prepare_ask():
     return question, image_bytes, rate_key, None
 
 
+def _timed(fn, *args):
+    """Run fn(*args), return (result, elapsed_seconds) — the caller's OWN wall-clock
+    duration, independent of when/in-what-order the caller gets around to reading it.
+    Needed because concurrent.futures' `future.result()` blocks the calling thread, so
+    naively timing "before submit" to "after .result()" on a SECOND future would
+    include however long the FIRST future's .result() call blocked for too."""
+    t0 = time.perf_counter()
+    result = fn(*args)
+    return result, time.perf_counter() - t0
+
+
 def _ask_events(question: str, image_bytes: bytes, rate_key: str):
     """The whole /api/ask pipeline, as a generator of progress events.
 
@@ -260,21 +271,28 @@ def _ask_events(question: str, image_bytes: bytes, rate_key: str):
             return
 
     # --- Layer-2/3 guard (question) + Rule 4 chart gate (image) — run concurrently ---
+    # as_completed() (not future.result() in submission order) so each stage's "done"
+    # event fires the moment IT finishes, not after whichever we happen to check first
+    # — a naive `guard_future.result()` then `chart_future.result()` would make the
+    # SECOND-checked stage's measured elapsed_ms include the first stage's wait time
+    # too, even if the second stage actually finished first (caught via /metrics
+    # showing guard and chart_gate with near-identical, both-inflated sums, 2026-07-10).
     yield {"stage": "guard", "status": "start", "elapsed_ms": None}
     yield {"stage": "chart_gate", "status": "start", "elapsed_ms": None}
+    stage_results = {}
     with ThreadPoolExecutor(max_workers=2) as pool:
-        t_guard = time.perf_counter()
-        t_chart = time.perf_counter()
-        guard_future = pool.submit(guard, question)
-        chart_future = pool.submit(looks_like_chart, image_bytes)
-        verdict = guard_future.result()
-        guard_elapsed = time.perf_counter() - t_guard
-        is_chart, chart_confidence = chart_future.result()
-        chart_elapsed = time.perf_counter() - t_chart
-    metrics.observe_stage("guard", guard_elapsed)
-    metrics.observe_stage("chart_gate", chart_elapsed)
-    yield {"stage": "guard", "status": "done", "elapsed_ms": round(guard_elapsed * 1000, 1)}
-    yield {"stage": "chart_gate", "status": "done", "elapsed_ms": round(chart_elapsed * 1000, 1)}
+        futures = {
+            pool.submit(_timed, guard, question): "guard",
+            pool.submit(_timed, looks_like_chart, image_bytes): "chart_gate",
+        }
+        for future in as_completed(futures):
+            stage = futures[future]
+            value, elapsed = future.result()
+            stage_results[stage] = value
+            metrics.observe_stage(stage, elapsed)
+            yield {"stage": stage, "status": "done", "elapsed_ms": round(elapsed * 1000, 1)}
+    verdict = stage_results["guard"]
+    is_chart, chart_confidence = stage_results["chart_gate"]
 
     if not verdict.allowed:
         metrics.count_blocked(verdict.category)
