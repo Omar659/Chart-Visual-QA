@@ -1140,6 +1140,22 @@ follow-ups about the *same* chart, with history.
 - [ ] **Register & package**: promote in the MLflow registry; package for serving
   (VLM: merged fp16 or 4-bit per the Phase 1.5 verdict; guard: GGUF → Ollama
   `Modelfile` → baked image).
+  > **Production finding (2026-07-10, live on the L4):** the 4-bit choice in Phase 1.5
+  > was driven by fitting the **6 GB dev 4050** — it does not carry over to the
+  > production **L4 (24 GB)**, where an 8B model fits in bf16 with room to spare. Ran
+  > both live: 4-bit (bitsandbytes NF4, unmerged LoRA — quantized bases can't
+  > `merge_and_unload()`) averaged **~82s/answer**; switching to bf16 (`none`, LoRA
+  > merged) dropped that dramatically, confirmed via `/metrics`. Root cause:
+  > bitsandbytes dequantizes weights on every forward pass (recurring per-token cost
+  > during generation, not a one-time load cost), and it's built for *training-time*
+  > memory savings, not optimized serving throughput. **Rule of thumb**: don't quantize
+  > unless there's a real memory constraint (small GPU, or need for a bigger batch than
+  > fits unquantized) — full precision is free when the GPU has headroom, and is
+  > strictly better on accuracy too. If a future model/GPU combo *does* need
+  > quantization for serving, prefer **AWQ or GPTQ via a serving-optimized runtime
+  > (vLLM, TensorRT-LLM)** over bitsandbytes — purpose-built inference kernels avoid
+  > most of the per-forward dequant tax (see Stage C3 below, already flagged as the
+  > extension path if NF4 accuracy is ever a problem).
 - [ ] **Deploy** via the workflow above; **monitor** in Grafana — online accuracy has no
   ground truth, so watch the proxies: block rates, per-stage latency, VLM budget.
 - [ ] **Flywheel (v2.0)**: review 👍/👎 feedback periodically; hard negatives become the
