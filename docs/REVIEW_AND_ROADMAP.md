@@ -11,12 +11,56 @@
 
 ---
 
-## Execution progress (updated 2026-07-08)
+## Execution progress (updated 2026-07-10)
 
-Work lives on branch **`feat/quantization-flag`** (not pushed). Backend suite: **63 passed /
+Work lives on branch **`feat/quantization-flag`** (not pushed). Backend suite: **96 passed /
 4 skipped**.
 
-**v1.0 modeling & reproducibility (done):**
+**v1.0 is live in production on Cloud Run — this is the current real state, not a plan:**
+- **All 4 services deployed and confirmed scale-to-zero** (`chartqa-vlm`, `chartqa-guard`,
+  `chartqa-backend`, `chartqa-frontend` — `minScale` unset/0 on all four, verified via
+  `gcloud run services describe`, real data not assumption; `maxScale` 1/2/3/3 respectively).
+- **Required Google login shipped** — `/api/ask` and `/api/vlm/warm` verify a Google ID
+  token server-side (`backend/auth.py`, stateless, no session table); anonymous access is
+  gone. Global rate-limit/budget now backed by **Upstash Redis** (`REDIS_URL` set in
+  prod), closing the per-instance-multiplying gap that existed when Redis was unconfigured.
+- **Guard Layer 3 (Llama Guard 3 1B) deployed and actually screening**, not fail-open —
+  `scripts/gcloud_deploy_guard.sh`, private + service-to-service auth (same backend SA
+  used for the VLM). Two compounding cold-start bugs found and fixed: (1) Ollama's GPU
+  auto-discovery wasted ~90s probing CUDA/Vulkan on every cold start of a CPU-only
+  container → fixed with `OLLAMA_LLM_LIBRARY=cpu`; (2) `GUARD_LLM_TIMEOUT=20s` was
+  shorter than real cold model-load time, so a client disconnect made Ollama abort and
+  restart the load — a self-defeating race that meant guard could never finish a cold
+  load in time → fixed by raising the timeout to 60s.
+- **VLM latency fixed** — `QWEN_QUANTIZATION` switched `4bit` → `none` on the 24 GB L4
+  production GPU. Root cause: bitsandbytes dequantizes weights on every forward pass
+  (a training/small-GPU optimization, not a serving one) and blocks LoRA
+  `merge_and_unload()`, stacking a second per-layer cost. 4-bit was only ever needed for
+  the 6 GB dev 4050; full bf16 fits the 24 GB L4 comfortably and — because Cloud Run GPU
+  bills by instance-active time, not VRAM — is the same or lower cost. Documented as a
+  standing finding (project memory + Phase 1.5 §Stage C3 cross-ref): if quantization is
+  ever needed again, prefer **AWQ/GPTQ via vLLM/TensorRT-LLM** (purpose-built serving
+  kernels) over bitsandbytes.
+- **SSE streaming with real per-stage progress** — `POST /api/ask/stream`, guard and
+  chart-gate now run genuinely concurrently via `ThreadPoolExecutor` + `as_completed()`
+  (overlapping I/O waits — Llama Guard's HTTP round-trip, Tesseract's OCR subprocess —
+  not true CPU parallelism on Cloud Run's single-vCPU allocation). Frontend renders a
+  live stage list ("Verifying image" / "Verifying question" / "Processing model") with
+  a spinner-to-checkmark transition and per-stage elapsed time. Caught and fixed a real
+  concurrency bug in the process: sequential `.result()` calls corrupted the
+  second-checked future's elapsed-time measurement; fixed with a `_timed()` wrapper
+  combined with `as_completed()` for order-independent, correctly-timed events.
+- **Image split for fast redeploys** — `vlm-base` (rarely-changing deps + baked model,
+  built via a separate rare script) with a thin `chartqa-vlm` service image `FROM` it.
+  Live-timed: **10m8s** thin redeploy vs. ~20–29min monolithic (Cloud Build has no
+  persistent cross-build layer cache, so this split is the only lever available).
+- **Chart hard-block** — `CHART_BLOCK_THRESHOLD` (0.4, raised from an initial 0.3 after a
+  real off-topic photo scored 0.37 and still reached the VLM) short-circuits confidently
+  non-chart uploads before the GPU call.
+- **`/metrics` (Prometheus) live in prod** — per-stage latency histograms + counters,
+  used to root-cause every fix above from real numbers, not guesses.
+
+**v1.0 modeling & reproducibility (done, prior sessions):**
 - **1.3 quantization flag** ✅ — `--quantization {none,8bit,4bit}` / `QWEN_QUANTIZATION`,
   NF4+double-quant+bf16, LoRA stays attached (no merge) when quantized, fail-loud w/o bnb.
 - **1.2 analysis pipeline validated** ✅ — 8/8 result JSONs byte-identical from committed dumps.
@@ -128,18 +172,24 @@ Work lives on branch **`feat/quantization-flag`** (not pushed). Backend suite: *
 
 **Open items:** env pollution (`datasets`/`mlflow`/`bitsandbytes`/`accelerate`/`peft`/
 `prometheus-client` in `backend/.venv`; no dedicated modeling venv); dataset-source decision
-(HuggingFaceM4 vs lmms-lab); Cloud Run GPU auth (`_predict_remote` is an unauthenticated
-POST — `--allow-unauthenticated` matches that today; locking it down needs a Google
-identity-token client, tracked in 3.7); nothing pushed.
+(HuggingFaceM4 vs lmms-lab); Grafana alert rules not test-fired; provider spend cap on the
+prod GCP project; Cloudflare/edge; base-image digests; nothing pushed to `main` yet.
+
+**Decision (2026-07-10): Phase 4 (fine-tune Llama Guard) is deprioritized for now** — the
+stock 1B Llama Guard is live and screening correctly; revisit only if a real false-
+positive/negative pattern shows up in `/metrics`. **Phase 5 (Conversational v2.0) is the
+next target** — see that section below; its framework decision (no LangChain, native
+chat-template + sliding window + Redis/Postgres) was already settled before this session
+and doesn't need to be revisited.
 
 ---
 
 ## 0. Executive summary
 
-> **Update (2026-07-08):** the GPU VLM service gap below is closed — `vlm_service/`
-> exists, runs the real quantized Qwen3-VL-8B + LoRA, and deploys two ways (RunPod dev /
-> Cloud Run GPU prod, Phase 3.8). Left as originally written for history; see the
-> "Execution progress" section at the top of this doc for current status.
+> **Update (2026-07-10):** the whole stack is live on Cloud Run — GPU VLM (de-quantized,
+> bf16), guard L3, backend, frontend, all scale-to-zero, gated behind required Google
+> login. Left as originally written for history; see the "Execution progress" section at
+> the top of this doc for current status.
 
 - **The system is code-complete and well-architected for v1.0**, with one real gap: the
   main VLM is *wired* (real `model_adapter.predict`) but **not deployable** yet — the
@@ -1046,8 +1096,18 @@ follow-ups about the *same* chart, with history.
 - [ ] **Persist transcripts to Postgres** (3.6): `conversations` / `messages` tables via
   Alembic. Redis stays the hot store; Postgres is the durable copy.
 - [ ] **Feedback endpoint** (`POST /api/feedback`: 👍/👎 + optional note per answer) →
-  Postgres. This is the market-standard **data flywheel**: reviewed feedback becomes
-  the next eval/fine-tuning set (see the master checklist).
+  Postgres (`conversation_id, question, image_hash, model_answer, vote, note`). This is
+  the market-standard **data flywheel**, but it is a *sourcing* mechanism, not a
+  training set by itself — a 👎 only proves the answer was wrong, it doesn't carry the
+  correct one. The actual loop (decision 2026-07-10, matches the "scripted, human-
+  triggered, not continuous" MLOps note below): periodically review 👎 rows → write the
+  correct answer for each (human-in-the-loop, unavoidable for VQA) → append curated
+  `(image, question, answer)` triples to a versioned `feedback_vN.jsonl` (MLflow
+  artifact) → re-run `finetune_lora.py` from the current adapter once there's a
+  meaningful batch → same **blocking eval gate** as any other run (≥ baseline on the
+  full 2500-sample split) before registry promotion. No auto-retraining on a schedule
+  or per-vote — that repeats the exact "continuous retraining is resume-driven
+  overkill at this scale" mistake the master checklist already warns against.
 
 ### 5.2 Frontend checklist
 
@@ -1066,6 +1126,30 @@ follow-ups about the *same* chart, with history.
 - [ ] Shareable read-only conversation links (served from the Postgres transcript).
 - [ ] Optional: extract the chart's underlying data table once, cache it, and let follow-ups
   query *that* (cheaper + more accurate than re-reading pixels every turn).
+
+### 5.4 Scope boundary — where this project ends (decision, 2026-07-10)
+
+**This project's ceiling is Phase 5 (5.1 + 5.2, feedback flywheel included).** That's a
+complete, coherent portfolio story: zero-shot vs. fine-tuned VLM comparison → production
+deploy with a real 3-layer guard → multi-turn chat with memory and a feedback loop. Each
+piece reuses infrastructure already built (SSE, Redis, Postgres, auth) — no new stack.
+
+**A RAG + agents project is a new, separate repo, not an extension of this one** — the
+product story, data shape, and failure modes are different enough (retrieval quality,
+tool-calling/multi-step planning, grounding/citations) that bolting it on here would
+blur both portfolio pieces rather than strengthen either. Two concrete forks worth
+tracking if picked up later:
+- **Tool-calling on structured data** (e.g. a car-rental-style booking assistant) is
+  the natural extension of 5.3's "extract the chart's table, query that" stretch goal —
+  same shape of problem, could plausibly stay in *this* repo if it ever happens.
+- **RAG-over-documents** (e.g. Q&A over a Drive/document corpus) is a genuinely
+  different product and belongs in a **new repo** — though it can reuse this project's
+  Cloud Run/Docker/auth scaffolding directly rather than starting from zero.
+
+**Where user feedback belongs**: *in this project*, not deferred to the next one — 5.1's
+`POST /api/feedback` is already scoped and cheap (one Postgres table + a button), and a
+working feedback flywheel (reviewed 👎 answers → next eval/fine-tune set) is itself a
+strong, differentiated portfolio signal that most single-shot VQA demos don't have.
 
 ---
 
@@ -1170,24 +1254,33 @@ follow-ups about the *same* chart, with history.
 4. [ ] Phase 2.2 reproducibility: committed adapter re-evaled to 86.08%, constants
     reconciled, MODELCARDs committed.
 5. [ ] Phase 2.3 MLflow up; both committed adapters backfilled into the registry.
-6. [ ] Phase 3.1 GPU VLM service live behind `VLM_URL`; scale-to-zero verified (reaches
-    zero within the idle timeout; cold-start time measured and surfaced in the UI).
-7. [ ] Phase 3.2/3.3 frontend container live; backend image slimmed (size documented).
-8. [~] Phase 3.4 cache + **rate limit** + upload re-encode live. **Cache + rate limit +
-    re-encode done**; global VLM concurrency cap still open (3.7).
-9. [~] Phase 3.5 dashboard live; each alert rule test-fired once. **Dashboard +
-    provisioned datasource done**; alert rules still open.
+6. [X] Phase 3.1 GPU VLM service live behind `VLM_URL` on Cloud Run; scale-to-zero
+    **verified with real `gcloud` data** (`minScale` unset/0 on all 4 services). Cold-start
+    time not yet surfaced in the UI (nice-to-have, not blocking).
+7. [X] Phase 3.2/3.3 frontend container live; backend image slimmed (non-root, `.dockerignore`
+    hardened).
+8. [X] Phase 3.4 cache + **rate limit** + upload re-encode live, **and now global**
+    (Upstash Redis in prod, closes the per-instance-multiplying gap). Global VLM
+    concurrency cap still open.
+9. [~] Phase 3.5 dashboard live (local compose only — no Grafana in prod, `/metrics`
+    read directly via curl); each alert rule test-fired once. Alert rules still open.
 10. [X] Phase 3.6 Redis + Postgres (+ MLflow server) in compose with healthchecks and
     volumes. **Done + Docker-verified** (redis PONG, pg_isready, MLflow /health 200).
-11. [~] Phase 3.7 cost controls: budget breaker trips in a test ✅ (unit + API 429),
-    rate limit ✅, non-root containers ✅, admin UIs localhost-bound ✅. **Remaining**:
-    provider spend cap for the *prod* GCP project; Cloudflare/edge; base-image digests.
-1. [ ] Phase 4 guard comparison published (stock vs fine-tuned P/R/F1/FPR) and the ship
-     gate decision recorded.
-1. [ ] CI/CD green end-to-end, including the post-deploy smoke test and one rollback
-     drill.
-1. [ ] README updated: architecture diagram, results tables, Grafana screenshot, live
-     demo link — **the actual portfolio deliverable**.
+    Prod uses Upstash Redis; Postgres/MLflow remain local-only (no prod durable DB yet —
+    needed for Phase 5 transcripts/feedback).
+11. [X] Phase 3.7 cost controls: budget breaker trips in a test ✅, rate limit ✅ **and
+    global** ✅, non-root containers ✅, admin UIs localhost-bound ✅, **required Google
+    login** ✅ (bigger abuse lever than rate-limiting alone). **Remaining**: provider
+    spend cap for the *prod* GCP project; Cloudflare/edge; base-image digests.
+12. [~] Phase 4 — **deprioritized by decision (2026-07-10)**; stock Llama Guard 3 1B is
+     live and screening correctly in prod. Revisit only if `/metrics` shows a real
+     false-positive/negative pattern worth fine-tuning against.
+13. [ ] Phase 5 — Conversational v2.0 not started; see that section for the settled
+     framework decision and checklist. **Proposed next phase.**
+14. [ ] CI/CD green end-to-end, including the post-deploy smoke test and one rollback
+     drill. Deploys today are manual via `scripts/gcloud_deploy_*.sh`, not yet in CI.
+15. [ ] README updated: architecture diagram, results tables, live demo link (no Grafana
+     screenshot — not deployed to prod) — **the actual portfolio deliverable**.
 
 ---
 

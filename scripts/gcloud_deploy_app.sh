@@ -168,8 +168,11 @@ BACKEND_ENV+=",ANSWER_CACHE_ENABLED=1,ANSWER_CACHE_MAX=512,ANSWER_CACHE_TTL_S=36
 # VLM_DAILY_BUDGET is a COUNT of real VLM answers per day, NOT a dollar amount — it's an
 # app-level soft cap, not a spend cap. The actual $ backstop for this project is a GCP
 # Billing Budget + alert (set one up for your project; see docs/REVIEW_AND_ROADMAP.md
-# §3.7). 20/day is plenty for a portfolio demo; raise it if you expect real traffic.
-BACKEND_ENV+=",REDIS_URL=${REDIS_URL},RATELIMIT_ENABLED=1,RATELIMIT_PER_MINUTE=30,VLM_DAILY_BUDGET=20"
+# §3.7). 80/day: even a generous 60s/answer worst-case is ~80min GPU-active/day
+# (~nvidia-l4, 4vCPU/16GiB) ≈ $27/day only if fully saturated every day, which a
+# portfolio demo won't be — the rate limit (30/min) + scale-to-zero are the real cost
+# defenses. Raise further only alongside a real GCP Billing Budget alert.
+BACKEND_ENV+=",REDIS_URL=${REDIS_URL},RATELIMIT_ENABLED=1,RATELIMIT_PER_MINUTE=30,VLM_DAILY_BUDGET=80"
 BACKEND_ENV+=",GUARD_ENABLED=1,GUARD_TOXICITY_THRESHOLD=0.7,GUARD_INJECTION_THRESHOLD=0.8,GUARD_PII_THRESHOLD=0.6"
 BACKEND_ENV+=",GUARD_TOXICITY_MODEL=original,GUARD_INJECTION_MODEL=protectai/deberta-v3-base-prompt-injection-v2"
 BACKEND_ENV+=",GUARD_LLM_ENABLED=${GUARD_LLM_ENABLED},GUARD_LLM_URL=${GUARD_URL},GUARD_LLM_AUTH=${GUARD_LLM_AUTH},GUARD_LLM_MODEL=llama-guard3:1b,GUARD_LLM_TIMEOUT=60"
