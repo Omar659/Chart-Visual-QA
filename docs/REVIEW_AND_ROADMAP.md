@@ -868,34 +868,97 @@ Docker image runs unmodified in both** — only the orchestration around it diff
   `HF_HUB_OFFLINE=1` at runtime, `cloudbuild.yaml` timeout raised to 3600s + 100 GB disk.
 - [X] `scripts/gcloud_deploy_vlm.sh` — `gcloud builds submit` (Cloud Build, so the
   multi-GB CUDA image never needs a local Docker build) → Artifact Registry → `gcloud
-  run deploy --gpu=1 --gpu-type=nvidia-l4 --min-instances=0 --max-instances=1`. Prints
-  the service URL for `VLM_URL`.
-- [ ] **Not yet live-tested** — needs a GCP project with billing + Cloud Run GPU quota
-  (region-gated; request via console if the deploy errors on quota). The script is
-  real, correctly-flagged code (verified against `gcloud run deploy --help`, not
-  guessed) but the first real deploy is still to happen.
-- [X] **Auth: the GPU service is PRIVATE** (2026-07-09). `gcloud_deploy_vlm.sh` deploys
-  it `--no-allow-unauthenticated`; `model_adapter._vlm_auth_header` attaches a
+  run deploy --gpu=1 --gpu-type=nvidia-l4 --min-instances=0 --max-instances=1
+  --no-gpu-zonal-redundancy` (a fresh project has no zonal-redundancy quota; without the
+  flag `gcloud` prompts interactively and hangs a scripted run). Prints the service URL
+  for `VLM_URL`.
+- [X] **Live-deployed** (2026-07-09/10) on `chartv-qa`/`us-central1`. First real deploy
+  surfaced and fixed real bugs, not hypothetical ones: (1) no root `.gcloudignore` →
+  `gcloud builds submit` fell back to `.gitignore`'s `checkpoints/` rule and silently
+  dropped the force-added LoRA adapter from the build context (`COPY failed`) — fixed
+  with a root `.gcloudignore`; (2) `bitsandbytes`/`triton` need a real C compiler for
+  their CUDA-driver JIT step even on a "runtime" (non-devel) CUDA base image — every
+  worker crashed on boot with `RuntimeError: Failed to find C compiler`, diagnosed via
+  `gcloud run services logs read chartqa-vlm` (not guessed — the traceback was
+  100%-reproducible, ruling out the initial cold-start-timeout hypothesis), fixed by
+  installing `build-essential` in `vlm_service/Dockerfile`. See
+  `.claude/skills/gcloud-deploy/SKILL.md`'s gotchas section for the full list.
+- [X] **Auth: the GPU service is PRIVATE**. `gcloud_deploy_vlm.sh` deploys it
+  `--no-allow-unauthenticated`; `backend/gcp_auth.py`'s `fetch_id_token()` (extracted
+  from `model_adapter.py` so `guard_llm.py` can share it, see 3.7 below) attaches a
   Google-signed **ID token** (from the Cloud Run metadata server, no new dependency,
   audience = the VLM's URL) when `VLM_AUTH=gcp_id_token`; `gcloud_deploy_app.sh` creates
   a backend service account, grants it `run.invoker` on `chartqa-vlm`, and deploys the
   backend with `--service-account` + `VLM_AUTH=gcp_id_token`. So the expensive endpoint
   can't be hit by the public internet — only by this backend (whose own rate-limit +
   daily budget cap cost on the public path). `VLM_AUTH=none` (default) keeps the RunPod
-  tunnel / docker-compose / dev paths unauthenticated. Not yet live-tested on Cloud Run.
+  tunnel / docker-compose / dev paths unauthenticated.
+
+**Guard Layer 3 deploy — private, CPU, same auth pattern as the GPU:**
+- [X] `scripts/gcloud_deploy_guard.sh` (new) — mirrors `gcloud_deploy_vlm.sh`'s shape but
+  simpler: `guard/Dockerfile` bakes the 1B model (Ollama), it's CPU-only, no custom
+  `cloudbuild.yaml` needed (image is small — a plain `gcloud builds submit --tag`
+  suffices). Deployed `--no-allow-unauthenticated`, `--min-instances=0`.
+- [X] **Fixed a real Cloud-Run-incompatibility in `guard/Dockerfile`** while wiring this
+  up: the base `ollama/ollama:latest` image's `CMD` hardcodes Ollama's own default bind
+  address (`:11434`), but Cloud Run requires the container to listen on whatever `$PORT`
+  it injects (usually 8080) or the revision never becomes ready. Overrode `CMD` with
+  `OLLAMA_HOST=0.0.0.0:${PORT:-11434} exec ollama serve` — falls back to 11434 when
+  `$PORT` is unset (docker-compose), binds to Cloud Run's port otherwise.
+- [X] Auth: same pattern as the GPU — `GUARD_LLM_AUTH=gcp_id_token` (new env, mirrors
+  `VLM_AUTH`), `backend/guard_llm.py` attaches an ID token via `gcp_auth.auth_header()`;
+  `gcloud_deploy_app.sh --guard-url` grants the same backend service account
+  `run.invoker` on `chartqa-guard` too (one identity, two grants).
 
 **App deploy (backend + frontend, no GPU) — separate from the model on purpose:**
 - [X] `scripts/gcloud_deploy_app.sh` — builds+deploys `backend/` and `frontend/` to
   Cloud Run independently of the model service, so an app-only change never rebuilds
   the CUDA image. `--vlm-url` wires a deployed `vlm_service` in (`USE_MOCK=0`,
   `VLM_PROVIDER=cloudrun`); omitted, it deploys self-contained in `USE_MOCK=1`.
-  Guard Layer 3 isn't deployed by this script (no guard service target yet) —
-  `GUARD_LLM_ENABLED=0`, which fails open per the guard's existing design, not a stub.
+  `--guard-url` wires up Guard Layer 3 (`GUARD_LLM_ENABLED=1`); omitted, it stays off
+  (fails open, Layers 1/2 still run). `--redis-url` (e.g. an Upstash `rediss://` URL)
+  makes rate-limit/VLM-budget counters global across backend instances instead of
+  per-instance in-memory — chosen over GCP Memorystore because Memorystore needs a VPC
+  connector and costs $35-50+/month even at the smallest tier, incompatible with the
+  R$50/month ceiling this deploy targets. `--google-client-id` turns on required Google
+  login (see below); omitted, deploys with no login wall.
 - [X] `frontend/nginx.conf.template` — `PORT`/`BACKEND_URL`/`DNS_RESOLVER` are
   env-substituted at container start (nginx:alpine's built-in `envsubst`-on-templates
   entrypoint step), so the identical frontend image proxies to `http://backend:5000`
   in docker-compose and to the backend's actual Cloud Run HTTPS URL in production —
   no frontend code fork.
+
+**Required Google login (2026-07-10) — stateless ID-token verification, no new DB table:**
+- [X] `backend/auth.py` — `verify_google_token()` wraps `google-auth`'s
+  `verify_oauth2_token` (audience = `GOOGLE_CLIENT_ID`); returns decoded claims or
+  `None` on any failure (expired, bad signature, wrong audience). `AUTH_ENABLED` gates
+  it (default `0`, matches local dev / the `GUARD_ENABLED`-style opt-in convention).
+- [X] `backend/app.py` — `/api/ask` and `/api/vlm/warm` check `Authorization: Bearer
+  <token>` first (cheapest-check-first, before the rate limiter) when `AUTH_ENABLED=1`;
+  missing/invalid → `401`. `/api/health` and `/metrics` stay open for monitoring.
+  `ratelimit.allow()`'s key switches from client IP to the authenticated user's Google
+  `sub` when auth is on (a real stable identity beats IP once one exists).
+- [X] Frontend: Google Identity Services script tag (`index.html`), a sign-in gate in
+  `App.jsx` (renders instead of the question form until a token exists, `sessionStorage`
+  so a refresh doesn't sign the user out, `warmVlm()` moved to fire on sign-in instead
+  of page load — no reason to wake the billed GPU for an unauthenticated visitor). Token
+  sent as a Bearer header on every `askQuestion`/`warmVlm` call (`api.js`); a `401`
+  response clears the stored token and re-shows the sign-in gate.
+- [X] `VITE_GOOGLE_CLIENT_ID` is baked in at **build** time (Vite's `import.meta.env` is
+  compile-time, unlike the nginx template's runtime `envsubst`) — new
+  `frontend/cloudbuild.yaml` + `frontend/Dockerfile` `ARG`/`ENV`, wired through
+  `gcloud_deploy_app.sh --google-client-id`.
+- [ ] **Manual, one-time, not scriptable**: create the OAuth 2.0 Web Client ID in Google
+  Cloud Console (Authorized JavaScript origins = the frontend's Cloud Run URL) and the
+  Upstash Redis database — see `.claude/skills/gcloud-deploy/SKILL.md` for the exact
+  steps.
+- [ ] **Not yet live-tested end-to-end** — the code is unit-tested (`backend/tests/
+  test_auth.py` mocks the real `google.oauth2.id_token.verify_oauth2_token` boundary,
+  never the project's own wrapper; `test_api.py` covers the 401 paths; 90 passed / 4
+  skipped) and `npm run build` is verified, but the actual Cloud Run redeploy with
+  `--guard-url`/`--redis-url`/`--google-client-id` + a real browser smoke test (sign in,
+  ask a question, confirm a second session shares the Redis-backed rate limit) hasn't
+  run yet.
 
 **Warm-start UX (shared code, not duplicated per provider):**
 - [X] `backend/vlm_provider.py` is the one place that decides "is the VLM running,
