@@ -91,6 +91,10 @@ app.config["MAX_CONTENT_LENGTH"] = int(MAX_UPLOAD_MB * 1024 * 1024)
 # Min "meaningful" (alphanumeric) chars a question must have to not be junk.
 MIN_QUESTION_ALNUM = env_int("MIN_QUESTION_ALNUM")
 
+# Below this, the chart gate is confident enough to hard-block the VLM call outright
+# (not just warn) — see chart_check.py / .env.example for why.
+CHART_BLOCK_THRESHOLD = env_float("CHART_BLOCK_THRESHOLD")
+
 
 def _question_too_weak(question: str) -> bool:
     """Reject only near-empty / junk questions (e.g. "?", "hi").
@@ -225,6 +229,19 @@ def ask():
     t0 = time.perf_counter()
     is_chart, chart_confidence = looks_like_chart(image_bytes)
     metrics.observe_stage("chart_gate", time.perf_counter() - t0)
+
+    # Hard block when the gate is confident this ISN'T a chart — cheaper than the guard
+    # LLM and MUCH cheaper than the VLM, and the only content check on the IMAGE itself
+    # (guard() above only screens the question text, so an off-topic image with an
+    # innocuous question would otherwise reach the model — confirmed 2026-07-10: an
+    # unrelated photo got a bizarre off-topic answer instead of "not a chart"). A
+    # borderline image (below CHART_CLIP_THRESHOLD but above this) still proceeds with
+    # just the "may be unreliable" warning, so ambiguous-but-real charts aren't blocked.
+    if chart_confidence < CHART_BLOCK_THRESHOLD:
+        metrics.count_blocked("not_a_chart")
+        return jsonify(blocked=True, category="not_a_chart",
+                       reason="This doesn't look like a chart — please upload a chart "
+                              "image.")
 
     if not is_mock():
         # Daily VLM budget breaker (Phase 3.7): refuse *before* touching the GPU once the

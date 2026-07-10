@@ -157,6 +157,34 @@ def test_ask_blocked_by_guard(client, monkeypatch):
     assert "answer" not in body
 
 
+def test_ask_blocked_when_confidently_not_a_chart(client, monkeypatch):
+    # Chart gate is confident this ISN'T a chart (below CHART_BLOCK_THRESHOLD) -> hard
+    # block, no VLM call — protects against off-topic images (the guard above only
+    # screens the question text, never the image) and saves a GPU call.
+    import app as app_mod
+
+    monkeypatch.setattr(app_mod, "looks_like_chart", lambda img: (False, 0.1))
+    res = _ask(client, question="What is in this picture?")
+    assert res.status_code == 200
+    body = res.get_json()
+    assert body["blocked"] is True
+    assert body["category"] == "not_a_chart"
+    assert "answer" not in body
+
+
+def test_ask_not_hard_blocked_when_borderline(client, monkeypatch):
+    # Below CHART_CLIP_THRESHOLD but above CHART_BLOCK_THRESHOLD -> soft "may be
+    # unreliable" warning only, still proceeds (ambiguous-but-real charts aren't blocked).
+    import app as app_mod
+
+    monkeypatch.setattr(app_mod, "looks_like_chart", lambda img: (False, 0.4))
+    res = _ask(client, question="What was revenue in 2024?")
+    assert res.status_code == 200
+    body = res.get_json()
+    assert body.get("blocked") is not True
+    assert body["is_chart"] is False
+
+
 def test_rate_limit_returns_429(client, monkeypatch):
     # Enable the limiter with a tiny budget and confirm the (N+1)th request is refused.
     import ratelimit
