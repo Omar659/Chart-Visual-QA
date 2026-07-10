@@ -1,13 +1,20 @@
 ---
 name: gcloud-deploy
-description: Deploy Chart-Visual-QA to Google Cloud Run (CPU app + GPU model + CPU guard), and the operational commands around it — cost safety (billing budget, image cleanup, daily VLM count cap, global rate-limit via Redis), auth between the CPU backend and the private GPU/guard services, required Google login, status/logs checks, and teardown/rollback. Use this whenever the user asks to deploy to Cloud Run, check cloud costs/status, or roll back a Cloud Run deploy.
+description: Deploy Chart-Visual-QA to Google Cloud Run (CPU app + GPU model + CPU guard), and the operational commands around it — cost safety (billing budget, image cleanup, daily VLM count cap, global rate-limit via Redis), auth between the CPU backend and the private GPU/guard services, required Google login, the modular vlm-base/vlm-service image split, status/logs checks, and teardown/rollback. Use this whenever the user asks to deploy to Cloud Run, check cloud costs/status, or roll back a Cloud Run deploy.
 ---
 # Cloud Run deploy — Chart-Visual-QA
 
-Three independent deploys, three scripts, deployed in this order:
+Four Cloud Run services, deployed independently, in this order:
 
+0. **`scripts/gcloud_build_vlm_base.sh`** (rare — only on a dep bump or base-model swap,
+   NOT on every deploy) — builds `vlm-base`, the CUDA/torch/deps + baked ~17.5 GB base
+   model image. Not a Cloud Run service itself; it's a build-cache image `chartqa-vlm`'s
+   image is `FROM`. See "Modular image split" below — **this is the reusable pattern for
+   any future self-served heavy model in this project**, not a one-off for Qwen.
 1. **`scripts/gcloud_deploy_vlm.sh`** — the GPU model (`vlm_service/`), Qwen3-VL-8B +
-   LoRA, on Cloud Run GPU (`nvidia-l4`, scale-to-zero). **Deployed PRIVATE** (no
+   LoRA, on Cloud Run GPU (`nvidia-l4`, scale-to-zero). Builds the THIN `vlm-service`
+   image (`FROM vlm-base`, just code/adapter/config — minutes, not 20-30 min) and fails
+   fast with instructions if `vlm-base` doesn't exist yet. **Deployed PRIVATE** (no
    `--allow-unauthenticated`) — the expensive endpoint must never be callable from the
    public internet.
 2. **`scripts/gcloud_deploy_guard.sh`** — Guard Layer 3 (`guard/`, Llama Guard 3 1B via
@@ -23,7 +30,7 @@ Three independent deploys, three scripts, deployed in this order:
    turns on required Google sign-in (see "Required Google login" below); omit it to
    deploy with no login wall.
 
-Read all three scripts' own header comments before running them — they're the source of
+Read all scripts' own header comments before running them — they're the source of
 truth for flags. This skill is the *why* and the *operational* commands around them.
 
 ## Pre-flight checklist (do this before running either script)
@@ -42,8 +49,10 @@ check this FIRST, it's the long-lead-time item.
 ## Deploy sequence
 
 ```bash
-# 1. GPU model (private). Builds a ~30GB image (base model is BAKED IN, see below) via
-#    Cloud Build — 10-30 min, mostly the model download + push.
+# 0. Build vlm-base ONCE (skip if it already exists and no dep/model changed). ~20-30 min.
+./scripts/gcloud_build_vlm_base.sh --project <PROJECT> --region us-central1
+
+# 1. GPU model (private). Thin image FROM vlm-base — ~2-3 min, not 20-30.
 ./scripts/gcloud_deploy_vlm.sh --project <PROJECT> --region us-central1
 
 # 2. Guard Layer 3 (private, CPU, small image — a few minutes). Optional but recommended.
@@ -77,14 +86,44 @@ is omitted.
   service+project+region). No client secret needed — ID-token verification only needs
   the Client ID as the expected audience.
 
-## Why the base model is baked into the image
+## Modular image split — the general pattern for self-served heavy models
 
-`vlm_service/Dockerfile` downloads the ~17.5GB Qwen3-VL-8B base model at BUILD time
-(`HF_HUB_OFFLINE=1` at runtime — no network call on cold start). Without this, a
-scale-to-zero (`min=0`) cold start would download 17.5GB from Hugging Face on every cold
-start — slow (minutes) and prone to timing out or hitting HF rate limits. The trade-off:
-the image is ~30GB and the build/push is slow. `vlm_service/cloudbuild.yaml` has the
-timeout (3600s) and disk (100GB) raised to match.
+**This is a reusable principle for this project, not a one-off fix for Qwen.** Any time we
+self-serve a heavy model (as opposed to calling a hosted API), split its Dockerfile into
+two images at the "changes rarely" / "changes often" line:
+
+- **`*-base`** — the expensive, rarely-changing half: the CUDA/ML-framework base image,
+  heavy pip deps, and (for a scale-to-zero service) the **model weights baked in at build
+  time** — `vlm_service/Dockerfile.base` downloads the ~17.5GB Qwen3-VL-8B base model here
+  (`HF_HUB_OFFLINE=1` at runtime, so no network call on cold start; without baking it in, a
+  `min=0` cold start would re-download 17.5GB from HF every time — slow and prone to
+  timeouts/rate limits). Built by a dedicated script (`gcloud_build_vlm_base.sh`), run
+  **rarely**: only when a dependency bumps or the base model changes.
+- **`*-service`** (thin) — `FROM` the base image, adds only what changes often: shared
+  wrapper source, the fine-tuned adapter, serving code, runtime config/env. Built by the
+  normal deploy script (`gcloud_deploy_vlm.sh`) on **every** deploy.
+
+**Why this exists at all:** Cloud Build workers are ephemeral — there is no persistent
+Docker layer cache between builds. A single monolithic Dockerfile therefore reruns *every*
+layer on every deploy, including a 17.5GB model download, even for a one-line code change
+(confirmed 2026-07-10: a config-only fix cost a full ~20-29 min rebuild). Splitting the
+image sidesteps the missing-cache problem entirely: the base is already **pushed** to
+Artifact Registry, so a normal deploy just pulls it (one cached layer) and adds a thin
+delta — no apt, no pip, no model download, ~2-3 min instead of ~20-29.
+
+**Trade-off, stated honestly:** one more Dockerfile + one more script to maintain, and the
+base is **not** auto-rebuilt — you must remember to run the `*_build_*_base.sh` script
+first after a dependency/model change; the deploy script can't detect a stale base (it
+only checks the base *exists*, via `gcloud artifacts docker images describe`). Storage is
+~unchanged: Artifact Registry dedupes the shared layers, so `*-service` costs only its own
+thin delta on top of `*-base`, not a second full copy.
+
+Full write-up + diagram: [docs/VLM_IMAGE_SPLIT.md](../../../docs/VLM_IMAGE_SPLIT.md).
+Apply the same split to any other self-hosted model this project adds later (e.g. a
+fine-tuned guard model, per Phase 4) instead of one monolithic Dockerfile.
+`vlm_service/cloudbuild.base.yaml` (the base build) keeps the raised timeout (3600s) and
+disk (100GB) that the model download needs; `vlm_service/cloudbuild.yaml` (the thin
+service build) does not need either.
 
 ## Cost safety — three independent layers, don't rely on just one
 
@@ -117,11 +156,13 @@ timeout (3600s) and disk (100GB) raised to match.
 3. **Image storage cleanup (`scripts/_gcloud_common.sh`'s `cleanup_old_images`).** Every
    deploy script always builds under the same `:latest` tag, so a re-deploy doesn't
    remove the OLD digest from Artifact Registry — it becomes untagged/dangling and still
-   costs storage forever. All three deploy scripts call `cleanup_old_images`
-   automatically AFTER each `gcloud run deploy` succeeds (safe ordering: the new
-   revision is live before the old image is removed). This matters most for
-   `vlm-service` — its image is ~30GB, so a leftover old digest is real, ongoing cost
-   with zero usage. Don't skip this when writing new deploy automation for this project.
+   costs storage forever. Every deploy/build script (including `gcloud_build_vlm_base.sh`)
+   calls `cleanup_old_images` automatically AFTER the push/deploy succeeds (safe
+   ordering: the new revision/image is confirmed live before the old one is removed).
+   This matters most for `vlm-base` — it's ~30GB, so a leftover old digest is real,
+   ongoing cost with zero usage; `vlm-service` itself is thin (~170MB delta) since
+   Artifact Registry dedupes the shared base layers. Don't skip this when writing new
+   deploy automation for this project.
 4. **Required Google login (abuse prevention, not a $ control per se).** When
    `--google-client-id` is set, `/api/ask` and `/api/vlm/warm` reject any request
    without a valid Google ID token — a much bigger lever against automated abuse than
@@ -246,3 +287,18 @@ gcloud run services delete <SERVICE> --project <PROJECT> --region <REGION>
   `vlm_service` repo-root context) occasionally hit a transient `ReadTimeoutError` —
   observed as plain network flakiness, not a code bug; retrying the same command
   succeeded. Don't over-diagnose a single timeout on a large upload before retrying once.
+- **On Windows Git Bash (MSYS2), any command-line arg that looks like a POSIX absolute
+  path gets silently rewritten to a Windows path before `gcloud` ever sees it.** A
+  `--set-env-vars` value like `QWEN_ADAPTER_PATH=/app/modeling/checkpoints/...` was
+  shipped to Cloud Run as `QWEN_ADAPTER_PATH=C:/Program Files/Git/app/modeling/...` —
+  real, deployed, crashed the container in `PeftModel.from_pretrained` (confirmed via
+  logs, and silently masked by an unrelated earlier boot crash in the previous deploy).
+  **`MSYS_NO_PATHCONV=1` (disable ALL conversion) is the wrong fix** — it also breaks
+  `gcloud` itself, whose own Windows wrapper needs MSYS path conversion internally to
+  locate its bundled Python (confirmed: `python.exe: can't open file 'D:\c\Users\...
+  \gcloud.py'`). The correct, scoped fix is
+  `export MSYS2_ARG_CONV_EXCL="--set-env-vars"` (in `scripts/_gcloud_common.sh`, sourced
+  by every deploy script) — it only suppresses conversion for arguments starting with
+  that literal flag, leaving `gcloud`'s own invocation untouched. Verify with
+  `MSYS2_ARG_CONV_EXCL="--set-env-vars" gcloud config get-value project` before trusting
+  any future variant of this fix.

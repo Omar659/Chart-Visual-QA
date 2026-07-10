@@ -35,12 +35,16 @@ full plan and [docs/ROBUSTNESS.md](docs/ROBUSTNESS.md) for the guard design.
   Layer-2 encoders), guard (Llama Guard 3 on CPU via Ollama), frontend (nginx serving the
   Vite build, templated so the same image works locally and on Cloud Run), and an optional
   Prometheus + Grafana observability pair with a provisioned dashboard.
-- **GPU model serving, two ways, one image** (`vlm_service/`) — a small Flask wrapper around
-  the shared `QwenVLChat` class, warm-loaded once at boot: **RunPod** pods for cheap
-  SSH-accessible dev/debugging (`scripts/runpod_up.py` / `runpod_down.py`, fully automated —
-  see [docs/RUNPOD_NOTES.md](docs/RUNPOD_NOTES.md)), and **Cloud Run GPU** (scale-to-zero,
-  `nvidia-l4`) for production (`scripts/gcloud_deploy_vlm.sh`). Same Dockerfile, same
-  `server.py`, no fork — only the orchestration around it differs per environment.
+- **GPU model serving, two environments, one `server.py`** (`vlm_service/`) — a small Flask
+  wrapper around the shared `QwenVLChat` class, warm-loaded once at boot: **RunPod** pods
+  for cheap SSH-accessible dev/debugging (`scripts/runpod_up.py` / `runpod_down.py`, a bare
+  venv install over SSH, no image — see [docs/RUNPOD_NOTES.md](docs/RUNPOD_NOTES.md)), and
+  **Cloud Run GPU** (scale-to-zero, `nvidia-l4`) for production, built as **two images**
+  split at the changes-rarely/changes-often line — `vlm-base` (CUDA/deps + the baked
+  ~17.5 GB model, rebuilt only on a dependency/model bump,
+  `scripts/gcloud_build_vlm_base.sh`) and a thin `vlm-service` `FROM` it (code + adapter +
+  config, redeployed in minutes via `scripts/gcloud_deploy_vlm.sh`) — see
+  [docs/VLM_IMAGE_SPLIT.md](docs/VLM_IMAGE_SPLIT.md).
 - **MLOps** (`modeling/`) — an installable `chartqa` package: LoRA fine-tuning + evaluation +
   error analysis for **Qwen3-VL-8B** and **BLIP-2**, with **MLflow** experiment tracking
   (params, accuracy, latency, peak VRAM, adapter size) and a bitsandbytes **quantization
@@ -134,7 +138,8 @@ the [deploy validation report](docs/CPU_DEPLOY_REPORT.md), and *Deploy & MLOps* 
 - **modeling/** — the `chartqa` package: fine-tuning, evaluation, MLflow tracking — see
   *Deploy & MLOps*.
 - **scripts/** — deploy automation: `runpod_up.py`/`runpod_down.py` (dev GPU pods),
-  `gcloud_deploy_vlm.sh`/`gcloud_deploy_app.sh` (Cloud Run).
+  `gcloud_build_vlm_base.sh` (rare — the base+model image), `gcloud_deploy_vlm.sh`/
+  `gcloud_deploy_guard.sh`/`gcloud_deploy_app.sh` (Cloud Run, every deploy).
 - **observability/** — Prometheus scrape config + a provisioned Grafana dashboard.
 - **app.py** — orchestrator: `python app.py` (prod, Docker) / `python app.py --dev` (local) /
   `python app.py --dev --runpod` (local + a real GPU model on a RunPod dev pod).
@@ -156,7 +161,7 @@ once at boot, `POST /predict {image, question} → {answer}`. The interesting pa
 | | RunPod (dev) | Cloud Run GPU (prod) |
 | --- | --- | --- |
 | Why | real SSH access — the only way the version-pinning/CUDA/cuDNN issues below were debuggable at all | managed scale-to-zero — no shell access, but no idle billing or manual teardown either |
-| Automated by | `scripts/runpod_up.py` (fresh pod → upload → install → launch → SSH tunnel → prints `VLM_URL`) / `runpod_down.py` | `scripts/gcloud_deploy_vlm.sh` (Cloud Build → Artifact Registry → `gcloud run deploy --gpu=1 --gpu-type=nvidia-l4 --min-instances=0`) |
+| Automated by | `scripts/runpod_up.py` (fresh pod → upload → install → launch → SSH tunnel → prints `VLM_URL`) / `runpod_down.py` | `scripts/gcloud_build_vlm_base.sh` (once, rare) then `scripts/gcloud_deploy_vlm.sh` (Cloud Build → Artifact Registry → `gcloud run deploy --gpu=1 --gpu-type=nvidia-l4 --min-instances=0`) |
 | Cost model | pay-per-second, bills continuously while running — needs explicit teardown (idle watchdog + signal traps built in) | true scale-to-zero — no cost while idle |
 
 Every real fix needed to get a clean GPU environment working — pinned torch/torchvision
@@ -169,6 +174,60 @@ The CPU app and the GPU model deploy **independently** (`gcloud_deploy_app.sh` v
 through `backend/vlm_provider.py`, the single place that decides whether the model needs
 a nudge to start — so a RunPod dev pod and a Cloud Run instance are handled by one code
 path, not two.
+
+### Production topology (Cloud Run)
+
+Four independently-deployed Cloud Run services, each its own container/image, each scaled
+and billed separately — a small service-oriented setup, not a monolith. Cost drove the
+split as much as modularity: the two expensive pieces (GPU model, and its own build cache)
+scale to zero and are locked down so only the backend can reach them.
+
+```
+ Browser
+    │  HTTPS + Google ID token (required sign-in)
+    ▼
+ ┌─────────────────────┐   /api/*   ┌──────────────────────┐
+ │  chartqa-frontend    │──────────▶│  chartqa-backend       │
+ │  nginx · PUBLIC       │           │  Flask · PUBLIC        │
+ │  serves the Vite build│           │  L1 rules + chart gate │
+ └─────────────────────┘           │  + L2 encoders + cache │
+                                     │  rate-limit / budget   │
+                                     └──────────┬─────────────┘
+                                                │  Google-signed ID token
+                                    ┌───────────┴────────────┐
+                                    ▼                         ▼
+                        ┌──────────────────────┐  ┌──────────────────────┐
+                        │  chartqa-guard         │  │  chartqa-vlm           │
+                        │  Ollama · PRIVATE       │  │  GPU nvidia-l4·PRIVATE │
+                        │  Guard Layer 3          │  │  FROM vlm-base         │
+                        │  (Llama Guard 3 1B)     │  │  (adapter+code, thin)  │
+                        └──────────────────────┘  └──────────┬─────────────┘
+                                                              │ FROM (build time only —
+                                                              │ never deployed/running)
+                                                   ┌──────────┴─────────────┐
+                                                   │  vlm-base                │
+                                                   │  build-cache image:      │
+                                                   │  CUDA/deps + baked model │
+                                                   │  rebuilt rarely          │
+                                                   └──────────────────────┘
+
+ chartqa-backend also talks to Upstash Redis (rediss://, external) for rate-limit /
+ daily VLM budget / answer-cache counters shared across backend instances.
+```
+
+- **Public** (`--allow-unauthenticated`): `chartqa-frontend`, `chartqa-backend` — the demo
+  surface.
+- **Private** (`--no-allow-unauthenticated`, backend calls via a Google-signed ID token
+  fetched from the Cloud Run metadata server, `backend/gcp_auth.py`): `chartqa-guard`,
+  `chartqa-vlm` — the two paths that cost real money per call, so nothing but the backend
+  can invoke them.
+- **`vlm-base` is not a Cloud Run service at all** — it's an Artifact Registry image that
+  `chartqa-vlm`'s Dockerfile is `FROM`. It exists purely so a normal `chartqa-vlm` redeploy
+  doesn't re-download the 17.5 GB base model every time (see
+  [docs/VLM_IMAGE_SPLIT.md](docs/VLM_IMAGE_SPLIT.md)).
+- Deploy order: `gcloud_build_vlm_base.sh` (once) → `gcloud_deploy_vlm.sh` →
+  `gcloud_deploy_guard.sh` → `gcloud_deploy_app.sh --vlm-url … --guard-url … --redis-url …
+  --google-client-id …` — see the `gcloud-deploy` skill / `docs/REVIEW_AND_ROADMAP.md` §3.7.
 
 ## API
 
@@ -248,9 +307,12 @@ Chart-Visual-QA/
 │   └── tests/             # pytest: API contract, guard logic, vendor-sync, quantization config
 ├── guard/          # CPU Llama Guard via Ollama, model baked into the image
 ├── frontend/       # React + Vite app; nginx.conf.template (envsubst'd: local + Cloud Run)
-├── vlm_service/    # GPU model service (Qwen3-VL-8B+LoRA): server.py, Dockerfile, cloudbuild.yaml
+├── vlm_service/    # GPU model service (Qwen3-VL-8B+LoRA): server.py + TWO images —
+│                   #   Dockerfile.base (deps+model, built rarely) and the thin
+│                   #   Dockerfile (FROM base, code/adapter/config, built every deploy)
 ├── modeling/       # chartqa package: fine-tuning, evaluation, MLflow tracking, quant study
-├── scripts/        # runpod_up.py/runpod_down.py, gcloud_deploy_vlm.sh/gcloud_deploy_app.sh
+├── scripts/        # runpod_up.py/runpod_down.py, gcloud_build_vlm_base.sh (rare),
+│                   #   gcloud_deploy_vlm.sh/gcloud_deploy_guard.sh/gcloud_deploy_app.sh
 ├── observability/  # Prometheus config + provisioned Grafana dashboard
 └── docs/           # ARCHITECTURE.md, ROBUSTNESS.md, REVIEW_AND_ROADMAP.md, RUNPOD_NOTES.md, ...
 ```
