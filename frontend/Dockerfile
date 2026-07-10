@@ -8,6 +8,13 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+# Google OAuth Client ID (Phase 3.7 required sign-in) — Vite's import.meta.env.VITE_* is
+# baked in at BUILD time, unlike the nginx template's PORT/BACKEND_URL (those are
+# runtime envsubst). Empty by default (no login wall) so `docker build` with no
+# --build-arg still produces the existing, unauthenticated local/dev behavior — only
+# scripts/gcloud_deploy_app.sh (via frontend/cloudbuild.yaml) passes a real value.
+ARG VITE_GOOGLE_CLIENT_ID=""
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npm run build          # -> /app/dist
 
 # nginx-unprivileged: the same nginx, but runs as a NON-ROOT user (uid 101) out of the

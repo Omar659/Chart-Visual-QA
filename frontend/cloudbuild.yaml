@@ -1,0 +1,13 @@
+# Builds frontend/Dockerfile with a build-time --build-arg (VITE_GOOGLE_CLIENT_ID) — the
+# plain `gcloud builds submit frontend --tag ...` used before this couldn't pass one.
+# Context is frontend/ itself (see scripts/gcloud_deploy_app.sh: `gcloud builds submit
+# frontend --config frontend/cloudbuild.yaml ...`).
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg=VITE_GOOGLE_CLIENT_ID=${_VITE_GOOGLE_CLIENT_ID}
+      - -t
+      - ${_IMAGE}
+      - .
+images: ["${_IMAGE}"]

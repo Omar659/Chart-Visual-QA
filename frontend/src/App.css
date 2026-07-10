@@ -56,6 +56,22 @@
   background-color: var(--mute);
 }
 
+.signout {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--mute);
+  background: none;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  padding: var(--s-xs) var(--s-md);
+  cursor: pointer;
+}
+
+.signout:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
 /* ── Layout ──────────────────────────────────────────────────────── */
 .container {
   max-width: 720px;
@@ -112,6 +128,19 @@
   background-color: var(--canvas);
   border: 1px solid var(--hairline);
   border-radius: var(--r-md);
+}
+
+/* ── Sign-in gate (Phase 3.7 required Google login) ─────────────────*/
+.signin-card {
+  align-items: center;
+  padding: var(--s-4xl) var(--s-2xl);
+  text-align: center;
+}
+
+.signin-prompt {
+  margin: 0;
+  font-size: 16px;
+  color: var(--body);
 }
 
 /* ── Image picker / dropzone ─────────────────────────────────────── */
