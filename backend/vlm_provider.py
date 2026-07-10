@@ -32,6 +32,7 @@ from pathlib import Path
 
 import requests
 
+import gcp_auth
 from env_config import env_float, env_str
 
 log = logging.getLogger("vlm_provider")
@@ -61,8 +62,10 @@ def is_ready() -> bool:
     url = env_str("VLM_URL").strip()
     if not url:
         return True  # in-process mode — nothing to warm
+    health_url = _health_url(url)
+    headers = gcp_auth.auth_header(health_url, env_str("VLM_AUTH"))
     try:
-        return requests.get(_health_url(url), timeout=3).ok
+        return requests.get(health_url, headers=headers, timeout=3).ok
     except requests.RequestException:
         return False
 
@@ -93,8 +96,10 @@ def ensure_running(timeout_s: float | None = None) -> bool:
 
 def _warm_cloudrun() -> None:
     url = env_str("VLM_URL").strip()
+    health_url = _health_url(url)
+    headers = gcp_auth.auth_header(health_url, env_str("VLM_AUTH"))
     try:
-        requests.get(_health_url(url), timeout=5)
+        requests.get(health_url, headers=headers, timeout=5)
     except requests.RequestException as exc:
         log.info("cloudrun warm ping failed (cold start still proceeds on the real request): %s", exc)
 

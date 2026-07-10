@@ -1,5 +1,8 @@
 Flask>=3.0,<4.0
 flask-cors>=4.0,<6.0
+# Production WSGI server (Dockerfile's CMD + gunicorn.conf.py) — Flask's own dev server
+# (used for local `python app.py`) is single-threaded and explicitly not for production.
+gunicorn>=21,<24
 Pillow>=10,<12
 requests>=2.28,<3        # Layer-3 guard HTTP calls (Ollama / vLLM)
 python-dotenv>=1.0,<2    # load config from a .env file at startup

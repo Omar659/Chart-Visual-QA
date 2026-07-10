@@ -1,5 +1,5 @@
 # Backend: Flask API + CLIP chart detector + Layer-2 encoders + Tesseract OCR.
-# Built and run by `python app.py` (production mode) via docker-compose.yml.
+# Served by gunicorn (production mode) via docker-compose.yml / Cloud Run.
 FROM python:3.12-slim
 
 # Tesseract OCR engine — the system binary pytesseract shells out to (so the
@@ -49,5 +49,23 @@ RUN python -c "from detoxify import Detoxify; Detoxify('original')" \
 
 COPY --chown=appuser:appuser . .
 
+# All guard/CLIP weights are baked into the image above — never phone home to HF Hub at
+# runtime. Without this, every model init still did live HEAD/GET cache-validation calls
+# to huggingface.co (confirmed via Cloud Run logs, 2026-07-10: ~10-70s of network round
+# trips, sometimes 429-throttled, on the very first /api/ask after a cold start) even
+# though the weights were already on disk — same class of bug already fixed for
+# vlm_service/Dockerfile, just never applied here.
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
+
 EXPOSE 5000
-CMD ["python", "app.py"]
+# gunicorn, not Flask's dev server: ratelimit.py/answer_cache.py/redis_client.py were
+# already designed around "shared across gunicorn workers" (their own comments say so),
+# but the CMD never actually used it — `python app.py` runs Werkzeug's single-threaded
+# dev server, so Cloud Run's default --concurrency=80 was a lie the container couldn't
+# back up (confirmed: a concurrent /api/ask landed on a cold-starting process and 503'd
+# while an already-warm instance sat idle). One worker + threads (not multiple worker
+# processes) so the ~1-2GB of guard/CLIP models (warmed via gunicorn.conf.py's
+# post_worker_init hook) aren't duplicated in memory per worker. Shell form so
+# ${PORT:-...} expands (Cloud Run injects PORT; local/docker-compose falls back to 5000).
+CMD gunicorn -c gunicorn.conf.py -b 0.0.0.0:${PORT:-5000} app:app
