@@ -821,6 +821,13 @@ Defenses, cheapest first:
   OLD untagged image digest left behind by re-pushing under the same `:latest` tag —
   matters most for `vlm-service`, whose baked-model image is ~30GB and would otherwise
   accumulate pure storage cost with zero usage.
+  **Correction (2026-10-19):** `cleanup_old_images` never actually deleted anything. It
+  read a `name` field that the image listing doesn't have, so each digest came back
+  empty and was skipped. By then the `chartqa` repo held 113 GB (37 untagged digests,
+  ~84 GB, ~US$11/month), against 28 GB for the live `:latest` images. Fixed the format
+  to `package@version`. Also added a server-side repo cleanup policy
+  (`scripts/gcloud_registry_cleanup.sh`): delete untagged digests older than 1 day and
+  keep the newest version per package, so cleanup no longer depends on a deploy running.
 - [ ] **Cloudflare free tier in front** of the public hostname: TLS, DDoS/bot filtering,
   static-asset caching. (Alternative: Caddy + Let's Encrypt on the VPS if fewer parties
   is preferred.)

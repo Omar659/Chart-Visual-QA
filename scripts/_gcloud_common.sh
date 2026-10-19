@@ -34,9 +34,14 @@ export MSYS2_ARG_CONV_EXCL="--set-env-vars"
 cleanup_old_images() {
   local image_path="$1"   # e.g. REGION-docker.pkg.dev/PROJECT/REPO/NAME (no :tag)
   echo "[cleanup] removing untagged (dangling) images under ${image_path}..."
+  # The image reference is package@version — this list output has NO `name` field. The
+  # original `--format="get(name)"` printed one empty line per untagged digest, which the
+  # loop below silently skipped, so this function never deleted anything (found
+  # 2026-10-19: 37 untagged digests / ~84 GB had piled up in chartv-qa since 2026-07-10).
   local digests
   digests=$(gcloud artifacts docker images list "$image_path" \
-    --include-tags --filter="-tags:*" --format="get(name)" 2>/dev/null || true)
+    --include-tags --filter="-tags:*" --format="value[separator=@](package,version)" \
+    2>/dev/null || true)
   if [[ -z "$digests" ]]; then
     echo "[cleanup] nothing to remove."
     return 0
