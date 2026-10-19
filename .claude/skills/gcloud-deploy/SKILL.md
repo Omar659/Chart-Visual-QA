@@ -163,21 +163,6 @@ service build) does not need either.
    ongoing cost with zero usage; `vlm-service` itself is thin (~170MB delta) since
    Artifact Registry dedupes the shared base layers. Don't skip this when writing new
    deploy automation for this project.
-
-   **Server-side backstop: the repo cleanup policy** (`scripts/gcloud_registry_cleanup.sh`
-   + `scripts/registry_cleanup_policy.json`) — delete untagged digests older than 1 day,
-   keep the most recent version of every package. It runs daily even when nobody deploys,
-   so it doesn't depend on the scripts above. The script installs it in **dry-run** by
-   default; `--apply` enforces it. Trade-off: rollback to an older revision only works
-   within ~1 day of a new deploy.
-
-   **Lesson (2026-10-19):** `cleanup_old_images` used `--format="get(name)"`, but that
-   listing has no `name` field (the reference is `package@version`). Every untagged
-   digest came back as an empty line and was silently skipped, so nothing was ever
-   deleted. 37 digests (~84 GB of 113 GB) piled up and cost ~US$11/month. Check a
-   cleanup by looking at the registry size afterwards
-   (`gcloud artifacts repositories list --project <PROJECT>`), not by the absence of
-   errors.
 4. **Required Google login (abuse prevention, not a $ control per se).** When
    `--google-client-id` is set, `/api/ask` and `/api/vlm/warm` reject any request
    without a valid Google ID token — a much bigger lever against automated abuse than
